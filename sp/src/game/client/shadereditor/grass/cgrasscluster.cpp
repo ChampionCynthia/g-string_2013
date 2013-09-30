@@ -1,6 +1,6 @@
 
 #include "cbase.h"
-#include "ShaderEditor/Grass/CGrassCluster.h"
+#include "shaderEditor/grass/cgrasscluster.h"
 #include "view.h"
 #include "viewrender.h"
 #include "idebugoverlaypanel.h"
@@ -17,7 +17,7 @@
 
 static ConVar gcluster_objectsPerHint( "grasscluster_objects_per_hint", "8" );
 static ConVar gcluster_debug( "grasscluster_debug", "0" );
-static ConVar gcluster_enable( "grasscluster_enable", "1" );
+static ConVar gcluster_enable( "grasscluster_enable", "0" );
 static ConVar gcluster_enable_flashlight( "grasscluster_enable_flashlightSupport", "1" );
 static ConVar gcluster_enable_morph( "grasscluster_enable_morph", "1" );
 static ConVar gcluster_cullDist( "grasscluster_cullDist", "4096" );
@@ -192,9 +192,6 @@ CON_COMMAND( grasscluster_preset_meadow_ultra, "" )
 	//gcluster_sprite_index.SetValue( 2 );
 	CGrassClusterManager::GetInstance()->ClearClusterData();
 }
-
-#ifdef SHADEREDITOR_FORCE_ENABLED
-#endif
 
 Vector FetchLightSamples( Vector pos )
 {

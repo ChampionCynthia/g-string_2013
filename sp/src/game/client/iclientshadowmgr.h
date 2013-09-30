@@ -102,6 +102,11 @@ public:
 	virtual void ComputeShadowDepthTextures( const CViewSetup &pView ) = 0;
 	
 	// GSTRINGMIGRATION
+	virtual ShadowHandle_t GetShadowHandle( ClientShadowHandle_t clienthandle ) = 0;
+	virtual ShadowType_t GetActualShadowCastType( ClientShadowHandle_t handle ) const = 0;
+	virtual int GetNumShadowDepthtextures() = 0;
+	virtual CTextureReference GetShadowDepthTex( int num ) = 0;
+
 	virtual void SetShadowColorMaterialsOnly( float r, float g, float b ) = 0;
 	virtual void GetShadowColor( unsigned char *r, unsigned char *g, unsigned char *b ) const = 0;
 	// END GSTRINGMIGRATION

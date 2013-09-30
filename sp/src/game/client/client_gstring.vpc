@@ -31,6 +31,12 @@ $Project "Client (G-String)"
 			$File	"shadereditor\sedit_modelrender.h"
 			$File	"shadereditor\shadereditorsystem.cpp"
 			$File	"shadereditor\shadereditorsystem.h"
+			
+			$Folder "Grass"
+			{
+				$File	"shadereditor\grass\cgrasscluster.cpp"
+				$File	"shadereditor\grass\cgrasscluster.h"
+			}
 		}
 		
 		$Folder "G-String"

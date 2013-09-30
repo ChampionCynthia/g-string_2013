@@ -82,6 +82,7 @@
 #include "gstring/cscreenoverlay_multi.h"
 #include "gstring/gstring_cvars.h"
 #include "shadereditor/shadereditorsystem.h"
+#include "shadereditor/grass/cgrasscluster.h"
 // END GSTRINGMIGRATION
 
 // memdbgon must be the last include file in a .cpp file!!!
@@ -4072,6 +4073,10 @@ void CRendering3dView::DrawOpaqueRenderables( ERenderDepthMode DepthMode )
 	//
 	RopeManager()->ResetRenderCache();
 	g_pParticleSystemMgr->ResetRenderCache();
+
+	// GSTRINGMIGRATION
+	CGrassClusterManager::GetInstance()->RenderClusters( DepthMode == DEPTH_MODE_SHADOW );
+	// END GSTRINGMIGRATION
 
 	bool const bDrawopaquestaticpropslast = r_drawopaquestaticpropslast.GetBool();
 

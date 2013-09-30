@@ -29,6 +29,7 @@
 // GSTRINGMIGRATION
 #include "gstring/gstring_postprocess.h"
 #include "gstring/c_gstring_player.h"
+#include "shadereditor/grass/cgrasscluster.h"
 // END GSTRINGMIGRATION
 
 #if defined(DOD_DLL) || defined(CSTRIKE_DLL) || defined(GSTRING) // GSTRINGMIGRATION
@@ -1890,6 +1891,22 @@ void CDetailObjectSystem::UnserializeModels( CUtlBuffer& buf )
 				case DETAIL_PROP_TYPE_SHAPE_CROSS:
 				case DETAIL_PROP_TYPE_SHAPE_TRI:
 				{
+					//const DetailPropSpriteDict_t &sprite = s_DetailObjectSystem.DetailSpriteDict( lump.m_DetailModel );
+
+					//float color[4];
+					//color[0] = TexLightToLinear( lump.m_Lighting.r, lump.m_Lighting.exponent );
+					//color[1] = TexLightToLinear( lump.m_Lighting.g, lump.m_Lighting.exponent );
+					//color[2] = TexLightToLinear( lump.m_Lighting.b, lump.m_Lighting.exponent );
+					//color[3] = 255;
+					//engine->LinearToGamma( color, color );
+
+					//_grassClusterInfo clusterHint;
+					//clusterHint.orig = lump.m_Origin;
+					//clusterHint.color.Init( color[0], color[1], color[2], 1 );
+					//clusterHint.uv_min.Init();
+					//clusterHint.uv_max.Init
+					//CGrassClusterManager::GetInstance()->AddClusterHint( clusterHint );
+
 					for( int i=0;i<SPRITE_MULTIPLIER;i++)
 					{
 						Vector pos = lump.m_Origin;
