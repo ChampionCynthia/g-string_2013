@@ -185,6 +185,13 @@ void C_GstringPlayer::OverrideView( CViewSetup *pSetup )
 			if ( pszName && *pszName )
 			{
 				m_pBobViewModel->SetModel( pszName );
+
+				const FileWeaponInfo_t &info = pViewModel->GetWeapon()->GetWpnData();
+
+				m_pBobViewModel->SetAttachmentInfo( info.szCameraAttachmentName,
+					info.szCameraBoneName,
+					info.flCameraMovementScale,
+					info.angCameraMovementOrientation );
 			}
 		}
 
@@ -217,7 +224,8 @@ void C_GstringPlayer::OverrideView( CViewSetup *pSetup )
 		m_flBobModelAmount = Approach( flGoalBobAmount, m_flBobModelAmount, gpGlobals->frametime * 5.0f );
 	}
 
-	if ( !m_bHasUseEntity )
+	if ( !m_bHasUseEntity
+		&& render->GetViewEntity() == entindex() )
 	{
 		pSetup->angles += m_angLastBobAngle * m_flBobModelAmount;
 	}

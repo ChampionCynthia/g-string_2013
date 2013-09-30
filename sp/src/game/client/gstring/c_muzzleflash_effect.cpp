@@ -37,7 +37,7 @@ void C_MuzzleflashEffect::UpdateLight( const Vector &vecPos, const Vector &vecDi
 
 	state.m_vecLightOrigin = vecPos;
 	state.m_quatOrientation = quat;
-	state.m_fVerticalFOVDegrees = state.m_fHorizontalFOVDegrees = 100.0f + 40.0f * flStrength;
+	state.m_fVerticalFOVDegrees = state.m_fHorizontalFOVDegrees = 85.0f + 40.0f * flStrength;
 	state.m_fConstantAtten = 0.0f;
 	state.m_Color[0] = 1.0f;
 	state.m_Color[1] = 0.85f;

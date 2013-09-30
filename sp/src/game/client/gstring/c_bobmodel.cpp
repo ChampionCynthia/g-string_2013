@@ -8,6 +8,10 @@ C_BobModel::C_BobModel()
 	, m_angIdle( vec3_angle )
 	, m_posIdle( vec3_origin )
 	, m_bInvalid( false )
+	, m_iBoneFollow( -1 )
+	, m_iAttachmentFollow( 1 )
+	, m_flScale( 1.0f )
+	, m_angOrientation( vec3_angle )
 {
 }
 
@@ -52,7 +56,7 @@ void C_BobModel::UpdateDefaultTransforms()
 	Vector vecPos;
 	QAngle ang;
 
-	if ( GetAttachment( 1, vecPos, ang ) )
+	if ( GetTransforms( vecPos, ang ) )
 	{
 		m_posIdle = vecPos;
 		m_angIdle = ang;
@@ -70,10 +74,68 @@ void C_BobModel::GetDeltaTransforms( QAngle &angDelta )
 
 	Vector pos;
 
-	GetAttachment( 1, pos, angDelta );
+	GetTransforms( pos, angDelta );
 
 	for ( int i = 0; i < 3; i++ )
 	{
 		angDelta[ i ] = AngleDiff( angDelta[ i ], m_angIdle[ i ] );
 	}
+
+	angDelta *= m_flScale;
+}
+
+bool C_BobModel::GetTransforms( Vector &pos, QAngle &ang )
+{
+	matrix3x4_t mat;
+
+	if ( m_iBoneFollow >= 0 )
+	{
+		if ( !GetModelPtr()
+			|| GetModelPtr()->numbones() <= m_iBoneFollow )
+			return false;
+
+		SetupBones( NULL, -1, BONE_USED_BY_ANYTHING, gpGlobals->curtime );
+
+		mat = GetBone( m_iBoneFollow );
+	}
+	else
+	{
+		if ( !GetModelPtr()
+			|| GetModelPtr()->GetNumAttachments() < m_iAttachmentFollow )
+			return false;
+
+		if ( !GetAttachment( m_iAttachmentFollow, mat ) )
+			return false;
+	}
+
+	Vector f, r, u;
+	MatrixAngles( mat, ang, pos );
+	AngleVectors( ang, &f, &r, &u );
+
+	matrix3x4_t rot, tmp;
+	MatrixBuildRotationAboutAxis( f, m_angOrientation.x, rot );
+	ConcatTransforms( rot, mat, tmp );
+	MatrixBuildRotationAboutAxis( r, m_angOrientation.y, rot );
+	ConcatTransforms( rot, tmp, mat );
+	MatrixBuildRotationAboutAxis( u, m_angOrientation.z, rot );
+	ConcatTransforms( rot, mat, tmp );
+
+	MatrixAngles( tmp, ang, pos );
+	return true;
+}
+
+void C_BobModel::SetAttachmentInfo( const char *pszAttachmentName, const char *pszBoneName,
+	float flScale, QAngle angOrientation )
+{
+	m_iBoneFollow = LookupBone( pszBoneName );
+	m_iAttachmentFollow = LookupAttachment( pszAttachmentName );
+
+	if ( m_iBoneFollow < 0
+		&& m_iAttachmentFollow <= 0 )
+	{
+		m_iAttachmentFollow = 1;
+	}
+
+	m_flScale = flScale;
+	m_angOrientation = angOrientation;
 }

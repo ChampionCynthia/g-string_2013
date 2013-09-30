@@ -347,6 +347,13 @@ FileWeaponInfo_t::FileWeaponInfo_t()
 	bShowUsageHint = false;
 	m_bAllowFlipping = true;
 	m_bBuiltRightHanded = true;
+
+	// GSTRINGMIGRATION
+	flCameraMovementScale = 1.0f;
+	*szCameraAttachmentName = 0;
+	*szCameraBoneName = 0;
+	angCameraMovementOrientation = vec3_angle;
+	// END GSTRINGMIGRATION
 }
 
 #ifdef CLIENT_DLL
@@ -460,5 +467,17 @@ void FileWeaponInfo_t::Parse( KeyValues *pKeyValuesData, const char *szWeaponNam
 			}
 		}
 	}
+
+	// GSTRINGMIGRATION
+	const char *pszCameraAttachment = pKeyValuesData->GetString( "camera_attachment", "muzzle" );
+	Q_strncpy( szCameraAttachmentName, pszCameraAttachment, sizeof( szCameraAttachmentName ) );
+
+	const char *pszCameraBone = pKeyValuesData->GetString( "camera_bone" );
+	Q_strncpy( szCameraBoneName, pszCameraBone, sizeof( szCameraBoneName ) );
+
+	flCameraMovementScale = pKeyValuesData->GetFloat( "camera_movement_scale", 1.0f );
+
+	UTIL_StringToVector( angCameraMovementOrientation.Base(), pKeyValuesData->GetString( "camera_orientation", "0 0 0" ) );
+	// END GSTRINGMIGRATION
 }
 

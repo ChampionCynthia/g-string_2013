@@ -130,6 +130,13 @@ public:
 
 // SERVER DLL
 
+// GSTRINGMIGRATION
+	char				szCameraAttachmentName[32];				// defaults to 'muzzle'
+	char				szCameraBoneName[32];					// not used by default, overwrites attachment
+
+	float				flCameraMovementScale;
+	QAngle				angCameraMovementOrientation;
+// END GSTRINGMIGRATION
 };
 
 // The weapon parse function
