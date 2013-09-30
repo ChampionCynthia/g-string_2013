@@ -33,6 +33,11 @@ public:
 	virtual void GetFlashlightForward( Vector &vecForward ) const;
 	virtual float GetFlashlightDot() const;
 
+	virtual void UpdateStepSound( surfacedata_t *psurface, const Vector &vecOrigin, const Vector &vecVelocity );
+	virtual void UpdateStepSoundOverride( surfacedata_t *psurface, const Vector &vecOrigin, const Vector &vecVelocity );
+
+	surfacedata_t* GetGroundSurface();
+
 protected:
 
 private:

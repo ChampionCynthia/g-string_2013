@@ -353,6 +353,8 @@ FileWeaponInfo_t::FileWeaponInfo_t()
 	*szCameraAttachmentName = 0;
 	*szCameraBoneName = 0;
 	angCameraMovementOrientation = vec3_angle;
+	angCameraMovementOffset = vec3_angle;
+	flCameraMovementReferenceCycle = 0.0f;
 	// END GSTRINGMIGRATION
 }
 
@@ -476,8 +478,10 @@ void FileWeaponInfo_t::Parse( KeyValues *pKeyValuesData, const char *szWeaponNam
 	Q_strncpy( szCameraBoneName, pszCameraBone, sizeof( szCameraBoneName ) );
 
 	flCameraMovementScale = pKeyValuesData->GetFloat( "camera_movement_scale", 1.0f );
+	flCameraMovementReferenceCycle = pKeyValuesData->GetFloat( "camera_reference_cycle", 0.0f );
 
 	UTIL_StringToVector( angCameraMovementOrientation.Base(), pKeyValuesData->GetString( "camera_orientation", "0 0 0" ) );
+	UTIL_StringToVector( angCameraMovementOffset.Base(), pKeyValuesData->GetString( "camera_offset_angle", "0 0 0" ) );
 	// END GSTRINGMIGRATION
 }
 

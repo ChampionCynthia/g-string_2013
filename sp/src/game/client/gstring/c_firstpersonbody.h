@@ -15,7 +15,7 @@ public:
 	virtual void BuildTransformations( CStudioHdr *hdr, Vector *pos, Quaternion *q,
 		const matrix3x4_t &cameraTransform, int boneMask, CBoneBitList &boneComputed );
 
-	virtual void FireEvent( const Vector& origin, const QAngle& angles, int event, const char *options ) {}
+	virtual void FireEvent( const Vector& origin, const QAngle& angles, int event, const char *options );
 
 	virtual CStudioHdr *OnNewModel();
 

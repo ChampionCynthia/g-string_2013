@@ -8,11 +8,11 @@ ConVar cvar_gstring_enable_postprocessing( "gstring_enable_postprocessing", "1" 
 ConVar cvar_gstring_enable_hud( "gstring_enable_hud", "1" );
 
 ConVar cvar_gstring_drawdetailpropsfirst( "gstring_Drawdetailpropsfirst", "1", FCVAR_ARCHIVE );
-ConVar cvar_gstring_drawbars( "gstring_DrawBars", "1", FCVAR_ARCHIVE );
-ConVar cvar_gstring_drawfilmgrain( "gstring_DrawFilmGrain", "1", FCVAR_ARCHIVE );
+//ConVar cvar_gstring_drawbars( "gstring_DrawBars", "1", FCVAR_ARCHIVE );
+//ConVar cvar_gstring_drawfilmgrain( "gstring_DrawFilmGrain", "1", FCVAR_ARCHIVE );
 ConVar cvar_gstring_drawvignette( "gstring_DrawVignette", "1", FCVAR_ARCHIVE );
 ConVar cvar_gstring_drawgodrays( "gstring_DrawGodrays", "1", FCVAR_ARCHIVE );
-ConVar cvar_gstring_drawexplosionblur( "gstring_DrawExplosionFX", "1", FCVAR_ARCHIVE );
+//ConVar cvar_gstring_drawexplosionblur( "gstring_DrawExplosionFX", "1", FCVAR_ARCHIVE );
 ConVar cvar_gstring_drawmotionblur( "gstring_DrawMotionblur", "1", FCVAR_ARCHIVE );
 ConVar cvar_gstring_drawscreenblur( "gstring_DrawScreenBlur", "1", FCVAR_ARCHIVE );
 ConVar cvar_gstring_drawdreamblur( "gstring_DrawDreamBlur", "1", FCVAR_ARCHIVE );

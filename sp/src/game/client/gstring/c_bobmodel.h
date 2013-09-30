@@ -25,15 +25,12 @@ public:
 	bool IsInvalid() const;
 
 	void UpdateDefaultTransforms();
-
 	void GetDeltaTransforms( QAngle &angDelta );
 
-	void SetAttachmentInfo( const char *pszAttachmentName, const char *pszBoneName,
-		float flScale, QAngle angOrientation );
+	void SetAttachmentInfo( const FileWeaponInfo_t &info );
 
 private:
 	bool GetTransforms( Vector &pos, QAngle &ang );
-
 
 	bool m_bDirty;
 	bool m_bInvalid;
@@ -43,9 +40,12 @@ private:
 
 	int m_iBoneFollow;
 	int m_iAttachmentFollow;
+
 	float m_flScale;
+	float m_flReferenceCycle;
 
 	QAngle m_angOrientation;
+	QAngle m_angOffset;
 };
 
 

@@ -1,6 +1,8 @@
 
 #include "cbase.h"
 #include "c_firstpersonbody.h"
+#include "cl_animevent.h"
+#include "c_gstring_player.h"
 
 #include "bone_setup.h"
 #include "jigglebones.h"
@@ -173,6 +175,24 @@ void C_FirstpersonBody::BuildTransformations( CStudioHdr *hdr, Vector *pos, Quat
 		{
 			MatrixScaleBy( gstring_firstpersonbody_hiddenbone_scale.GetFloat(), GetBoneForWrite( i ) );
 		}
+	}
+}
+
+void C_FirstpersonBody::FireEvent( const Vector& origin, const QAngle& angles, int event, const char *options )
+{
+	switch ( event )
+	{
+	case CL_EVENT_FOOTSTEP_LEFT:
+	case CL_EVENT_FOOTSTEP_RIGHT:
+		{
+			C_GstringPlayer *pPlayer = ToGstringPlayer( C_BasePlayer::GetLocalPlayer() );
+
+			if ( pPlayer != NULL )
+			{
+				pPlayer->UpdateStepSoundOverride( pPlayer->GetGroundSurface(), pPlayer->GetAbsOrigin(), pPlayer->GetAbsVelocity() );
+			}
+		}
+		break;
 	}
 }
 

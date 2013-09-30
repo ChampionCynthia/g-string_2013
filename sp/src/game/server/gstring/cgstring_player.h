@@ -20,6 +20,8 @@ public:
 	virtual void ImpulseCommands();
 	virtual void PhysicsSimulate();
 
+	virtual void UpdateStepSound( surfacedata_t *psurface, const Vector &vecOrigin, const Vector &vecVelocity );
+
 protected:
 
 private:

@@ -28,6 +28,8 @@
 static ConVar gstring_firstpersonbody_forwardoffset_min( "gstring_firstpersonbody_forwardoffset_min", "13.0" );
 static ConVar gstring_firstpersonbody_forwardoffset_max( "gstring_firstpersonbody_forwardoffset_max", "18.0" );
 
+static ConVar gstring_firstpersonbody_enable( "gstring_firstpersonbody_enable", "1" );
+
 
 IMPLEMENT_CLIENTCLASS_DT( C_GstringPlayer, DT_CGstringPlayer, CGstringPlayer )
 
@@ -99,7 +101,7 @@ void C_GstringPlayer::ClientThink()
 	{
 		m_flNightvisionFraction = Approach( flNightvisionTarget, m_flNightvisionFraction, gpGlobals->frametime * 5.0f );
 
-		unsigned char r,g,b;
+		unsigned char r, g, b;
 		g_pClientShadowMgr->GetShadowColor( &r, &g, &b );
 
 		Vector v( r / 255.0f, g / 255.0f, b / 255.0f );
@@ -186,12 +188,7 @@ void C_GstringPlayer::OverrideView( CViewSetup *pSetup )
 			{
 				m_pBobViewModel->SetModel( pszName );
 
-				const FileWeaponInfo_t &info = pViewModel->GetWeapon()->GetWpnData();
-
-				m_pBobViewModel->SetAttachmentInfo( info.szCameraAttachmentName,
-					info.szCameraBoneName,
-					info.flCameraMovementScale,
-					info.angCameraMovementOrientation );
+				m_pBobViewModel->SetAttachmentInfo( pViewModel->GetWeapon()->GetWpnData() );
 			}
 		}
 
@@ -375,6 +372,17 @@ float C_GstringPlayer::GetFlashlightDot() const
 
 void C_GstringPlayer::UpdateBodyModel()
 {
+	if ( !gstring_firstpersonbody_enable.GetBool() )
+	{
+		if ( m_pBodyModel != NULL )
+		{
+			m_pBodyModel->Release();
+			m_pBodyModel = NULL;
+		}
+
+		return;
+	}
+
 	if ( m_pBodyModel == NULL )
 	{
 		m_pBodyModel = new C_FirstpersonBody();
@@ -490,7 +498,7 @@ void C_GstringPlayer::UpdateBodyModel()
 		{
 			flPlaybackrate = flSpeed / flGroundSpeed;
 
-			flPlaybackrate = MIN( 3.0f, flPlaybackrate );
+			flPlaybackrate = MIN( 1.5f, flPlaybackrate );
 		}
 	}
 
@@ -502,4 +510,18 @@ void C_GstringPlayer::UpdateBodyModel()
 	{
 		m_pBodyModel->CreateShadow();
 	}
+}
+
+surfacedata_t* C_GstringPlayer::GetGroundSurface()
+{
+	return BaseClass::GetGroundSurface();
+}
+
+void C_GstringPlayer::UpdateStepSound( surfacedata_t *psurface, const Vector &vecOrigin, const Vector &vecVelocity )
+{
+}
+
+void C_GstringPlayer::UpdateStepSoundOverride( surfacedata_t *psurface, const Vector &vecOrigin, const Vector &vecVelocity )
+{
+	BaseClass::UpdateStepSound( psurface, vecOrigin, vecVelocity );
 }

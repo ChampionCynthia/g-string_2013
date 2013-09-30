@@ -515,17 +515,19 @@ void CBasePlayer::UpdateStepSound( surfacedata_t *psurface, const Vector &vecOri
 	float velwalk;
 	int	fLadder;
 
-	if ( m_flStepSoundTime > 0 )
-	{
-		m_flStepSoundTime -= 1000.0f * gpGlobals->frametime;
-		if ( m_flStepSoundTime < 0 )
-		{
-			m_flStepSoundTime = 0;
-		}
-	}
+	// GSTRINGMIGRATION
+	//if ( m_flStepSoundTime > 0 )
+	//{
+	//	m_flStepSoundTime -= 1000.0f * gpGlobals->frametime;
+	//	if ( m_flStepSoundTime < 0 )
+	//	{
+	//		m_flStepSoundTime = 0;
+	//	}
+	//}
 
-	if ( m_flStepSoundTime > 0 )
-		return;
+	//if ( m_flStepSoundTime > 0 )
+	//	return;
+	// END GSTRINGMIGRATION
 
 	if ( GetFlags() & (FL_FROZEN|FL_ATCONTROLS))
 		return;
@@ -745,9 +747,6 @@ void CBasePlayer::PlayStepSound( Vector &vecOrigin, surfacedata_t *psurface, flo
 	ep.m_pOrigin = &vecOrigin;
 
 	EmitSound( filter, entindex(), ep );
-
-	// Kyle says: ugggh. This function may as well be called "PerformPileOfDesperateGameSpecificFootstepHacks".
-	OnEmitFootstepSound( params, vecOrigin, fvol );
 }
 
 void CBasePlayer::UpdateButtonState( int nUserCmdButtonMask )

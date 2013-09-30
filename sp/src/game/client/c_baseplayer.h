@@ -346,8 +346,6 @@ public:
 	virtual void SetStepSoundTime( stepsoundtimes_t iStepSoundTime, bool bWalking );
 	virtual const char *GetOverrideStepSound( const char *pszBaseStepSoundName ) { return pszBaseStepSoundName; }
 
-	virtual void OnEmitFootstepSound( const CSoundParameters& params, const Vector& vecOrigin, float fVolume ) {}
-
 	// Called by prediction when it detects a prediction correction.
 	// vDelta is the line from where the client had predicted the player to at the usercmd in question,
 	// to where the server says the client should be at said usercmd.

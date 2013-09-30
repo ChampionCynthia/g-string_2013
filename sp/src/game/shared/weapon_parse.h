@@ -135,7 +135,9 @@ public:
 	char				szCameraBoneName[32];					// not used by default, overwrites attachment
 
 	float				flCameraMovementScale;
+	float				flCameraMovementReferenceCycle;
 	QAngle				angCameraMovementOrientation;
+	QAngle				angCameraMovementOffset;
 // END GSTRINGMIGRATION
 };
 

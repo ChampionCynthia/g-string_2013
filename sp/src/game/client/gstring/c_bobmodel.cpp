@@ -11,7 +11,9 @@ C_BobModel::C_BobModel()
 	, m_iBoneFollow( -1 )
 	, m_iAttachmentFollow( 1 )
 	, m_flScale( 1.0f )
+	, m_flReferenceCycle( 0.0f )
 	, m_angOrientation( vec3_angle )
+	, m_angOffset( vec3_angle )
 {
 }
 
@@ -51,7 +53,7 @@ void C_BobModel::UpdateDefaultTransforms()
 	}
 
 	SetSequence( iSequence );
-	SetCycle( 0.0f );
+	SetCycle( m_flReferenceCycle );
 
 	Vector vecPos;
 	QAngle ang;
@@ -124,11 +126,10 @@ bool C_BobModel::GetTransforms( Vector &pos, QAngle &ang )
 	return true;
 }
 
-void C_BobModel::SetAttachmentInfo( const char *pszAttachmentName, const char *pszBoneName,
-	float flScale, QAngle angOrientation )
+void C_BobModel::SetAttachmentInfo( const FileWeaponInfo_t &info )
 {
-	m_iBoneFollow = LookupBone( pszBoneName );
-	m_iAttachmentFollow = LookupAttachment( pszAttachmentName );
+	m_iBoneFollow = LookupBone( info.szCameraBoneName );
+	m_iAttachmentFollow = LookupAttachment( info.szCameraAttachmentName );
 
 	if ( m_iBoneFollow < 0
 		&& m_iAttachmentFollow <= 0 )
@@ -136,6 +137,9 @@ void C_BobModel::SetAttachmentInfo( const char *pszAttachmentName, const char *p
 		m_iAttachmentFollow = 1;
 	}
 
-	m_flScale = flScale;
-	m_angOrientation = angOrientation;
+	m_flScale = info.flCameraMovementScale;
+	m_flReferenceCycle = info.flCameraMovementReferenceCycle;
+
+	m_angOrientation = info.angCameraMovementOrientation;
+	m_angOffset = info.angCameraMovementOffset;
 }

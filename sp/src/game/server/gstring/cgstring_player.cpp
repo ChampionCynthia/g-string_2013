@@ -113,3 +113,31 @@ void CGstringPlayer::PhysicsSimulate()
 
 	m_bHasUseEntity = GetUseEntity() != NULL;
 }
+
+void CGstringPlayer::UpdateStepSound( surfacedata_t *psurface, const Vector &vecOrigin, const Vector &vecVelocity )
+{
+	if ( m_Local.m_bDucked )
+	{
+		if ( m_flStepSoundTime > 0 )
+		{
+			m_flStepSoundTime -= 1000.0f * gpGlobals->frametime;
+			if ( m_flStepSoundTime < 0 )
+			{
+				m_flStepSoundTime = 0;
+			}
+		}
+
+		const bool bStepTimeWasZero = m_flStepSoundTime <= 0.0f;
+
+		if ( m_flStepSoundTime <= 0 )
+		{
+			BaseClass::UpdateStepSound( psurface, vecOrigin, vecVelocity );
+		}
+
+		if ( m_flStepSoundTime > 0.0f
+			&& bStepTimeWasZero )
+		{
+			m_flStepSoundTime += 480.0f;
+		}
+	}
+}

@@ -8,11 +8,11 @@ extern ConVar cvar_gstring_enable_postprocessing;
 extern ConVar cvar_gstring_enable_hud;
 
 extern ConVar cvar_gstring_drawdetailpropsfirst;
-extern ConVar cvar_gstring_drawbars;
-extern ConVar cvar_gstring_drawfilmgrain;
+//extern ConVar cvar_gstring_drawbars;
+//extern ConVar cvar_gstring_drawfilmgrain;
 extern ConVar cvar_gstring_drawvignette;
 extern ConVar cvar_gstring_drawgodrays;
-extern ConVar cvar_gstring_drawexplosionblur;
+//extern ConVar cvar_gstring_drawexplosionblur;
 extern ConVar cvar_gstring_drawmotionblur;
 extern ConVar cvar_gstring_drawscreenblur;
 extern ConVar cvar_gstring_drawdreamblur;

@@ -100,8 +100,8 @@ void DrawBarsAndGrain( int x, int y, int w, int h )
 	C_GstringPlayer *pPlayer = LocalGstringPlayer();
 	float flNightvisionStrengthInv = 1.0f - (pPlayer ? pPlayer->GetNightvisionFraction() : 0.0f);
 
-	if ( cvar_gstring_drawfilmgrain.GetBool()
-		&& cvar_gstring_filmgrain_strength.GetFloat() > 0.0f )
+	if ( /*cvar_gstring_drawfilmgrain.GetBool()
+		&&*/ cvar_gstring_filmgrain_strength.GetFloat() > 0.0f )
 	{
 		static int iFilmgrainIndex = shaderEdit->GetPPEIndex( FILMGRAIN_EDITOR_NAME );
 
@@ -132,11 +132,14 @@ void DrawBarsAndGrain( int x, int y, int w, int h )
 		}
 	}
 
-	if ( cvar_gstring_drawbars.GetBool() )
+	const float flBarScale = cvar_gstring_bars_scale.GetFloat();
+
+	if ( /*cvar_gstring_drawbars.GetBool()
+		&&*/ flBarScale > 0.0f )
 	{
 		static CMaterialReference grain( "effects/black", TEXTURE_GROUP_OTHER );
 
-		const float flBarSize = h * cvar_gstring_bars_scale.GetFloat();
+		const float flBarSize = h * flBarScale;
 
 		UpdateScreenEffectTexture();
 
@@ -279,8 +282,8 @@ void DrawExplosionBlur()
 	if ( iExplosionIndex < 0 )
 		return;
 
-	if ( !cvar_gstring_drawexplosionblur.GetInt()
-		|| cvar_gstring_explosionfx_strength.GetFloat() <= 0.0f )
+	if ( /*!cvar_gstring_drawexplosionblur.GetInt()
+		||*/ cvar_gstring_explosionfx_strength.GetFloat() <= 0.0f )
 		return;
 
 	for ( int i = 0; i < g_hExplosionBlurQueue.Count(); i++ )
