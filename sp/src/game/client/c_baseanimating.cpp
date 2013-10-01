@@ -1013,7 +1013,7 @@ CStudioHdr *C_BaseAnimating::OnNewModel()
 	{
 		// XXX what's authoritative? the model pointer or the model index? what a mess.
 		nNewIndex = modelinfo->GetModelIndex( modelinfo->GetModelName( GetModel() ) );
-		Assert( modelinfo->GetModel( nNewIndex ) == GetModel() );
+		Assert( nNewIndex < 0 || modelinfo->GetModel( nNewIndex ) == GetModel() );
 	}
 
 	m_AutoRefModelIndex = nNewIndex;
@@ -3307,6 +3307,8 @@ void C_BaseAnimating::ProcessMuzzleFlashEvent()
 		//FIXME: We should really use a named attachment for this
 		if ( m_Attachments.Count() > 0 )
 		{
+			SetupBones( NULL, -1, BONE_USED_BY_ANYTHING, gpGlobals->curtime ); // GSTRINGMIGRATION
+
 			Vector vAttachment;
 			QAngle dummyAngles;
 			GetAttachment( 1, vAttachment, dummyAngles );

@@ -3288,7 +3288,7 @@ void CWeaponPhysCannon::ItemPostFrame()
 	}
 
 	//Check for object in pickup range
-	if ( m_bActive == false )
+	if ( false ) // m_bActive == false ) // GSTRINGMIGRATION
 	{
 		CheckForTarget();
 

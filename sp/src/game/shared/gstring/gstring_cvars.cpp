@@ -34,6 +34,6 @@ ConVar cvar_gstring_vignette_range_max( "gstring_Vignette_range_max", "0.7", FCV
 ConVar cvar_gstring_debug_vguiparticles( "gstring_debug_VguiParticles", "0" );
 ConVar cvar_gstring_nightvision_minlighting( "gstring_nightvision_minlighting", "0.5" );
 
-ConVar cvar_gstring_drawhurtfx( "gstring_DrawHurtFX", "1" );
-ConVar cvar_gstring_chromatic_aberration( "gstring_chromatic_aberration", "0.005" );
+ConVar cvar_gstring_drawhurtfx( "gstring_DrawHurtFX", "1", FCVAR_ARCHIVE );
+ConVar cvar_gstring_chromatic_aberration( "gstring_chromatic_aberration", "0.005", FCVAR_ARCHIVE );
 #endif
