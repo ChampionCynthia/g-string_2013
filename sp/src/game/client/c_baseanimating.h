@@ -47,6 +47,7 @@ class CBoneList;
 class KeyValues;
 class CJiggleBones;
 class IBoneSetup;
+class C_ClientRagdoll; // GSTRINGMIGRATION
 FORWARD_DECLARE_HANDLE( memhandle_t );
 typedef unsigned short MDLHandle_t;
 
@@ -290,6 +291,7 @@ public:
 	bool							IsAboutToRagdoll() const;
 	virtual C_BaseAnimating			*BecomeRagdollOnClient();
 	C_BaseAnimating					*CreateRagdollCopy();
+	virtual C_ClientRagdoll			*CreateRagdollCopyInstance(); // GSTRINGMIGRATION
 	bool							InitAsClientRagdoll( const matrix3x4_t *pDeltaBones0, const matrix3x4_t *pDeltaBones1, const matrix3x4_t *pCurrentBonePosition, float boneDt, bool bFixedConstraints=false );
 	void							IgniteRagdoll( C_BaseAnimating *pSource );
 	void							TransferDissolveFrom( C_BaseAnimating *pSource );
@@ -480,6 +482,7 @@ private:
 
 public:
 	CRagdoll						*m_pRagdoll;
+	CHandle< C_BaseAnimating >		m_pRagdollEntity; // GSTRINGMIGRATION
 
 	// Texture group to use
 	int								m_nSkin;

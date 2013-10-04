@@ -1713,7 +1713,7 @@ void CNPC_BaseZombie::Spawn( void )
 //-----------------------------------------------------------------------------
 void CNPC_BaseZombie::Precache( void )
 {
-	UTIL_PrecacheOther( GetHeadcrabClassname() );
+	//UTIL_PrecacheOther( GetHeadcrabClassname() ); // GSTRINGMIGRATION
 
 	PrecacheScriptSound( "E3_Phystown.Slicer" );
 	PrecacheScriptSound( "NPC_BaseZombie.PoundDoor" );
@@ -2378,6 +2378,13 @@ bool CNPC_BaseZombie::HeadcrabFits( CBaseAnimating *pCrab )
 //-----------------------------------------------------------------------------
 void CNPC_BaseZombie::ReleaseHeadcrab( const Vector &vecOrigin, const Vector &vecVelocity, bool fRemoveHead, bool fRagdollBody, bool fRagdollCrab )
 {
+	if ( fRagdollBody )
+	{
+		BecomeRagdollOnClient( vec3_origin );
+	}
+
+	return; // GSTRINGMIGRATION
+
 	CAI_BaseNPC		*pCrab;
 	Vector vecSpot = vecOrigin;
 

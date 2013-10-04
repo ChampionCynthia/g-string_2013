@@ -4548,12 +4548,19 @@ void C_BaseAnimating::GetRagdollInitBoneArrays( matrix3x4_t *pDeltaBones0, matri
 	}
 }
 
+// GSTRINGMIGRATION
+C_ClientRagdoll *C_BaseAnimating::CreateRagdollCopyInstance()
+{
+	return new C_ClientRagdoll( false );
+}
+// END GSTRINGMIGRATION
+
 C_BaseAnimating *C_BaseAnimating::CreateRagdollCopy()
 {
 	//Adrian: We now create a separate entity that becomes this entity's ragdoll.
 	//That way the server side version of this entity can go away. 
 	//Plus we can hook save/restore code to these ragdolls so they don't fall on restore anymore.
-	C_ClientRagdoll *pRagdoll = new C_ClientRagdoll( false );
+	C_ClientRagdoll *pRagdoll = CreateRagdollCopyInstance(); // GSTRINGMIGRATION
 	if ( pRagdoll == NULL )
 		return NULL;
 
@@ -4603,6 +4610,13 @@ C_BaseAnimating *C_BaseAnimating::CreateRagdollCopy()
 	pRagdoll->m_vecForce = m_vecForce;
 	pRagdoll->m_nForceBone = m_nForceBone;
 	pRagdoll->SetNextClientThink( CLIENT_THINK_ALWAYS );
+
+	// GSTRINGMIGRATION
+	if ( IsPlayer() )
+	{
+		pRagdoll->m_vecForce += GetAbsVelocity() * 10.0f;
+	}
+	// END GSTRINGMIGRATION
 
 	pRagdoll->SetModelName( AllocPooledString(pModelName) );
 	pRagdoll->SetModelScale( GetModelScale() );
@@ -4761,7 +4775,7 @@ void C_BaseAnimating::OnDataChanged( DataUpdateType_t updateType )
 	// build a ragdoll if necessary
 	if ( m_nRenderFX == kRenderFxRagdoll && !m_builtRagdoll )
 	{
-		BecomeRagdollOnClient();
+		m_pRagdollEntity.Set( BecomeRagdollOnClient() ); // GSTRINGMIGRATION
 	}
 
 	//HACKHACK!!!

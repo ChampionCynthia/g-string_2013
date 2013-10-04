@@ -7,6 +7,7 @@
 #include "c_muzzleflash_effect.h"
 #include "c_bobmodel.h"
 #include "c_firstpersonbody.h"
+#include "c_gstring_player_ragdoll.h"
 
 
 #define FLASHLIGHT_DISTANCE		1000
@@ -30,6 +31,10 @@ static ConVar gstring_firstpersonbody_forwardoffset_max( "gstring_firstpersonbod
 
 static ConVar gstring_firstpersonbody_enable( "gstring_firstpersonbody_enable", "1" );
 
+static ConVar gstring_viewbob_walk_dist( "gstring_viewbob_walk_dist", "2.5" );
+static ConVar gstring_viewbob_walk_scale( "gstring_viewbob_walk_scale", "1.5" );
+static ConVar gstring_viewbob_model_scale( "gstring_viewbob_model_scale", "1" );
+
 
 IMPLEMENT_CLIENTCLASS_DT( C_GstringPlayer, DT_CGstringPlayer, CGstringPlayer )
 
@@ -49,8 +54,17 @@ C_GstringPlayer::C_GstringPlayer()
 	, m_angLastBobAngle( vec3_angle )
 	, m_pBodyModel( NULL )
 	, m_flMuzzleFlashRoll( 0.0f )
+	, m_flLandBobTime( 0.0f )
+	, m_flBodyYawLast( 0.0f )
+	, m_bBodyWasMoving( false )
+	, m_bBobWasInAir( false )
+	, m_flLandBobDynamicScale( 0.0f )
+	, m_bBodyWasInAir( false )
+	, m_bBodyPlayingLandAnim( false )
+	, m_bBodyWasHidden( false )
 {
 	m_bHasUseEntity = false;
+	m_vecBodyOffset.Init( -gstring_firstpersonbody_forwardoffset_min.GetFloat(), 0, 0 );
 }
 
 C_GstringPlayer::~C_GstringPlayer()
@@ -89,6 +103,9 @@ void C_GstringPlayer::OnDataChanged( DataUpdateType_t updateType )
 	{
 		SetNextClientThink( CLIENT_THINK_ALWAYS );
 	}
+	else
+	{
+	}
 }
 
 void C_GstringPlayer::ClientThink()
@@ -122,6 +139,13 @@ void C_GstringPlayer::ClientThink()
 
 void C_GstringPlayer::OverrideView( CViewSetup *pSetup )
 {
+	if ( m_pRagdollEntity.Get() != NULL )
+	{
+		m_pRagdollEntity->GetAttachment( "eyes", pSetup->origin, pSetup->angles );
+		pSetup->fov += 10.0f;
+		return;
+	}
+
 	Vector velocity;
 	EstimateAbsVelocity( velocity );
 	float speed = velocity.NormalizeInPlace();
@@ -152,14 +176,51 @@ void C_GstringPlayer::OverrideView( CViewSetup *pSetup )
 		float sine = sin( gpGlobals->curtime * 10.0f ) * amt;
 		float sineY = sin( gpGlobals->curtime * 5.0f + M_PI * 0.5f ) * amt;
 
-		pSetup->origin += Vector( 0, 0, 1.0f ) * sine;
-		pSetup->angles.x += sine * 1.0f;
-		pSetup->angles.y += sineY * 2.0f;
+		pSetup->origin += Vector( 0, 0, gstring_viewbob_walk_dist.GetFloat() ) * sine;
+		pSetup->angles.x += sine * gstring_viewbob_walk_scale.GetFloat();
+		pSetup->angles.y += sineY * 2.0f * gstring_viewbob_walk_scale.GetFloat();
 	}
 
 	if ( amtSide != 0.0f )
 	{
 		pSetup->angles.z += amtSide;
+	}
+
+	// land bob anim
+	const bool bIsInAir = ( GetFlags() &  FL_ONGROUND ) != 0;
+
+	if ( m_bBobWasInAir != bIsInAir )
+	{
+		if ( bIsInAir )
+		{
+			const float flVelocityDown = GetAbsVelocity().z;
+
+			if ( flVelocityDown < -70.0f )
+			{
+				m_flLandBobDynamicScale = RemapValClamped( flVelocityDown, -70, -200, 0.0f, 2.0f );
+
+				m_flLandBobTime = M_PI;
+			}
+		}
+
+		m_bBobWasInAir = bIsInAir;
+	}
+
+	if ( m_flLandBobTime > 0.0f )
+	{
+		//pSetup->origin.z -= ( 1.0f - abs( ( ( m_flLandBobTime / 500.0f ) - 0.5f ) * 2.0f ) ) * 10.0f;
+		float flLandOffset = sin( m_flLandBobTime );
+
+		pSetup->origin.z -= flLandOffset * 2.0f * m_flLandBobDynamicScale;
+
+		float flRate = 2.0f + 10.0f * ( m_flLandBobTime / M_PI );
+
+		m_flLandBobTime -= gpGlobals->frametime * flRate;
+
+		if ( m_flLandBobTime < 0.0f )
+		{
+			m_flLandBobTime = 0.0f;
+		}
 	}
 
 	// shake derived from viewmodel
@@ -224,14 +285,14 @@ void C_GstringPlayer::OverrideView( CViewSetup *pSetup )
 	if ( !m_bHasUseEntity
 		&& render->GetViewEntity() == entindex() )
 	{
-		pSetup->angles += m_angLastBobAngle * m_flBobModelAmount;
+		pSetup->angles += m_angLastBobAngle
+			* gstring_viewbob_model_scale.GetFloat()
+			* m_flBobModelAmount;
 	}
 }
 
 void C_GstringPlayer::ProcessMuzzleFlashEvent()
 {
-	//BaseClass::ProcessMuzzleFlashEvent();
-
 	m_flMuzzleFlashDuration = RandomFloat( 0.025f, 0.045f );
 	m_flMuzzleFlashTime = gpGlobals->curtime + m_flMuzzleFlashDuration;
 	m_flMuzzleFlashRoll = RandomFloat( 0, 360.0f );
@@ -289,6 +350,7 @@ void C_GstringPlayer::UpdateFlashlight()
 	m_vecFlashlightForward = vecForward;
 
 #define FLASHLIGHT_FOV_ADJUST 15.0f
+#define FLASHLIGHT_FOV_ADJUSTMUZZLEFLASH 25.0f
 #define FLASHLIGHT_FOV_MIN 5.0f
 
 	if ( bDoFlashlight )
@@ -339,7 +401,7 @@ void C_GstringPlayer::UpdateFlashlight()
 		// Update the light with the new position and direction.
 		m_pMuzzleFlashEffect->UpdateLight( vecPos, vecForward, vecRight, vecUp, flStrength * flStrength );
 		
-		m_flFlashlightDot = m_pMuzzleFlashEffect->GetHorizontalFOV() - FLASHLIGHT_FOV_ADJUST;
+		m_flFlashlightDot = m_pMuzzleFlashEffect->GetHorizontalFOV() - FLASHLIGHT_FOV_ADJUSTMUZZLEFLASH;
 		m_flFlashlightDot = MAX( m_flFlashlightDot, FLASHLIGHT_FOV_MIN );
 		m_flFlashlightDot = cos( DEG2RAD( m_flFlashlightDot ) );
 	}
@@ -372,7 +434,8 @@ float C_GstringPlayer::GetFlashlightDot() const
 
 void C_GstringPlayer::UpdateBodyModel()
 {
-	if ( !gstring_firstpersonbody_enable.GetBool() )
+	if ( !gstring_firstpersonbody_enable.GetBool()
+		|| !IsAlive() )
 	{
 		if ( m_pBodyModel != NULL )
 		{
@@ -408,18 +471,49 @@ void C_GstringPlayer::UpdateBodyModel()
 	const bool bDuck = m_Local.m_bDucked
 		|| m_Local.m_bDucking;
 	const bool bMoving = flSpeed > flMovingMinSpeed;
+	bool bIsHidden = false;
 
-	static float flBackOffset = gstring_firstpersonbody_forwardoffset_min.GetFloat();
-	float flBackOffsetDesired = bDuck ?
-		gstring_firstpersonbody_forwardoffset_max.GetFloat()
-		: gstring_firstpersonbody_forwardoffset_min.GetFloat();
+	// move body backwards while ducked
+	float flBackOffsetSpeed = 35.0f;
+	float flBackOffsetSpeedQuad = 5.0f;
+	Vector vecOffsetDesired( bDuck ?
+		-gstring_firstpersonbody_forwardoffset_max.GetFloat()
+		: -gstring_firstpersonbody_forwardoffset_min.GetFloat(),
+		0, 0 );
 
-	if ( flBackOffset != flBackOffsetDesired )
+	// hide body while falling/swimming
+	if ( GetAbsVelocity().z < -300
+		|| GetWaterLevel() >= WL_Eyes )
 	{
-		flBackOffset = Approach( flBackOffsetDesired, flBackOffset, gpGlobals->frametime * 25.0f );
+		vecOffsetDesired.x = -110.0f;
+		vecOffsetDesired.z = 200.0f;
+
+		flBackOffsetSpeedQuad = 1.0f;
+		bIsHidden = true;
 	}
 
-	Vector origin = GetRenderOrigin() - fwd * flBackOffset;
+	Vector vecOffsetDelta = vecOffsetDesired - m_vecBodyOffset;
+	if ( vecOffsetDelta.LengthSqr() > 2.0f )
+	{
+		float len = vecOffsetDelta.NormalizeInPlace();
+		float deltaLen = MAX( gpGlobals->frametime * flBackOffsetSpeed,
+			len * gpGlobals->frametime * flBackOffsetSpeedQuad );
+		deltaLen = MIN( len, deltaLen );
+
+		vecOffsetDelta *= deltaLen;
+
+		m_vecBodyOffset += vecOffsetDelta;
+	}
+	else
+	{
+		m_vecBodyOffset = vecOffsetDesired;
+	}
+
+	// fix z position when ducking, duck-jumping etc
+	Vector origin = GetRenderOrigin() + fwd * m_vecBodyOffset.x
+		+ right * m_vecBodyOffset.y
+		+ up * m_vecBodyOffset.z;
+
 	if ( !bDuck
 		|| m_Local.m_bInDuckJump && bInAir )
 	{
@@ -437,19 +531,48 @@ void C_GstringPlayer::UpdateBodyModel()
 	Activity actDesired = ACT_IDLE;
 	float flPlaybackrate = 1.0f;
 
+	if ( m_bBodyWasInAir != bInAir )
+	{
+		// current land anim sucks for this :(
+		//if ( !bInAir )
+		//{
+		//	m_bBodyPlayingLandAnim = true;
+
+		//	m_pBodyModel->SetCycle( 0.0f );
+		//}
+
+		m_bBodyWasInAir = bInAir;
+	}
+
 	if ( bInAir )
 	{
 		actDesired = ACT_JUMP;
+
+		m_bBodyPlayingLandAnim = false;
 	}
 	else
 	{
 		if ( bMoving )
 		{
 			actDesired = bDuck ? ACT_RUN_CROUCH : ACT_RUN;
+
+			m_bBodyPlayingLandAnim = false;
 		}
 		else
 		{
 			actDesired = bDuck ? ACT_COVER_LOW : ACT_IDLE;
+
+			if ( m_bBodyPlayingLandAnim )
+			{
+				if ( m_pBodyModel->GetCycle() >= 1.0f )
+				{
+					m_bBodyPlayingLandAnim = false;
+				}
+				else
+				{
+					actDesired = ACT_LAND;
+				}
+			}
 		}
 	}
 
@@ -457,7 +580,6 @@ void C_GstringPlayer::UpdateBodyModel()
 	vecVelocity.z = 0.0f;
 	float flLength = vecVelocity.NormalizeInPlace();
 
-	static bool bWasMoving = false;
 	const bool bDoMoveYaw = flLength > flMovingMinSpeed;
 
 	if ( bDoMoveYaw
@@ -468,21 +590,19 @@ void C_GstringPlayer::UpdateBodyModel()
 		float flYaw = atan2( vecVelocity.y, vecVelocity.x );
 		flYaw = AngleNormalizePositive( flYaw );
 
-		static float flYawLast = 0.0f;
-
-		if ( bWasMoving )
+		if ( m_bBodyWasMoving )
 		{
-			flYawLast = ApproachAngle( flYaw, flYawLast, gpGlobals->frametime * 10.0f );
+			m_flBodyYawLast = ApproachAngle( flYaw, m_flBodyYawLast, gpGlobals->frametime * 10.0f );
 		}
 		else
 		{
-			flYawLast = flYaw;
+			m_flBodyYawLast = flYaw;
 		}
 
-		m_pBodyModel->SetPoseParameter( m_pBodyModel->m_iPoseParam_MoveYaw, RAD2DEG( AngleNormalize( flYawLast ) ) );
+		m_pBodyModel->SetPoseParameter( m_pBodyModel->m_iPoseParam_MoveYaw, RAD2DEG( AngleNormalize( m_flBodyYawLast ) ) );
 	}
 
-	bWasMoving = bDoMoveYaw;
+	m_bBodyWasMoving = bDoMoveYaw;
 
 	if ( m_pBodyModel->GetSequenceActivity( m_pBodyModel->GetSequence() )
 		!= actDesired )
@@ -524,4 +644,23 @@ void C_GstringPlayer::UpdateStepSound( surfacedata_t *psurface, const Vector &ve
 void C_GstringPlayer::UpdateStepSoundOverride( surfacedata_t *psurface, const Vector &vecOrigin, const Vector &vecVelocity )
 {
 	BaseClass::UpdateStepSound( psurface, vecOrigin, vecVelocity );
+}
+
+void C_GstringPlayer::GetRagdollInitBoneArrays( matrix3x4_t *pDeltaBones0, matrix3x4_t *pDeltaBones1, matrix3x4_t *pCurrentBones, float boneDt )
+{
+	if ( m_pBodyModel != NULL )
+	{
+		m_pBodyModel->SetAbsOrigin( GetAbsOrigin() );
+		m_pBodyModel->InvalidateBoneCache();
+
+		m_pBodyModel->GetRagdollInitBoneArrays( pDeltaBones0, pDeltaBones1, pCurrentBones, boneDt );
+		return;
+	}
+
+	BaseClass::GetRagdollInitBoneArrays( pDeltaBones0, pDeltaBones1, pCurrentBones, boneDt );
+}
+
+C_ClientRagdoll *C_GstringPlayer::CreateRagdollCopyInstance()
+{
+	return new C_GStringPlayerRagdoll();
 }

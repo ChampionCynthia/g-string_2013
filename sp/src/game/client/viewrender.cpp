@@ -2285,9 +2285,12 @@ void CViewRender::RenderView( const CViewSetup &view, int nClearFlags, int whatT
 		// GSTRINGMIGRATION
 		if ( whatToDraw & RENDERVIEW_DRAWHUD && !bBuildingCubemaps )
 		{
+			UpdateScreenEffectTexture( 0, view.x, view.y, view.width, view.height );
+
 			render->Push2DView( view, 0, saveRenderTarget, GetFrustum() );
 			DrawVGUILayer( CHud::HUDRENDERSTAGE_PRE_HDR, view );
 			render->PopView( GetFrustum() );
+
 			UpdateScreenEffectTexture( 0, view.x, view.y, view.width, view.height );
 		}
 
@@ -5477,7 +5480,7 @@ void CBaseWorldView::PushView( float waterHeight )
 			waterHeight = origin[2] + r_eyewaterepsilon.GetFloat();
 		}
 
-		pRenderContext->SetHeightClipZ( waterHeight );
+		pRenderContext->SetHeightClipZ( waterHeight - 15.0f ); // GSTRINGMIGRATION
 		pRenderContext->SetHeightClipMode( clipMode );
 
 		render->Push3DView( *this, m_ClearFlags, pTexture, GetFrustum() );
@@ -6110,6 +6113,7 @@ void CAboveWaterView::CReflectionView::Setup( bool bReflectEntities )
 	// NOTE: Clearing the color is unnecessary since we're drawing the skybox
 	// and dest-alpha is never used in the reflection
 	m_DrawFlags = DF_RENDER_REFLECTION | DF_CLIP_Z | DF_CLIP_BELOW | 
+		DF_RENDER_UNDERWATER | // GSTRINGMIGRATION draw partial underwater to fix ugly water edge
 		DF_RENDER_ABOVEWATER;
 
 	// NOTE: This will cause us to draw the 2d skybox in the reflection 

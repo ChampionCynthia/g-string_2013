@@ -191,7 +191,14 @@ bool Impact( Vector &vecOrigin, Vector &vecStart, int iMaterial, int iDamageType
 char const *GetImpactDecal( C_BaseEntity *pEntity, int iMaterial, int iDamageType )
 {
 	char const *decalName;
-	if ( !pEntity )
+
+	// GSTRINGMIGRATION
+	if ( iDamageType == DMG_CLUB )
+	{
+		decalName = "Impact.Metal";
+	}
+	else if ( !pEntity )
+	// END GSTRINGMIGRATION
 	{
 		decalName = "Impact.Concrete";
 	}

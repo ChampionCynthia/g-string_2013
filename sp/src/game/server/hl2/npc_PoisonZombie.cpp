@@ -438,7 +438,7 @@ void CNPC_PoisonZombie::Event_Killed( const CTakeDamageInfo &info )
 
 	if ( !m_fIsTorso )
 	{
-		EvacuateNest(info.GetDamageType() == DMG_BLAST, info.GetDamage(), info.GetAttacker() );
+		//EvacuateNest(info.GetDamageType() == DMG_BLAST, info.GetDamage(), info.GetAttacker() ); // GSTRINGMIGRATION
 	}
 
 	BaseClass::Event_Killed( info );
@@ -672,6 +672,8 @@ void CNPC_PoisonZombie::HandleAnimEvent( animevent_t *pEvent )
 
 	if ( pEvent->event == AE_ZOMBIE_POISON_THROW_CRAB )
 	{
+		return; // GSTRINGMIGRATION
+
 		SetBodygroup( ZOMBIE_BODYGROUP_THROW, 0 );
 
 		CBlackHeadcrab *pCrab = (CBlackHeadcrab *)CreateNoSpawn( GetHeadcrabClassname(), EyePosition(), vec3_angle, this );

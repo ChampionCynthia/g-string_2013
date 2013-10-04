@@ -53,6 +53,8 @@ $Project "Client (G-String)"
 			$File	"gstring\c_bobmodel.h"
 			$File	"gstring\c_firstpersonbody.cpp"
 			$File	"gstring\c_firstpersonbody.h"
+			$File	"gstring\c_gstring_player_ragdoll.cpp"
+			$File	"gstring\c_gstring_player_ragdoll.h"
 			
 			$Folder "vgui"
 			{

@@ -38,6 +38,9 @@ public:
 
 	surfacedata_t* GetGroundSurface();
 
+	virtual void GetRagdollInitBoneArrays( matrix3x4_t *pDeltaBones0, matrix3x4_t *pDeltaBones1, matrix3x4_t *pCurrentBones, float boneDt );
+	C_ClientRagdoll *CreateRagdollCopyInstance();
+
 protected:
 
 private:
@@ -60,10 +63,19 @@ private:
 	C_BobModel *m_pBobViewModel;
 	float m_flBobModelAmount;
 	QAngle m_angLastBobAngle;
+	float m_flLandBobTime;
+	float m_flLandBobDynamicScale;
+	bool m_bBobWasInAir;
 
 	CNetworkVar( bool, m_bHasUseEntity );
 
 	C_FirstpersonBody *m_pBodyModel;
+	float m_flBodyYawLast;
+	Vector m_vecBodyOffset;
+	bool m_bBodyWasMoving;
+	bool m_bBodyWasInAir;
+	bool m_bBodyWasHidden;
+	bool m_bBodyPlayingLandAnim;
 };
 
 inline C_GstringPlayer *ToGstringPlayer( C_BaseEntity *pPlayer )

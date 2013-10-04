@@ -13,6 +13,7 @@ public:
 	CGstringPlayer();
 
 	void Precache();
+	void Spawn();
 
 	bool IsNightvisionActive() const;
 	void SetNightvisionActive( bool bActive );
@@ -21,6 +22,9 @@ public:
 	virtual void PhysicsSimulate();
 
 	virtual void UpdateStepSound( surfacedata_t *psurface, const Vector &vecOrigin, const Vector &vecVelocity );
+
+	virtual bool ShouldGib( const CTakeDamageInfo &info );
+	virtual bool CanBecomeRagdoll();
 
 protected:
 

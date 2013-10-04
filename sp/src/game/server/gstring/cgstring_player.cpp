@@ -35,6 +35,13 @@ void CGstringPlayer::Precache()
 	BaseClass::Precache();
 }
 
+void CGstringPlayer::Spawn()
+{
+	BaseClass::Spawn();
+
+	SetModel( "models/humans/group02/female_04.mdl" );
+}
+
 bool CGstringPlayer::IsNightvisionActive() const
 {
 	return m_bNightvisionActive;
@@ -140,4 +147,14 @@ void CGstringPlayer::UpdateStepSound( surfacedata_t *psurface, const Vector &vec
 			m_flStepSoundTime += 480.0f;
 		}
 	}
+}
+
+bool CGstringPlayer::ShouldGib( const CTakeDamageInfo &info )
+{
+	return false;
+}
+
+bool CGstringPlayer::CanBecomeRagdoll()
+{
+	return true;
 }
