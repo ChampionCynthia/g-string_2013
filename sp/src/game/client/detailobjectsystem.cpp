@@ -30,6 +30,8 @@
 #include "gstring/gstring_postprocess.h"
 #include "gstring/c_gstring_player.h"
 #include "shadereditor/grass/cgrasscluster.h"
+#include "viewrender.h"
+#include "materialsystem/itexture.h"
 // END GSTRINGMIGRATION
 
 #if defined(DOD_DLL) || defined(CSTRIKE_DLL) || defined(GSTRING) // GSTRINGMIGRATION
@@ -100,36 +102,22 @@ class CDetailObjectSystemPerLeafData
 };
 
 // GSTRINGMIGRATION
-static void ModulateByFlashlight( const Vector &vecOrigin, Vector &vecColor )
+class EnumFlashlights : public IClientLeafShadowEnum
 {
-	C_GstringPlayer *pPlayer = ToGstringPlayer( C_BasePlayer::GetLocalPlayer() );
-
-	if ( pPlayer != NULL
-		&& pPlayer->IsRenderingFlashlight() )
+public:
+	virtual void EnumShadow( ClientShadowHandle_t clienthandle )
 	{
-		Vector vecFlashlightPos, vecFlashlightForward;
+		const ShadowType_t type = g_pClientShadowMgr->GetActualShadowCastType( clienthandle );
+		if ( type != SHADOWS_RENDER_TO_DEPTH_TEXTURE )
+			return;
 
-		pPlayer->GetFlashlightPosition( vecFlashlightPos );
-		pPlayer->GetFlashlightForward( vecFlashlightForward );
+		ShadowHandle_t handle = g_pClientShadowMgr->GetShadowHandle( clienthandle );
 
-		Vector delta = ( vecOrigin + Vector( 0, 0, 20 ) ) - CurrentViewOrigin();
+		shadowList.AddToTail( handle );
+	};
 
-		const float flDist = delta.NormalizeInPlace();
-		const float flDot = DotProduct( delta, vecFlashlightForward );
-		const float flFOV = pPlayer->GetFlashlightDot();
-
-		if ( flDot > flFOV )
-		{
-			float flScale = RemapValClamped( flDot, flFOV, flFOV + 0.04f, 0.0f, 1.0f );
-			flScale *= RemapValClamped( flDist, 0.0f, 500.0f, 1.0f, 0.0f );
-
-			float flMaxLight = ( vecColor.x + vecColor.y + vecColor.z ) * 0.15f + 0.5f;
-			flMaxLight = MIN( 1.0f, flMaxLight );
-
-			vecColor = Lerp( flScale, vecColor, Vector( flMaxLight, flMaxLight, flMaxLight ) );
-		}
-	}
-}
+	CUtlVector< ShadowHandle_t >shadowList;
+};
 // END GSTRINGMIGRATION
 
 //-----------------------------------------------------------------------------
@@ -534,6 +522,20 @@ private:
 	float m_flCurFadeSqDist;
 	float m_flCurFalloffFactor;
 
+// GSTRINGMIGRATION
+	struct FlashlightEntry
+	{
+		FlashlightState_t state;
+		VMatrix world2Texture;
+		ITexture *pDepthTexture;
+	};
+	CUtlVector< FlashlightEntry > m_activeFlashlights;
+
+	void SetupFlashlightStates();
+	void ClearFlashlightStates();
+
+	void DrawFlashlight( IMesh *pMesh );
+// END GSTRINGMIGRATION
 };
 
 
@@ -1055,8 +1057,6 @@ void CDetailModel::DrawTypeSprite( CMeshBuilder &meshBuilder )
 	Vector vecColor;
 	GetColorModulation( vecColor.Base() );
 
-	ModulateByFlashlight( m_Origin, vecColor ); // GSTRINGMIGRATION
-
 	unsigned char color[4];
 	color[0] = (unsigned char)(vecColor[0] * 255.0f);
 	color[1] = (unsigned char)(vecColor[1] * 255.0f);
@@ -1149,8 +1149,6 @@ void CDetailModel::DrawTypeShapeCross( CMeshBuilder &meshBuilder )
 
 	Vector vecColor;
 	GetColorModulation( vecColor.Base() );
-
-	ModulateByFlashlight( m_Origin, vecColor ); // GSTRINGMIGRATION
 
 	unsigned char color[4];
 	color[0] = (unsigned char)(vecColor[0] * 255.0f);
@@ -1265,8 +1263,6 @@ void CDetailModel::DrawTypeShapeTri( CMeshBuilder &meshBuilder )
 
 	Vector vecColor;
 	GetColorModulation( vecColor.Base() );
-
-	ModulateByFlashlight( m_Origin, vecColor ); // GSTRINGMIGRATION
 
 	unsigned char color[4];
 	color[0] = (unsigned char)(vecColor[0] * 255.0f);
@@ -1455,6 +1451,86 @@ CDetailObjectSystem::CDetailObjectSystem() : m_DetailSpriteDict( 0, 32 ), m_Deta
 	m_pBuildoutBuffer = NULL;
 }
 
+// GSTRINGMIGRATION
+void CDetailObjectSystem::SetupFlashlightStates()
+{
+	CUtlVector< Frustum_t > flashlightFrusta;
+	EnumFlashlights enumList;
+
+	IWorldRenderList *pWorldRenderList = render->CreateWorldList();
+	WorldListInfo_t *pListInfo = new WorldListInfo_t;
+	VisOverrideData_t vOverride;
+	vOverride.m_vecVisOrigin = CurrentViewOrigin();
+	vOverride.m_fDistToAreaPortalTolerance = FLT_MAX;
+	render->BuildWorldLists( pWorldRenderList, pListInfo, -1, &vOverride );
+
+	ClientLeafSystem()->EnumerateShadowsInLeaves( pListInfo->m_LeafCount, pListInfo->m_pLeafList, &enumList );
+	for ( int i = 0; i < enumList.shadowList.Count(); i++ )
+		flashlightFrusta.AddToTail( shadowmgr->GetFlashlightFrustum( enumList.shadowList[i] ) );
+
+	Assert( enumList.shadowList.Count() == flashlightFrusta.Count() );
+
+	SafeRelease( pWorldRenderList );
+	delete pListInfo;
+
+	if ( flashlightFrusta.Count() > 0 )
+	{
+		for ( int i = 0; i < flashlightFrusta.Count(); i++ )
+		{
+			const FlashlightState_t &flState = shadowmgr->GetFlashlightState( enumList.shadowList[i] );
+			ITexture *pTex = g_pClientShadowMgr->GetShadowDepthTex( i );
+
+			VMatrix a,b,c,d;
+			CViewSetup shadowView;
+			shadowView.m_flAspectRatio = 1.0f;
+			shadowView.x = shadowView.y = 0;
+			shadowView.width = pTex->GetActualWidth();
+			shadowView.height = pTex->GetActualHeight();
+			shadowView.m_bOrtho = false;
+			shadowView.origin = flState.m_vecLightOrigin;
+			QuaternionAngles( flState.m_quatOrientation, shadowView.angles );
+			shadowView.fov = flState.m_fHorizontalFOVDegrees;
+			shadowView.zFar = shadowView.zFarViewmodel = flState.m_FarZ;
+			shadowView.zNear = shadowView.zNearViewmodel = flState.m_NearZ;
+			render->GetMatricesForView( shadowView, &a, &b, &c, &d );
+
+			VMatrix shadowToUnit;
+			MatrixBuildScale( shadowToUnit, 1.0f / 2, 1.0f / -2, 1.0f );
+			shadowToUnit[0][3] = shadowToUnit[1][3] = 0.5f;
+			MatrixMultiply( shadowToUnit, c, d );
+
+			FlashlightEntry entry;
+			entry.state = flState;
+			entry.world2Texture = d;
+			entry.pDepthTexture = pTex;
+			m_activeFlashlights.AddToTail( entry );
+		}
+	}
+}
+
+void CDetailObjectSystem::ClearFlashlightStates()
+{
+	m_activeFlashlights.RemoveAll();
+}
+
+void CDetailObjectSystem::DrawFlashlight( IMesh *pMesh )
+{
+	CMatRenderContextPtr pRenderContext( materials );
+	pRenderContext->SetFlashlightMode( true );
+
+	FOR_EACH_VEC( m_activeFlashlights, i )
+	{
+		const FlashlightEntry &entry = m_activeFlashlights[ i ];
+
+		pRenderContext->SetFlashlightStateEx( entry.state, entry.world2Texture, entry.pDepthTexture );
+
+		pMesh->Draw();
+	}
+
+	pRenderContext->SetFlashlightMode( false );
+}
+// END GSTRINGMIGRATION
+
 void CDetailObjectSystem::FreeSortBuffers( void )
 {
 	if ( m_pSortInfo )
@@ -1614,6 +1690,9 @@ void CDetailObjectSystem::BeginTranslucentDetailRendering( )
 	m_nSortedLeaf = -1;
 	m_nSortedFastLeaf = -1;
 	m_nSpriteCount = m_nFirstSprite = 0;
+
+	ClearFlashlightStates();
+	SetupFlashlightStates();
 }
 
 
@@ -2374,6 +2453,7 @@ void CDetailObjectSystem::RenderFastSprites( const Vector &viewOrigin, const Vec
 				{
 					meshBuilder.End();
 					pMesh->Draw();
+					DrawFlashlight( pMesh );	// GSTRINGMIGRATION
 					nQuadsRemaining = nQuadsToDraw;
 					meshBuilder.Begin( pMesh, MATERIAL_QUADS, nQuadsToDraw );
 				}
@@ -2426,6 +2506,7 @@ void CDetailObjectSystem::RenderFastSprites( const Vector &viewOrigin, const Vec
 	}
 	meshBuilder.End();
 	pMesh->Draw();
+	DrawFlashlight( pMesh );	// GSTRINGMIGRATION
 	pRenderContext->PopMatrix();
 }
 
@@ -2507,6 +2588,7 @@ void CDetailObjectSystem::RenderTranslucentDetailObjects( const Vector &viewOrig
 			{
 				meshBuilder.End();
 				pMesh->Draw();
+				DrawFlashlight( pMesh );	// GSTRINGMIGRATION
 
 				nQuadCount -= nQuadsDrawn;
 				nQuadsToDraw = nQuadCount;
@@ -2527,7 +2609,7 @@ void CDetailObjectSystem::RenderTranslucentDetailObjects( const Vector &viewOrig
 
 	meshBuilder.End();
 	pMesh->Draw();
-
+	DrawFlashlight( pMesh );	// GSTRINGMIGRATION
 	pRenderContext->PopMatrix();
 }
 
@@ -2606,6 +2688,7 @@ void CDetailObjectSystem::RenderFastTranslucentDetailObjectsInLeaf( const Vector
 		{
 			meshBuilder.End();
 			pMesh->Draw();
+			DrawFlashlight( pMesh );	// GSTRINGMIGRATION
 			nQuadsRemaining = nQuadsToDraw;
 			meshBuilder.Begin( pMesh, MATERIAL_QUADS, nQuadsToDraw );
 		}
@@ -2659,6 +2742,7 @@ void CDetailObjectSystem::RenderFastTranslucentDetailObjectsInLeaf( const Vector
 
 	meshBuilder.End();
 	pMesh->Draw();
+	DrawFlashlight( pMesh );	// GSTRINGMIGRATION
 	pRenderContext->PopMatrix();
 }
 
@@ -2748,6 +2832,7 @@ void CDetailObjectSystem::RenderTranslucentDetailObjectsInLeaf( const Vector &vi
 		{
 			meshBuilder.End();
 			pMesh->Draw();
+			DrawFlashlight( pMesh );	// GSTRINGMIGRATION
 
 			nQuadCount = ( m_nSpriteCount - m_nFirstSprite ) * 4;
 			nQuadsToDraw = nQuadCount;
@@ -2766,6 +2851,7 @@ void CDetailObjectSystem::RenderTranslucentDetailObjectsInLeaf( const Vector &vi
 	}
 	meshBuilder.End();
 	pMesh->Draw();
+	DrawFlashlight( pMesh );	// GSTRINGMIGRATION
 
  	pRenderContext->PopMatrix();
 }

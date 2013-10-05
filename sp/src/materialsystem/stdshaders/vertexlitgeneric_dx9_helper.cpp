@@ -365,7 +365,6 @@ static void DrawVertexLitGeneric_DX9_Internal( CBaseVSShader *pShader, IMaterial
 {
 	CVertexLitGeneric_DX9_Context *pContextData = reinterpret_cast< CVertexLitGeneric_DX9_Context *> ( *pContextDataPtr );
 
-
 	bool bHasBump = IsTextureSet( info.m_nBumpmap, params );
 #if !defined( _X360 )
 	bool bIsDecal = IS_FLAG_SET( MATERIAL_VAR_DECAL );
@@ -1326,6 +1325,11 @@ static void DrawVertexLitGeneric_DX9_Internal( CBaseVSShader *pShader, IMaterial
 		float fWriteWaterFogToDestAlpha = bWriteWaterFogToAlpha ? 1 : 0;
 		float fVertexAlpha = bHasVertexAlpha ? 1 : 0;
 
+		// GSTRINGMIGRATION
+		if ( bHasFlashlight && !bVertexLitGeneric )
+			fVertexAlpha = 0.0f;
+		// END GSTRINGMIGRATION
+
 		// Controls for lerp-style paths through shader code (bump and non-bump have use different register)
 		float vShaderControls[4] = { fPixelFogType, fWriteDepthToAlpha, fWriteWaterFogToDestAlpha, fVertexAlpha	 };
 		DynamicCmdsOut.SetPixelShaderConstant( 12, vShaderControls, 1 );
@@ -1371,7 +1375,8 @@ void DrawVertexLitGeneric_DX9( CBaseVSShader *pShader, IMaterialVar** params, IS
 		return;		
 	}
 	
-	bool bReceiveFlashlight = bVertexLitGeneric;
+	bool bReceiveFlashlight = bVertexLitGeneric
+		|| info.m_nReceiveFlashlight >= 0 && params[info.m_nReceiveFlashlight]->GetIntValue() != 0; // GSTRINGMIGRATION
 	bool bNewFlashlight = IsX360();
 	if ( bNewFlashlight )
 	{

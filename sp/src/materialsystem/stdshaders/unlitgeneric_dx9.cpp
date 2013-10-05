@@ -190,7 +190,12 @@ BEGIN_VS_SHADER( SDK_UnlitGeneric, "Help for SDK_UnlitGeneric" )
 		bool bNewFlashlightPath = IsX360() || ( r_flashlight_version2.GetInt() != 0 );
 		if ( ( pShaderShadow == NULL ) && ( pShaderAPI != NULL ) && !bNewFlashlightPath && pShaderAPI->InFlashlightMode() ) // Not snapshotting && flashlight pass
 		{
-			Draw( false );
+			// GSTRINGMIGRATION
+			if ( params[RECEIVEFLASHLIGHT]->GetIntValue() != 0 )
+				DrawVertexLitGeneric_DX9( this, params, pShaderAPI, pShaderShadow, false, vars, vertexCompression, pContextDataPtr );
+			else
+				Draw( false );
+			// END GSTRINGMIGRATION
 		}
 		else
 		{
