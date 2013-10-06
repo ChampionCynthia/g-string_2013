@@ -178,7 +178,7 @@ static void RagdollAddSolid( IPhysicsEnvironment *pPhysEnv, ragdoll_t &ragdoll, 
 {
 	if ( solid.index >= 0 && solid.index < params.pCollide->solidCount)
 	{
-		Assert( ragdoll.listCount == solid.index );
+		//Assert( ragdoll.listCount == solid.index ); // GSTRINGMIGRATION can skip collidables so this is okay now
 		int boneIndex = Studio_BoneIndexByName( params.pStudioHdr, solid.name );
 		ragdoll.boneIndex[ragdoll.listCount] = boneIndex;
 
@@ -275,6 +275,12 @@ static void RagdollCreateObjects( IPhysicsEnvironment *pPhysEnv, ragdoll_t &ragd
 	constraint_groupparams_t group;
 	group.Defaults();
 	ragdoll.pGroup = pPhysEnv->CreateConstraintGroup( group );
+
+	// GSTRINGMIGRATION
+	const bool bUseCutting = params.pPartialParams != NULL
+		&& params.pPartialParams->cutBones.Count() > 0;
+	CUtlVector< int > hCutIndices;
+	// END GSTRINGMIGRATION
  
 	IVPhysicsKeyParser *pParse = physcollision->VPhysicsKeyParserCreate( params.pCollide->pKeyValues );
 	while ( !pParse->Finished() )
@@ -285,12 +291,62 @@ static void RagdollCreateObjects( IPhysicsEnvironment *pPhysEnv, ragdoll_t &ragd
 			solid_t solid;
 
 			pParse->ParseSolid( &solid, &g_SolidSetup );
+
+			// GSTRINGMIGRATION
+			if ( bUseCutting )
+			{
+				bool bCutThisSolid = false;
+
+				FOR_EACH_VEC( params.pPartialParams->cutBones, i )
+				{
+					if ( Q_stricmp( params.pPartialParams->cutBones[ i ].Get(),
+						solid.name ) == 0 )
+					{
+						bCutThisSolid = true;
+						break;
+					}
+				}
+
+				if ( bCutThisSolid )
+				{
+					hCutIndices.AddToTail( solid.index );
+					continue;
+				}
+			}
+			// END GSTRINGMIGRATION
+
 			RagdollAddSolid( pPhysEnv, ragdoll, params, solid );
 		}
 		else if ( !strcmpi( pBlock, "ragdollconstraint" ) )
 		{
 			constraint_ragdollparams_t constraint;
 			pParse->ParseRagdollConstraint( &constraint, NULL );
+
+			// GSTRINGMIGRATION
+			if ( bUseCutting )
+			{
+				if ( hCutIndices.HasElement( constraint.childIndex ) || hCutIndices.HasElement( constraint.parentIndex ) )
+				{
+					continue;
+				}
+
+				int iNewChildIndex = constraint.childIndex;
+				int iNewParentIndex = constraint.parentIndex;
+
+				FOR_EACH_VEC( hCutIndices, i )
+				{
+					if ( hCutIndices[ i ] < constraint.parentIndex )
+						iNewParentIndex--;
+
+					if ( hCutIndices[ i ] < constraint.childIndex )
+						iNewChildIndex--;
+				}
+
+				constraint.childIndex = iNewChildIndex;
+				constraint.parentIndex = iNewParentIndex;
+			}
+			// END GSTRINGMIGRATION
+
 			RagdollAddConstraint( pPhysEnv, ragdoll, params, constraint );
 		}
 		else if ( !strcmpi( pBlock, "collisionrules" ) )
@@ -424,6 +480,11 @@ bool RagdollCreate( ragdoll_t &ragdoll, const ragdollparams_t &params, IPhysicsE
 	Vector nudgeForce = params.forceVector;
 	Vector forcePosition = params.forcePosition;
 	// UNDONE: Test scaling the force by total mass on all bones
+
+	// GSTRINGMIGRATION
+	if ( forceBone >= ragdoll.listCount )
+		forceBone = 0;
+	// END GSTRINGMIGRATION
 	
 	Assert( forceBone < ragdoll.listCount );
 
@@ -439,7 +500,8 @@ bool RagdollCreate( ragdoll_t &ragdoll, const ragdollparams_t &params, IPhysicsE
 		PhysSetGameFlags( ragdoll.list[i].pObject, FVPHYSICS_PART_OF_RAGDOLL );
 	}
 
-	if ( forcePosition != vec3_origin )
+	if ( forcePosition != vec3_origin
+		&& params.pPartialParams == NULL )
 	{
 		for ( i = 0; i < ragdoll.listCount; i++ )
 		{

@@ -306,6 +306,8 @@ IMPLEMENT_SERVERCLASS_ST_NOBASE( CBaseEntity, DT_BaseEntity )
 	SendPropArray3( SENDINFO_ARRAY3(m_nModelIndexOverrides), SendPropInt( SENDINFO_ARRAY(m_nModelIndexOverrides), SP_MODEL_INDEX_BITS, SPROP_UNSIGNED ) ),
 #endif
 
+	SendPropString( SENDINFO( m_szEntityClassname ) ), // GSTRINGMIGRATION
+
 END_SEND_TABLE()
 
 
@@ -613,6 +615,11 @@ CBaseEntity *CBaseEntity::GetFollowedEntity()
 void CBaseEntity::SetClassname( const char *className )
 {
 	m_iClassname = AllocPooledString( className );
+
+	// GSTRINGMIGRATION
+	Assert( Q_strlen( className ) <= 31 );
+	Q_strncpy( m_szEntityClassname.GetForModify(), className, 32 );
+	// END GSTRINGMIGRATION
 }
 
 void CBaseEntity::SetModelIndex( int index )

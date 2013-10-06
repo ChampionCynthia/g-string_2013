@@ -55,6 +55,12 @@ $Project "Client (G-String)"
 			$File	"gstring\c_firstpersonbody.h"
 			$File	"gstring\c_gstring_player_ragdoll.cpp"
 			$File	"gstring\c_gstring_player_ragdoll.h"
+			$File	"gstring\c_clientpartialragdoll.cpp"
+			$File	"gstring\c_clientpartialragdoll.h"
+			$File	"gstring\c_gibconfig.cpp"
+			$File	"gstring\c_gibconfig.h"
+			$File	"gstring\c_gstring_util.cpp"
+			$File	"gstring\c_gstring_util.h"
 			
 			$Folder "vgui"
 			{

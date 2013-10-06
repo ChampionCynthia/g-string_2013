@@ -64,8 +64,29 @@ struct ragdoll_t
 	ragdollanimatedfriction_t animfriction;
 };
 
+// GSTRINGMIGRATION
+struct ragdollparams_partial_t
+{
+	// cut all bones that have this parent
+	CUtlVector< CUtlString > trunkBones;
+
+	// cut all bones that do not have this parent
+	CUtlVector< CUtlString > branchBones;
+
+	// precomputed cut bones for ragdoll generation
+	CUtlVector< CUtlString > cutBones;
+};
+// END GSTRINGMIGRATION
+
 struct ragdollparams_t
 {
+// GSTRINGMIGRATION
+	ragdollparams_t()
+		: pPartialParams( NULL )
+	{
+	}
+// END GSTRINGMIGRATION
+
 	void		*pGameData;
 	vcollide_t	*pCollide;
 	CStudioHdr	*pStudioHdr;
@@ -77,6 +98,8 @@ struct ragdollparams_t
 	float		jointFrictionScale;
 	bool		allowStretch;
 	bool		fixedConstraints;
+
+	ragdollparams_partial_t *pPartialParams;		//GSTRINGMIGRATION
 };
 
 //-----------------------------------------------------------------------------

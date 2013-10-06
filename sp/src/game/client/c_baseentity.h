@@ -256,6 +256,13 @@ public:
 
 	string_t						m_iClassname;
 
+	// GSTRINGMIGRATION
+	const char *GetEntityClassName() { return m_szEntityClassname.Get(); }
+
+private:
+	CNetworkString( m_szEntityClassname, 32 );
+	// END GSTRINGMIGRATION
+
 // IClientUnknown overrides.
 public:
 

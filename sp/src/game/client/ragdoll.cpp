@@ -97,7 +97,8 @@ void CRagdoll::Init(
 	const matrix3x4_t *pDeltaBones1, 
 	const matrix3x4_t *pCurrentBonePosition, 
 	float dt,
-	bool bFixedConstraints )
+	bool bFixedConstraints,
+	ragdollparams_partial_t *pPartialParams ) // GSTRINGMIGRATION
 {
 	ragdollparams_t params;
 	params.pGameData = static_cast<void *>( ent );
@@ -111,6 +112,7 @@ void CRagdoll::Init(
 	params.jointFrictionScale = 1.0;
 	params.allowStretch = false;
 	params.fixedConstraints = bFixedConstraints;
+	params.pPartialParams = pPartialParams; // GSTRINGMIGRATION
 	RagdollCreate( m_ragdoll, params, physenv );
 	ent->VPhysicsSetObject( NULL );
 	ent->VPhysicsSetObject( m_ragdoll.list[0].pObject );
@@ -353,10 +355,12 @@ CRagdoll *CreateRagdoll(
 	const matrix3x4_t *pDeltaBones1, 
 	const matrix3x4_t *pCurrentBonePosition,
 	float dt,
-	bool bFixedConstraints )
+	bool bFixedConstraints,
+	ragdollparams_partial_t *pPartialParams ) // GSTRINGMIGRATION
 {
 	CRagdoll *pRagdoll = new CRagdoll;
-	pRagdoll->Init( ent, pstudiohdr, forceVector, forceBone, pDeltaBones0, pDeltaBones1, pCurrentBonePosition, dt, bFixedConstraints );
+	pRagdoll->Init( ent, pstudiohdr, forceVector, forceBone, pDeltaBones0, pDeltaBones1,
+		pCurrentBonePosition, dt, bFixedConstraints, pPartialParams ); // GSTRINGMIGRATION
 
 	if ( !pRagdoll->IsValid() )
 	{

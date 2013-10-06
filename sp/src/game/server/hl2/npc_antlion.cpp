@@ -4296,6 +4296,11 @@ Vector CNPC_Antlion::BodyTarget( const Vector &posSrc, bool bNoisy /*= true*/ )
 	{
 		CBaseAnimating *pAnimating = GetBaseAnimating();
 		m_nBodyBone = pAnimating->LookupBone( "Antlion.Body_Bone" );
+
+		if ( m_nBodyBone < 0 )
+		{
+			m_nBodyBone = 0;
+		}
 	}
 
 	// Get the exact position in our center of mass (thorax)

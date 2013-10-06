@@ -57,7 +57,8 @@ public:
 		const matrix3x4_t *pDeltaBones1, 
 		const matrix3x4_t *pCurrentBonePosition, 
 		float boneDt,
-		bool bFixedConstraints=false );
+		bool bFixedConstraints=false,
+		ragdollparams_partial_t *pPartialParams = NULL ); // GSTRINGMIGRATION
 
 	virtual void RagdollBone( C_BaseEntity *ent, mstudiobone_t *pbones, int boneCount, bool *boneSimulated, CBoneAccessor &pBoneToWorld );
 	virtual const Vector& GetRagdollOrigin( );
@@ -123,7 +124,8 @@ CRagdoll *CreateRagdoll(
 	const matrix3x4_t *pDeltaBones1, 
 	const matrix3x4_t *pCurrentBonePosition, 
 	float boneDt,
-	bool bFixedConstraints=false );
+	bool bFixedConstraints=false,
+	ragdollparams_partial_t *pPartialParams = NULL ); // GSTRINGMIGRATION
 
 
 // save this ragdoll's creation as the current tick

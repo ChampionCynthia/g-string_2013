@@ -290,9 +290,10 @@ public:
 	bool							IsRagdoll() const;
 	bool							IsAboutToRagdoll() const;
 	virtual C_BaseAnimating			*BecomeRagdollOnClient();
-	C_BaseAnimating					*CreateRagdollCopy();
-	virtual C_ClientRagdoll			*CreateRagdollCopyInstance(); // GSTRINGMIGRATION
-	bool							InitAsClientRagdoll( const matrix3x4_t *pDeltaBones0, const matrix3x4_t *pDeltaBones1, const matrix3x4_t *pCurrentBonePosition, float boneDt, bool bFixedConstraints=false );
+	C_BaseAnimating					*CreateRagdollCopy( bool bSnatchInstance = true ); // GSTRINGMIGRATION add param
+	virtual C_ClientRagdoll			*CreateRagdollCopyInstance(); // GSTRINGMIGRATION virtual
+	virtual bool					InitAsClientRagdoll( const matrix3x4_t *pDeltaBones0, const matrix3x4_t *pDeltaBones1,
+		const matrix3x4_t *pCurrentBonePosition, float boneDt, bool bFixedConstraints=false, ragdollparams_partial_t *pPartialParams = NULL ); // GSTRINGMIGRATION virtual, add param
 	void							IgniteRagdoll( C_BaseAnimating *pSource );
 	void							TransferDissolveFrom( C_BaseAnimating *pSource );
 	virtual void					SaveRagdollInfo( int numbones, const matrix3x4_t &cameraTransform, CBoneAccessor &pBoneToWorld );

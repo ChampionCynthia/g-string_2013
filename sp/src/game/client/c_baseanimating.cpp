@@ -60,6 +60,14 @@
 #include "c_baseobject.h"
 #endif
 
+// GSTRINGMIGRATION
+#include "gstring/c_clientpartialragdoll.h"
+#include "gstring/c_gibconfig.h"
+#include "engine/ivmodelinfo.h"
+#include "vcollide_parse.h"
+#include "solidsetdefaults.h"
+// END GSTRINGMIGRATION
+
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -4551,11 +4559,12 @@ void C_BaseAnimating::GetRagdollInitBoneArrays( matrix3x4_t *pDeltaBones0, matri
 // GSTRINGMIGRATION
 C_ClientRagdoll *C_BaseAnimating::CreateRagdollCopyInstance()
 {
-	return new C_ClientRagdoll( false );
+	return new C_ClientPartialRagdoll();
+	//return new C_ClientRagdoll( false );
 }
 // END GSTRINGMIGRATION
 
-C_BaseAnimating *C_BaseAnimating::CreateRagdollCopy()
+C_BaseAnimating *C_BaseAnimating::CreateRagdollCopy( bool bSnatchInstance ) // GSTRINGMIGRATION
 {
 	//Adrian: We now create a separate entity that becomes this entity's ragdoll.
 	//That way the server side version of this entity can go away. 
@@ -4576,7 +4585,10 @@ C_BaseAnimating *C_BaseAnimating::CreateRagdollCopy()
 	}
 
 	// move my current model instance to the ragdoll's so decals are preserved.
-	SnatchModelInstance( pRagdoll );
+// GSTRINGMIGRATION
+	if ( bSnatchInstance )
+		SnatchModelInstance( pRagdoll );
+// END GSTRINGMIGRATION
 
 	// We need to take these from the entity
 	pRagdoll->SetAbsOrigin( GetAbsOrigin() );
@@ -4627,18 +4639,112 @@ C_BaseAnimating *C_BaseAnimating::BecomeRagdollOnClient()
 {
 	MoveToLastReceivedPosition( true );
 	GetAbsOrigin();
-	C_BaseAnimating *pRagdoll = CreateRagdollCopy();
 
+	// GSTRINGMIGRATION
 	matrix3x4_t boneDelta0[MAXSTUDIOBONES];
 	matrix3x4_t boneDelta1[MAXSTUDIOBONES];
 	matrix3x4_t currentBones[MAXSTUDIOBONES];
 	const float boneDt = 0.1f;
 	GetRagdollInitBoneArrays( boneDelta0, boneDelta1, currentBones, boneDt );
-	pRagdoll->InitAsClientRagdoll( boneDelta0, boneDelta1, currentBones, boneDt );
+
+	CUtlVector< KeyValues* > gibModels;
+	C_BaseAnimating *pRagdoll = NULL;
+
+	CStudioHdr *pHdr = GetModelPtr();
+
+	// translate the force bone to a studio bone
+	int iForceBone = -1;
+	vcollide_t *pCollide = modelinfo->GetVCollide( GetModelIndex() );
+
+	if ( pCollide != NULL
+		&& m_nForceBone >= 0 )
+	{
+		IVPhysicsKeyParser *pParse = physcollision->VPhysicsKeyParserCreate( pCollide->pKeyValues );
+
+		while ( !pParse->Finished() )
+		{
+			const char *pBlock = pParse->GetCurrentBlockName();
+
+			// need to parse the phys solids and compare to their indices
+			if ( !strcmpi( pBlock, "solid" ) )
+			{
+				solid_t solid;
+				pParse->ParseSolid( &solid, &g_SolidSetup );
+
+				if ( solid.index == m_nForceBone )
+				{
+					iForceBone = LookupBone( solid.name );
+					break;
+				}
+			}
+			else
+			{
+				pParse->SkipBlock();
+			}
+		}
+
+		physcollision->VPhysicsKeyParserDestroy( pParse );
+	}
+
+	// get meta data to load gib model
+	const char *pszForceBoneName = ( pHdr && iForceBone >= 0 && iForceBone < pHdr->numbones() )
+		? pHdr->pBone( iForceBone )->pszName() : NULL;
+	const char *pszClassName = GetEntityClassName();
+	const char *pszModelName = GetModel() ? modelinfo->GetModelName( GetModel() ) : "";
+
+	if ( C_GibConfig::GetInstance()->GetGibsForModel( C_GibConfig::SINGLE, pszClassName, pszModelName,
+		GetModelPtr(), pszForceBoneName, gibModels ) )
+	{
+		bool bFoundMaster = false;
+
+		// create gibs based on configs
+		FOR_EACH_VEC( gibModels, i )
+		{
+			KeyValues *pKVData = gibModels[ i ];
+
+			const bool bIsMaster = !bFoundMaster && pKVData->GetBool( "master" );
+
+			if ( bIsMaster )
+				bFoundMaster = true;
+
+			C_BaseAnimating *pGib = CreateRagdollCopy( bIsMaster );
+
+			ragdollparams_partial_t partial;
+
+			for ( KeyValues *pKVBone = pKVData->GetFirstValue();
+				pKVBone;
+				pKVBone = pKVBone->GetNextValue() )
+			{
+				const char *pszName = pKVBone->GetName();
+				const char *pszValue = pKVBone->GetString();
+
+				if ( FStrEq( "trunk", pszName ) )
+					partial.trunkBones.AddToTail( pszValue );
+				else if ( FStrEq( "branch", pszName ) )
+					partial.branchBones.AddToTail( pszValue );
+			}
+
+			pGib->InitAsClientRagdoll( boneDelta0, boneDelta1, currentBones, boneDt, false, &partial );
+
+			if ( bIsMaster
+				|| pRagdoll == NULL )
+			{
+				pRagdoll = pGib;
+			}
+		}
+	}
+	else // create normal, full ragdoll
+	{
+		pRagdoll = CreateRagdollCopy();
+		pRagdoll->InitAsClientRagdoll( boneDelta0, boneDelta1, currentBones, boneDt );
+	}
+	// END GSTRINGMIGRATION
+
 	return pRagdoll;
 }
 
-bool C_BaseAnimating::InitAsClientRagdoll( const matrix3x4_t *pDeltaBones0, const matrix3x4_t *pDeltaBones1, const matrix3x4_t *pCurrentBonePosition, float boneDt, bool bFixedConstraints )
+bool C_BaseAnimating::InitAsClientRagdoll( const matrix3x4_t *pDeltaBones0, const matrix3x4_t *pDeltaBones1,
+	const matrix3x4_t *pCurrentBonePosition, float boneDt, bool bFixedConstraints, ragdollparams_partial_t *pPartialParams ) // GSTRINGMIGRATION
 {
 	CStudioHdr *hdr = GetModelPtr();
 	if ( !hdr || m_pRagdoll || m_builtRagdoll )
@@ -4658,7 +4764,8 @@ bool C_BaseAnimating::InitAsClientRagdoll( const matrix3x4_t *pDeltaBones0, cons
 	// HACKHACK: force time to last interpolation position
 	m_flPlaybackRate = 1;
 	
-	m_pRagdoll = CreateRagdoll( this, hdr, m_vecForce, m_nForceBone, pDeltaBones0, pDeltaBones1, pCurrentBonePosition, boneDt, bFixedConstraints );
+	m_pRagdoll = CreateRagdoll( this, hdr, m_vecForce, m_nForceBone, pDeltaBones0, pDeltaBones1,
+		pCurrentBonePosition, boneDt, bFixedConstraints, pPartialParams ); // GSTRINGMIGRATION
 
 	// Cause the entity to recompute its shadow	type and make a
 	// version which only updates when physics state changes

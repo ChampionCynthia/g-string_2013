@@ -17,6 +17,10 @@
 #include "c_impact_effects.h"
 #include "tier0/vprof.h"
 
+// GSTRINGMIGRATION
+#include "gstring/c_clientpartialragdoll.h"
+// END GSTRINGMIGRATION
+
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -51,8 +55,28 @@ IterationRetval_t CRagdollEnumerator::EnumElement( IHandleEntity *pHandleEntity 
 	if ( pPhysicsObject == NULL )
 		return ITERATION_CONTINUE;
 
+// GSTRINGMIGRATION
+	C_ClientPartialRagdoll *pPartialRagdoll = dynamic_cast< C_ClientPartialRagdoll* >( pModel );
+
+	// make sure that all hitboxes are valid when tracing against them
+	if ( pPartialRagdoll != NULL )
+	{
+		pPartialRagdoll->SetShrinkingEnabled( false );
+		pPartialRagdoll->InvalidateBoneCache();
+		pPartialRagdoll->SetupBones( NULL, -1, BONE_USED_BY_ANYTHING, gpGlobals->curtime );
+		pPartialRagdoll->SetShrinkingEnabled( true );
+	}
+// END GSTRINGMIGRATION
+
 	trace_t tr;
 	enginetrace->ClipRayToEntity( m_rayShot, MASK_SHOT, pModel, &tr );
+
+// GSTRINGMIGRATION
+	if ( pPartialRagdoll != NULL )
+	{
+		pPartialRagdoll->InvalidateBoneCache();
+	}
+// END GSTRINGMIGRATION
 
 	if ( tr.fraction < 1.0 )
 	{

@@ -782,6 +782,9 @@ public:
 
 	int		m_iHammerID; // Hammer unique edit id number
 
+private:
+	CNetworkString( m_szEntityClassname, 32 ); // GSTRINGMIGRATION
+
 public:
 	// was pev->speed
 	float		m_flSpeed;
@@ -790,7 +793,7 @@ public:
 	// was pev->rendermode
 	CNetworkVar( unsigned char, m_nRenderMode );
 	CNetworkVar( short, m_nModelIndex );
-	
+
 #ifdef TF_DLL
 	CNetworkArray( int, m_nModelIndexOverrides, MAX_VISION_MODES ); // used to override the base model index on the client if necessary
 #endif
