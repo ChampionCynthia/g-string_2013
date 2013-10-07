@@ -2431,7 +2431,7 @@ int CBaseCombatCharacter::OnTakeDamage( const CTakeDamageInfo &info )
 			Event_Killed( info );
 
 			// Only classes that specifically request it are gibbed
-			if ( ShouldGib( info ) )
+			if ( false ) //ShouldGib( info ) ) // TODO FIXME
 			{
 				bGibbed = Event_Gibbed( info );
 			}

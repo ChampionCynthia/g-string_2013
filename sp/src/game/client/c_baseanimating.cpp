@@ -63,9 +63,8 @@
 // GSTRINGMIGRATION
 #include "gstring/c_clientpartialragdoll.h"
 #include "gstring/c_gibconfig.h"
+#include "gstring/c_gstring_util.h"
 #include "engine/ivmodelinfo.h"
-#include "vcollide_parse.h"
-#include "solidsetdefaults.h"
 // END GSTRINGMIGRATION
 
 // memdbgon must be the last include file in a .cpp file!!!
@@ -4559,7 +4558,7 @@ void C_BaseAnimating::GetRagdollInitBoneArrays( matrix3x4_t *pDeltaBones0, matri
 // GSTRINGMIGRATION
 C_ClientRagdoll *C_BaseAnimating::CreateRagdollCopyInstance()
 {
-	return new C_ClientPartialRagdoll();
+	return new C_ClientPartialRagdoll( false );
 	//return new C_ClientRagdoll( false );
 }
 // END GSTRINGMIGRATION
@@ -4647,87 +4646,44 @@ C_BaseAnimating *C_BaseAnimating::BecomeRagdollOnClient()
 	const float boneDt = 0.1f;
 	GetRagdollInitBoneArrays( boneDelta0, boneDelta1, currentBones, boneDt );
 
-	CUtlVector< KeyValues* > gibModels;
 	C_BaseAnimating *pRagdoll = NULL;
 
 	CStudioHdr *pHdr = GetModelPtr();
 
 	// translate the force bone to a studio bone
-	int iForceBone = -1;
-	vcollide_t *pCollide = modelinfo->GetVCollide( GetModelIndex() );
-
-	if ( pCollide != NULL
-		&& m_nForceBone >= 0 )
-	{
-		IVPhysicsKeyParser *pParse = physcollision->VPhysicsKeyParserCreate( pCollide->pKeyValues );
-
-		while ( !pParse->Finished() )
-		{
-			const char *pBlock = pParse->GetCurrentBlockName();
-
-			// need to parse the phys solids and compare to their indices
-			if ( !strcmpi( pBlock, "solid" ) )
-			{
-				solid_t solid;
-				pParse->ParseSolid( &solid, &g_SolidSetup );
-
-				if ( solid.index == m_nForceBone )
-				{
-					iForceBone = LookupBone( solid.name );
-					break;
-				}
-			}
-			else
-			{
-				pParse->SkipBlock();
-			}
-		}
-
-		physcollision->VPhysicsKeyParserDestroy( pParse );
-	}
+	int iStudioBone = ConvertPhysBoneToStudioBone( this, m_nForceBone );
 
 	// get meta data to load gib model
-	const char *pszForceBoneName = ( pHdr && iForceBone >= 0 && iForceBone < pHdr->numbones() )
-		? pHdr->pBone( iForceBone )->pszName() : NULL;
-	const char *pszClassName = GetEntityClassName();
-	const char *pszModelName = GetModel() ? modelinfo->GetModelName( GetModel() ) : "";
+	GibbingParams_t params;
+	params.type = GibTypes::SINGLE;
+	params.pHdr = GetModelPtr();
+	params.pszClassName = GetEntityClassName();
+	params.pszSourceModel = GetModel() ? modelinfo->GetModelName( GetModel() ) : "";
+	params.pszHitBone = ( pHdr && iStudioBone >= 0 && iStudioBone < pHdr->numbones() )
+		? pHdr->pBone( iStudioBone )->pszName() : NULL;
 
-	if ( C_GibConfig::GetInstance()->GetGibsForModel( C_GibConfig::SINGLE, pszClassName, pszModelName,
-		GetModelPtr(), pszForceBoneName, gibModels ) )
+	CUtlVector< ragdollparams_partial_t > gibModels;
+	const char *pszGibGroup = NULL;
+
+	if ( C_GibConfig::GetInstance()->GetGibsForModel( params, gibModels, &pszGibGroup ) )
 	{
-		bool bFoundMaster = false;
-
 		// create gibs based on configs
 		FOR_EACH_VEC( gibModels, i )
 		{
-			KeyValues *pKVData = gibModels[ i ];
+			ragdollparams_partial_t &partial = gibModels[ i ];
 
-			const bool bIsMaster = !bFoundMaster && pKVData->GetBool( "master" );
+			C_BaseAnimating *pGib = CreateRagdollCopy( pRagdoll == NULL );
 
-			if ( bIsMaster )
-				bFoundMaster = true;
+			C_ClientPartialRagdoll *pRecursiveRagdoll = dynamic_cast< C_ClientPartialRagdoll* >( pGib );
 
-			C_BaseAnimating *pGib = CreateRagdollCopy( bIsMaster );
-
-			ragdollparams_partial_t partial;
-
-			for ( KeyValues *pKVBone = pKVData->GetFirstValue();
-				pKVBone;
-				pKVBone = pKVBone->GetNextValue() )
+			if ( pRecursiveRagdoll != NULL )
 			{
-				const char *pszName = pKVBone->GetName();
-				const char *pszValue = pKVBone->GetString();
-
-				if ( FStrEq( "trunk", pszName ) )
-					partial.trunkBones.AddToTail( pszValue );
-				else if ( FStrEq( "branch", pszName ) )
-					partial.branchBones.AddToTail( pszValue );
+				pRecursiveRagdoll->SetRecursiveGibData( pszGibGroup );
 			}
 
 			pGib->InitAsClientRagdoll( boneDelta0, boneDelta1, currentBones, boneDt, false, &partial );
 
-			if ( bIsMaster
-				|| pRagdoll == NULL )
+			if ( pRagdoll == NULL )
 			{
 				pRagdoll = pGib;
 			}
@@ -4736,6 +4692,14 @@ C_BaseAnimating *C_BaseAnimating::BecomeRagdollOnClient()
 	else // create normal, full ragdoll
 	{
 		pRagdoll = CreateRagdollCopy();
+
+		C_ClientPartialRagdoll *pRecursiveRagdoll = dynamic_cast< C_ClientPartialRagdoll* >( pRagdoll );
+
+		if ( pRecursiveRagdoll != NULL )
+		{
+			pRecursiveRagdoll->SetRecursiveGibData( pszGibGroup );
+		}
+
 		pRagdoll->InitAsClientRagdoll( boneDelta0, boneDelta1, currentBones, boneDt );
 	}
 	// END GSTRINGMIGRATION

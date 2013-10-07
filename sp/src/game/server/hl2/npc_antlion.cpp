@@ -4009,7 +4009,13 @@ bool CNPC_Antlion::CorpseGib( const CTakeDamageInfo &info )
 
 		Vector vecOrigin;
 		QAngle angBone;
-		GetBonePosition( s_nBodyBone, vecOrigin, angBone );
+
+		// GSTRINGMIGRATION
+		if ( s_nBodyBone >= 0 )
+			GetBonePosition( s_nBodyBone, vecOrigin, angBone );
+		else
+			vecOrigin = WorldSpaceCenter();
+		// END GSTRINGMIGRATION
 
 		DispatchParticleEffect( "AntlionGib", vecOrigin, QAngle( 0, 0, 0 ) );
 	}
@@ -4295,7 +4301,7 @@ Vector CNPC_Antlion::BodyTarget( const Vector &posSrc, bool bNoisy /*= true*/ )
 	if ( m_nBodyBone == -1 )
 	{
 		CBaseAnimating *pAnimating = GetBaseAnimating();
-		m_nBodyBone = pAnimating->LookupBone( "Antlion.Body_Bone" );
+		m_nBodyBone = pAnimating->LookupBone( "bone13" ); // GSTRINGMIGRATION
 
 		if ( m_nBodyBone < 0 )
 		{

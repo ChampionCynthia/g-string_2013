@@ -67,6 +67,19 @@ struct ragdoll_t
 // GSTRINGMIGRATION
 struct ragdollparams_partial_t
 {
+	ragdollparams_partial_t() {}
+	ragdollparams_partial_t( const ragdollparams_partial_t &other )
+	{
+		*this = other;
+	}
+	ragdollparams_partial_t &operator=( const ragdollparams_partial_t &other )
+	{
+		trunkBones.AddVectorToTail( other.trunkBones );
+		branchBones.AddVectorToTail( other.branchBones );
+		cutBones.AddVectorToTail( other.cutBones );
+		return *this;
+	}
+
 	// cut all bones that have this parent
 	CUtlVector< CUtlString > trunkBones;
 

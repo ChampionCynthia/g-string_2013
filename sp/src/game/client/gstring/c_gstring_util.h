@@ -2,6 +2,7 @@
 #define C_GSTRING_UTIL_H
 
 
+extern int ConvertPhysBoneToStudioBone( C_BaseAnimating *pEntity, int iPhysBone );
 
 extern int BoneParentDepth( CStudioHdr *pHdr, int iBone, int iPotentialParent );
 extern int BoneParentDepth( CStudioHdr *pHdr, const char *pszBone, const char *pszPotentialParent );

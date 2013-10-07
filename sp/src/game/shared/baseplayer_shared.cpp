@@ -772,7 +772,7 @@ void CBasePlayer::GetStepSoundVelocities( float *velwalk, float *velrun )
 	// UNDONE: need defined numbers for run, walk, crouch, crouch run velocities!!!!	
 	if ( ( GetFlags() & FL_DUCKING) || ( GetMoveType() == MOVETYPE_LADDER ) )
 	{
-		*velwalk = 60;		// These constants should be based on cl_movespeedkey * cl_forwardspeed somehow
+		*velwalk = 30;		// These constants should be based on cl_movespeedkey * cl_forwardspeed somehow // GSTRINGMIGRATION
 		*velrun = 80;		
 	}
 	else

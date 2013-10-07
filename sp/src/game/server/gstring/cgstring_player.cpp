@@ -144,7 +144,7 @@ void CGstringPlayer::UpdateStepSound( surfacedata_t *psurface, const Vector &vec
 		if ( m_flStepSoundTime > 0.0f
 			&& bStepTimeWasZero )
 		{
-			m_flStepSoundTime += 480.0f;
+			m_flStepSoundTime += 780.0f;
 		}
 	}
 }

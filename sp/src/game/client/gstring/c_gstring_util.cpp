@@ -2,6 +2,47 @@
 #include "cbase.h"
 #include "bone_setup.h"
 
+#include "engine/ivmodelinfo.h"
+#include "vcollide_parse.h"
+#include "solidsetdefaults.h"
+
+int ConvertPhysBoneToStudioBone( C_BaseAnimating *pEntity, int iPhysBone )
+{
+	int iStudioBone = -1;
+	vcollide_t *pCollide = modelinfo->GetVCollide( pEntity->GetModelIndex() );
+
+	if ( pCollide != NULL
+		&& iPhysBone >= 0 )
+	{
+		IVPhysicsKeyParser *pParse = physcollision->VPhysicsKeyParserCreate( pCollide->pKeyValues );
+
+		while ( !pParse->Finished() )
+		{
+			const char *pBlock = pParse->GetCurrentBlockName();
+
+			// need to parse the phys solids and compare to their indices
+			if ( !strcmpi( pBlock, "solid" ) )
+			{
+				solid_t solid;
+				pParse->ParseSolid( &solid, &g_SolidSetup );
+
+				if ( solid.index == iPhysBone )
+				{
+					iStudioBone = pEntity->LookupBone( solid.name );
+					break;
+				}
+			}
+			else
+			{
+				pParse->SkipBlock();
+			}
+		}
+
+		physcollision->VPhysicsKeyParserDestroy( pParse );
+	}
+
+	return iStudioBone;
+}
 
 int BoneParentDepth( CStudioHdr *pHdr, int iBone, int iPotentialParent )
 {

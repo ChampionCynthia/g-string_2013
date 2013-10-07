@@ -1692,6 +1692,7 @@ void CBaseEntity::FireBullets( const FireBulletsInfo_t &info )
 
 	bool bDoImpacts = false;
 	bool bDoTracers = false;
+	int physBone = -1; // GSTRINGMIGRATION
 	
 	float flCumulativeDamage = 0.0f;
 
@@ -1738,7 +1739,16 @@ void CBaseEntity::FireBullets( const FireBulletsInfo_t &info )
 				pShootThroughPortal = NULL;
 			}
 #else
+			// GSTRINGMIGRATION
+			// this 'trick' causes the shotgun to always hit the pelvis bone last
+			// which makes gibbing lame
 			AI_TraceHull( info.m_vecSrc, vecEnd, Vector( -3, -3, -3 ), Vector( 3, 3, 3 ), MASK_SHOT, &traceFilter, &tr );
+
+			if ( physBone > 0 )
+			{
+				tr.physicsbone = physBone;
+			}
+			// END GSTRINGMIGRATION
 #endif //#ifdef PORTAL
 		}
 		else
@@ -1764,6 +1774,14 @@ void CBaseEntity::FireBullets( const FireBulletsInfo_t &info )
 			}
 #else
 			AI_TraceLine(info.m_vecSrc, vecEnd, MASK_SHOT, &traceFilter, &tr);
+
+			// GSTRINGMIGRATION
+			// remember the last good bone
+			if ( physBone < 0 )
+			{
+				physBone = tr.physicsbone;
+			}
+			// END GSTRINGMIGRATION
 #endif //#ifdef PORTAL
 		}
 
@@ -1789,7 +1807,7 @@ void CBaseEntity::FireBullets( const FireBulletsInfo_t &info )
 
 #ifdef GAME_DLL
 		if ( ai_debug_shoot_positions.GetBool() )
-			NDebugOverlay::Line(info.m_vecSrc, vecEnd, 255, 255, 255, false, .1 );
+			NDebugOverlay::Line(info.m_vecSrc, vecEnd, 255, 255, 255, false, 3 );
 #endif
 
 		if ( bStartedInWater )

@@ -683,6 +683,9 @@ public:
 	bool m_bImportant;
 	float m_flEffectTime;
 
+protected:
+	bool m_bReleaseRagdoll; // GSTRINGMIGRATION made protected
+
 private:
 	int m_iCurrentFriction;
 	int m_iMinFriction;
@@ -691,7 +694,6 @@ private:
 	float m_flFrictionTime;
 
 	int  m_iFrictionAnimState;
-	bool m_bReleaseRagdoll;
 
 	bool m_bFadingOut;
 
