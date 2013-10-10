@@ -27,12 +27,17 @@ public:
 	virtual void BuildTransformations( CStudioHdr *hdr, Vector *pos, Quaternion *q,
 		const matrix3x4_t &cameraTransform, int boneMask, CBoneBitList &boneComputed );
 
+	virtual int BloodColor() { return m_iBloodColor; }
+	virtual void SetBloodColor( int iBloodColor ) { m_iBloodColor = iBloodColor; }
+
 private:
 
 	void BuildPartial( ragdollparams_partial_t &params );
 
 	bool m_bShrinking;
 	bool m_bIsPartial;
+
+	int m_iBloodColor;
 
 	CBoneBitList m_normalBones;
 	CBoneBitList m_trunkBones;

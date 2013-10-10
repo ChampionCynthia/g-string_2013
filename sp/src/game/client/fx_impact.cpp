@@ -63,8 +63,12 @@ IterationRetval_t CRagdollEnumerator::EnumElement( IHandleEntity *pHandleEntity 
 	{
 		pPartialRagdoll->SetShrinkingEnabled( false );
 		pPartialRagdoll->InvalidateBoneCache();
+
 		pPartialRagdoll->SetupBones( NULL, -1, BONE_USED_BY_ANYTHING, gpGlobals->curtime );
 		pPartialRagdoll->SetShrinkingEnabled( true );
+
+		// set up again to make sure that all hidden bones shrink again
+		pPartialRagdoll->InvalidateBoneCache();
 	}
 // END GSTRINGMIGRATION
 
@@ -219,7 +223,7 @@ char const *GetImpactDecal( C_BaseEntity *pEntity, int iMaterial, int iDamageTyp
 	// GSTRINGMIGRATION
 	if ( iDamageType == DMG_CLUB )
 	{
-		decalName = "Impact.Metal";
+		decalName = "GString.Hammer.Impact";
 	}
 	else if ( !pEntity )
 	// END GSTRINGMIGRATION

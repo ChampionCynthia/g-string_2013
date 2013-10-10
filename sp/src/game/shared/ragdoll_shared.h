@@ -75,7 +75,7 @@ struct ragdollparams_partial_t
 	ragdollparams_partial_t &operator=( const ragdollparams_partial_t &other )
 	{
 		trunkBones.AddVectorToTail( other.trunkBones );
-		branchBones.AddVectorToTail( other.branchBones );
+		rootBone = other.rootBone;
 		cutBones.AddVectorToTail( other.cutBones );
 		return *this;
 	}
@@ -84,7 +84,7 @@ struct ragdollparams_partial_t
 	CUtlVector< CUtlString > trunkBones;
 
 	// cut all bones that do not have this parent
-	CUtlVector< CUtlString > branchBones;
+	CUtlString rootBone;
 
 	// precomputed cut bones for ragdoll generation
 	CUtlVector< CUtlString > cutBones;

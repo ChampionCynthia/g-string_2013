@@ -468,7 +468,7 @@ private:
 	void				DestroyGlowEffect( void );
 
 protected:
-	int			m_bloodColor;			// color of blood particless
+	CNetworkVar( int, m_bloodColor );			// color of blood particless // GSTRINGMIGRATION
 
 	// -------------------
 	// combat ability data

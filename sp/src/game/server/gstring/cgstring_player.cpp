@@ -32,6 +32,8 @@ void CGstringPlayer::Precache()
 
 	PrecacheModel( "models/humans/group02/female_04.mdl" );
 
+	UTIL_PrecacheDecal( "GString.Hammer.Impact", true );
+
 	BaseClass::Precache();
 }
 

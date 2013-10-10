@@ -2470,7 +2470,9 @@ bool CGameMovement::CheckJumpButton( void )
 		
 		// We give a certain percentage of the current forward movement as a bonus to the jump speed.  That bonus is clipped
 		// to not accumulate over time.
-		float flSpeedBoostPerc = ( !pMoveData->m_bIsSprinting && !player->m_Local.m_bDucked ) ? 0.5f : 0.1f;
+		// GSTRINGMIGRATION
+		float flSpeedBoostPerc = ( player->m_Local.m_bDucked && !pMoveData->m_bIsSprinting )
+			? 0.75f : pMoveData->m_bIsSprinting ? 0.15f : 0.5f;
 		float flSpeedAddition = fabs( mv->m_flForwardMove * flSpeedBoostPerc );
 		float flMaxSpeed = mv->m_flMaxSpeed + ( mv->m_flMaxSpeed * flSpeedBoostPerc );
 		float flNewSpeed = ( flSpeedAddition + mv->m_vecVelocity.Length2D() );
@@ -2478,7 +2480,7 @@ bool CGameMovement::CheckJumpButton( void )
 		// If we're over the maximum, we want to only boost as much as will get us to the goal speed
 		if ( flNewSpeed > flMaxSpeed )
 		{
-			flSpeedAddition -= flNewSpeed - flMaxSpeed;
+			//flSpeedAddition -= flNewSpeed - flMaxSpeed;
 		}
 
 		if ( mv->m_flForwardMove < 0.0f )

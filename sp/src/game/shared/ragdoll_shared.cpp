@@ -794,6 +794,11 @@ bool ShouldRemoveThisRagdoll( CBaseAnimating *pRagdoll )
 
 #ifdef CLIENT_DLL
 
+	// GSTRINGMIGRATION
+	if ( pRagdoll->m_pRagdoll == NULL )
+		return true;
+	// END GSTRINGMIGRATION
+
 	/* we no longer ignore enemies just because they are on fire -- a ragdoll in front of me
 	   is always a higher priority for retention than a flaming zombie behind me. At the 
 	   time I put this in, the ragdolls do clean up their own effects if culled via SUB_Remove().

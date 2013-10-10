@@ -3991,6 +3991,10 @@ bool CNPC_Antlion::ShouldGib( const CTakeDamageInfo &info )
 //-----------------------------------------------------------------------------
 bool CNPC_Antlion::CorpseGib( const CTakeDamageInfo &info )
 {
+	// GSTRINGMIGRATION
+	return false;
+	// END GSTRINGMIGRATION
+
 #ifdef HL2_EPISODIC
 
 	if ( IsWorker() )

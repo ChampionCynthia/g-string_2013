@@ -167,6 +167,8 @@ BEGIN_RECV_TABLE(C_BaseCombatCharacter, DT_BaseCombatCharacter)
 	RecvPropInt( RECVINFO( m_iPowerups ) ),
 #endif
 
+	RecvPropInt( RECVINFO( m_bloodColor ) ), // GSTRINGMIGRATION
+
 END_RECV_TABLE()
 
 

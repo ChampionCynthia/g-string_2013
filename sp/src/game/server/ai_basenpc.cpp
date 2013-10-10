@@ -404,6 +404,8 @@ void CAI_BaseNPC::ClearAllSchedules(void)
 //-----------------------------------------------------------------------------
 bool CAI_BaseNPC::Event_Gibbed( const CTakeDamageInfo &info )
 {
+	return false; // GSTRINGMIGRATION
+
 	bool gibbed = CorpseGib( info );
 
 	if ( gibbed )
@@ -594,7 +596,7 @@ void CAI_BaseNPC::Event_Killed( const CTakeDamageInfo &info )
 	StopLoopingSounds();
 	DeathSound( info );
 
-	if ( ( GetFlags() & FL_NPC ) && ( ShouldGib( info ) == false ) )
+	if ( ( GetFlags() & FL_NPC ) ) // GSTRINGMIGRATION && ( ShouldGib( info ) == false ) )
 	{
 		SetTouch( NULL );
 	}

@@ -4665,6 +4665,8 @@ C_BaseAnimating *C_BaseAnimating::BecomeRagdollOnClient()
 	CUtlVector< ragdollparams_partial_t > gibModels;
 	const char *pszGibGroup = NULL;
 
+	int iBloodColor = BloodColor();
+
 	if ( C_GibConfig::GetInstance()->GetGibsForModel( params, gibModels, &pszGibGroup ) )
 	{
 		// create gibs based on configs
@@ -4679,6 +4681,7 @@ C_BaseAnimating *C_BaseAnimating::BecomeRagdollOnClient()
 			if ( pRecursiveRagdoll != NULL )
 			{
 				pRecursiveRagdoll->SetRecursiveGibData( pszGibGroup );
+				pRecursiveRagdoll->SetBloodColor( iBloodColor );
 			}
 
 			pGib->InitAsClientRagdoll( boneDelta0, boneDelta1, currentBones, boneDt, false, &partial );
@@ -4695,7 +4698,8 @@ C_BaseAnimating *C_BaseAnimating::BecomeRagdollOnClient()
 
 		C_ClientPartialRagdoll *pRecursiveRagdoll = dynamic_cast< C_ClientPartialRagdoll* >( pRagdoll );
 
-		if ( pRecursiveRagdoll != NULL )
+		if ( pRecursiveRagdoll != NULL
+			&& pszGibGroup != NULL )
 		{
 			pRecursiveRagdoll->SetRecursiveGibData( pszGibGroup );
 		}

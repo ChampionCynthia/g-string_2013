@@ -66,6 +66,9 @@ void C_GibConfig::ReloadConfig()
 
 		unsigned short index = m_ragdollConfigs.InsertOrReplace( pszName, ragdoll );
 
+		// find aliases for bones
+		// weapons using hulls might mostly hit bones that can't be cut
+		// so we can allow splitting a spline bone when the pelvis is being shot
 		for ( KeyValues *pKVAlias = pKVRagdoll->GetFirstTrueSubKey();
 			pKVAlias; pKVAlias = pKVAlias->GetNextTrueSubKey() )
 		{
@@ -185,9 +188,10 @@ bool C_GibConfig::GetGibsForModel( const GibbingParams_t &params, CUtlVector< ra
 	if ( !pszIdealJointName )
 		return false;
 
+	// set up cutting for this joint
 	ragdollparams_partial_t params_trunk, params_branch;
 	params_trunk.trunkBones.AddToTail( pszIdealJointName );
-	params_branch.branchBones.AddToTail( pszIdealJointName );
+	params_branch.rootBone = pszIdealJointName;
 
 	gibs.AddToTail( params_trunk );
 	gibs.AddToTail( params_branch );
@@ -201,7 +205,8 @@ bool C_GibConfig::GetGibsForGroup( const GibbingParamsRecursive_t &params, CUtlV
 	if ( !m_ragdollConfigs.IsValidIndex( ragdollLookup ) )
 		return false;
 
-	const char *pszIdealJointName = GetBestCutJoint( m_ragdollConfigs[ ragdollLookup ], params.pHdr, params.pszHitBone );
+	const char *pszIdealJointName = GetBestCutJoint( m_ragdollConfigs[ ragdollLookup ], params.pHdr,
+		params.pszHitBone, params.pszRootBone );
 
 	if ( pszSplitBone != NULL )
 	{
@@ -211,20 +216,63 @@ bool C_GibConfig::GetGibsForGroup( const GibbingParamsRecursive_t &params, CUtlV
 	if ( !pszIdealJointName )
 		return false;
 
+	// set up cutting for this joint
 	ragdollparams_partial_t params_trunk, params_branch;
 	params_trunk.trunkBones.AddToTail( pszIdealJointName );
-	params_branch.branchBones.AddToTail( pszIdealJointName );
+	params_branch.rootBone = pszIdealJointName;
 
 	gibs.AddToTail( params_trunk );
 	gibs.AddToTail( params_branch );
 	return true;
 }
 
-const char *C_GibConfig::GetBestCutJoint( const RagdollConfig_t &config, CStudioHdr *pHdr, const char *pszHitBone )
+static bool EvaluateCutParent( CStudioHdr *pHdr, const char *pszChild, const char *pszParent, const char *pszRoot, int &iBestDepth )
 {
+	// ignore any potential bones that are parents of the current root
+	if ( pszRoot != NULL
+		&& BoneParentDepth( pHdr, pszRoot, pszParent ) >= 0 )
+		return false;
+
+	// figure out the distance from the hit bone to the potential cut bone
+	int iDepth = BoneParentDepth( pHdr, pszChild, pszParent );
+
+	if ( iDepth < 0 )
+		return false;
+
+	if ( iDepth > iBestDepth )
+		return false;
+
+	iBestDepth = iDepth;
+	return true;
+}
+
+static bool EvaluateCutChild( CStudioHdr *pHdr, const char *pszChild, const char *pszParent, int &iBestDepth )
+{
+	// try to cut off a child now, flip vars
+	int iDepth = BoneParentDepth( pHdr, pszParent, pszChild );
+
+	if ( iDepth <= 0 )
+		return false;
+
+	if ( iDepth > iBestDepth )
+		return false;
+
+	iBestDepth = iDepth;
+	return true;
+}
+
+const char *C_GibConfig::GetBestCutJoint( const RagdollConfig_t &config, CStudioHdr *pHdr,
+	const char *pszHitBone, const char *pszRootBone )
+{
+	// cuts a parent
 	const char *pszIdealJointName = NULL;
 	int iBestWeight = MAXSTUDIOBONES;
 
+	// or a potential child
+	const char *pszIdealJointNameReverse = NULL;
+	int iBestReverse = MAXSTUDIOBONES;
+
+	// for every marked cut joint
 	for ( KeyValues *pKV = config.m_pData->GetFirstValue();
 		pKV; pKV = pKV->GetNextValue() )
 	{
@@ -243,33 +291,35 @@ const char *C_GibConfig::GetBestCutJoint( const RagdollConfig_t &config, CStudio
 
 		unsigned short aliasIndex = config.m_aliases.Find( pszJointName );
 
+		// test cutting of a parent through aliases
 		if ( config.m_aliases.IsValidIndex( aliasIndex ) )
 		{
 			FOR_EACH_VEC( config.m_aliases[ aliasIndex ], a )
 			{
-				int iDepth = BoneParentDepth( pHdr, pszHitBone, config.m_aliases[ aliasIndex ][ a ] );
-
-				if ( iDepth < 0 )
-					continue;
-
-				if ( iDepth > iBestWeight )
-					continue;
-
-				iBestWeight = iDepth;
-				pszIdealJointName = pszJointName;
+				if ( EvaluateCutParent( pHdr, pszHitBone, config.m_aliases[ aliasIndex ][ a ], pszRootBone, iBestWeight ) )
+				{
+					pszIdealJointName = pszJointName;
+				}
 			}
 		}
 
-		int iDepth = BoneParentDepth( pHdr, pszHitBone, pszJointName );
+		// try cutting off a parent
+		if ( EvaluateCutParent( pHdr, pszHitBone, pszJointName, pszRootBone, iBestWeight ) )
+		{
+			pszIdealJointName = pszJointName;
+		}
 
-		if ( iDepth < 0 )
-			continue;
+		// test cutting off a child bone (reverse search)
+		if ( EvaluateCutChild( pHdr, pszHitBone, pszJointName, iBestReverse ) )
+		{
+			pszIdealJointNameReverse = pszJointName;
+		}
+	}
 
-		if ( iDepth > iBestWeight )
-			continue;
-
-		iBestWeight = iDepth;
-		pszIdealJointName = pszJointName;
+	// if we didn't find a parent to cut, take the potential child
+	if ( pszIdealJointName == NULL )
+	{
+		pszIdealJointName = pszIdealJointNameReverse;
 	}
 
 	return pszIdealJointName;

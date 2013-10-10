@@ -39,6 +39,7 @@ struct GibbingParamsRecursive_t
 	const char *pszParentName;
 	int iGibIndex;
 	const char *pszHitBone;
+	const char *pszRootBone;
 	CStudioHdr *pHdr;
 };
 
@@ -139,7 +140,7 @@ private:
 	// shared partial ragdoll layouts
 	CUtlMap< CUtlString, RagdollConfig_t > m_ragdollConfigs;
 
-	const char *GetBestCutJoint( const RagdollConfig_t &config, CStudioHdr *pHdr, const char *pszHitBone );
+	const char *GetBestCutJoint( const RagdollConfig_t &config, CStudioHdr *pHdr, const char *pszHitBone, const char *pszRootBone = NULL );
 };
 
 

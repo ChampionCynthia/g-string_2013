@@ -203,6 +203,8 @@ IMPLEMENT_SERVERCLASS_ST(CBaseCombatCharacter, DT_BaseCombatCharacter)
 	SendPropInt( SENDINFO(m_iPowerups), MAX_POWERUPS, SPROP_UNSIGNED ), 
 #endif
 
+	SendPropInt( SENDINFO( m_bloodColor ), 5 ), // GSTRINGMIGRATION
+
 END_SEND_TABLE()
 
 
@@ -1319,6 +1321,10 @@ CBaseEntity *CBaseCombatCharacter::CheckTraceHullAttack( const Vector &vStart, c
 
 bool  CBaseCombatCharacter::Event_Gibbed( const CTakeDamageInfo &info )
 {
+	// GSTRINGMIGRATION
+	return false;
+	// END GSTRINGMIGRATION
+
 	bool fade = false;
 
 	if ( HasHumanGibs() )
@@ -1626,7 +1632,7 @@ void CBaseCombatCharacter::Event_Killed( const CTakeDamageInfo &info )
 	SendOnKilledGameEvent( info );
 
 	// Ragdoll unless we've gibbed
-	if ( ShouldGib( info ) == false )
+	if ( true ) // GSTRINGMGRATION  ShouldGib( info ) == false )
 	{
 		bool bRagdollCreated = false;
 		if ( (info.GetDamageType() & DMG_DISSOLVE) && CanBecomeRagdoll() )
@@ -2431,7 +2437,7 @@ int CBaseCombatCharacter::OnTakeDamage( const CTakeDamageInfo &info )
 			Event_Killed( info );
 
 			// Only classes that specifically request it are gibbed
-			if ( false ) //ShouldGib( info ) ) // TODO FIXME
+			if ( ShouldGib( info ) )
 			{
 				bGibbed = Event_Gibbed( info );
 			}
