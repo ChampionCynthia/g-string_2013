@@ -187,19 +187,45 @@ BEGIN_VS_SHADER( SDK_UnlitGeneric, "Help for SDK_UnlitGeneric" )
 		VertexLitGeneric_DX9_Vars_t vars;
 		SetupVars( vars );
 
-		bool bNewFlashlightPath = IsX360() || ( r_flashlight_version2.GetInt() != 0 );
-		if ( ( pShaderShadow == NULL ) && ( pShaderAPI != NULL ) && !bNewFlashlightPath && pShaderAPI->InFlashlightMode() ) // Not snapshotting && flashlight pass
+		//bool bNewFlashlightPath = IsX360() || ( r_flashlight_version2.GetInt() != 0 );
+		//if ( ( pShaderShadow == NULL ) && ( pShaderAPI != NULL ) && !bNewFlashlightPath && pShaderAPI->InFlashlightMode() ) // Not snapshotting && flashlight pass
+		//{
+		//	// GSTRINGMIGRATION
+		//	if ( params[RECEIVEFLASHLIGHT]->GetIntValue() != 0 )
+		//		DrawVertexLitGeneric_DX9( this, params, pShaderAPI, pShaderShadow, false, vars, vertexCompression, pContextDataPtr );
+		//	else
+		//		Draw( false );
+		//	// END GSTRINGMIGRATION
+		//}
+		//else
+		//{
+		//	DrawVertexLitGeneric_DX9( this, params, pShaderAPI, pShaderShadow, false, vars, vertexCompression, pContextDataPtr );
+		//}
+
+		const bool bSnapshotting = pShaderShadow != NULL;
+		const bool bHasFlashlight = pShaderAPI && pShaderAPI->InFlashlightMode();
+		const bool bCanReceiveFlashlight = params[ RECEIVEFLASHLIGHT ]->GetIntValue() != 0;
+
+		if ( bCanReceiveFlashlight )
 		{
-			// GSTRINGMIGRATION
-			if ( params[RECEIVEFLASHLIGHT]->GetIntValue() != 0 )
-				DrawVertexLitGeneric_DX9( this, params, pShaderAPI, pShaderShadow, false, vars, vertexCompression, pContextDataPtr );
+			if ( bSnapshotting || bHasFlashlight )
+			{
+				DrawVertexLitGeneric_DX9( this, params, pShaderAPI, pShaderShadow, false, vars, vertexCompression, pContextDataPtr, true );
+			}
 			else
+			{
 				Draw( false );
-			// END GSTRINGMIGRATION
+			}
 		}
-		else
+
+		if ( bSnapshotting || !bHasFlashlight )
 		{
 			DrawVertexLitGeneric_DX9( this, params, pShaderAPI, pShaderShadow, false, vars, vertexCompression, pContextDataPtr );
 		}
+		else
+		{
+			Draw( false );
+		}
+
 	}
 END_SHADER

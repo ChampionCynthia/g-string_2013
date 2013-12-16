@@ -185,6 +185,13 @@ VS_OUTPUT main( const VS_INPUT v )
 
 #if !defined (_X360) && FLASHLIGHT
 	o.color = float4( 0.0f, 0.0f, 0.0f, 0.0f );
+	
+	if ( g_bVertexColor )
+	{
+		o.color.rgb += GammaToLinear( v.vColor.rgb );
+		o.color.a = v.vColor.a;
+	}
+	
 #else
 	if ( g_bVertexColor )
 	{

@@ -472,7 +472,7 @@ static void DrawVertexLitGeneric_DX9_Internal( CBaseVSShader *pShader, IMaterial
 			}
 
 			int nShadowFilterMode = 0;
-			if ( bHasFlashlight )
+			if ( bHasFlashlight && bVertexLitGeneric )
 			{
 				if ( g_pHardwareConfig->SupportsPixelShaders_2_b() )
 				{
@@ -1367,7 +1367,7 @@ static void DrawVertexLitGeneric_DX9_Internal( CBaseVSShader *pShader, IMaterial
 
 void DrawVertexLitGeneric_DX9( CBaseVSShader *pShader, IMaterialVar** params, IShaderDynamicAPI *pShaderAPI,
 	IShaderShadow* pShaderShadow, bool bVertexLitGeneric, VertexLitGeneric_DX9_Vars_t &info, VertexCompressionType_t vertexCompression,
-								CBasePerMaterialContextData **pContextDataPtr )
+								CBasePerMaterialContextData **pContextDataPtr, bool bForceFlashlight )
 {
 	if ( WantsSkinShader( params, info ) ) //&& g_pHardwareConfig->SupportsPixelShaders_2_b() /*&& mat_bumpmap.GetBool()*/ )
 	{
@@ -1382,7 +1382,7 @@ void DrawVertexLitGeneric_DX9( CBaseVSShader *pShader, IMaterialVar** params, IS
 	{
 		bReceiveFlashlight = bReceiveFlashlight || ( GetIntParam( info.m_nReceiveFlashlight, params ) != 0 );
 	}
-	bool bHasFlashlight = bReceiveFlashlight && pShader->UsingFlashlight( params );
+	bool bHasFlashlight = bReceiveFlashlight && pShader->UsingFlashlight( params ) || bForceFlashlight;
 
 	DrawVertexLitGeneric_DX9_Internal( pShader, params, pShaderAPI,
 		pShaderShadow, bVertexLitGeneric, bHasFlashlight, info, vertexCompression, pContextDataPtr );

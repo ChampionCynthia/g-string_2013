@@ -341,7 +341,7 @@ float4 main( PS_INPUT i ) : COLOR
 			g_FlashlightAttenuationFactors.w, FlashlightSampler, ShadowDepthSampler,
 			RandRotSampler, nShadowSampleLevel, bDoShadows, false, i.projPos.xy / i.projPos.w, false, g_EnvmapContrast_ShadowTweaks, false );
 
-#if defined ( _X360 )
+#if defined ( _X360 ) || DIFFUSELIGHTING == 0
 		diffuseLighting += flashlightColor;
 #else
 		diffuseLighting = flashlightColor;

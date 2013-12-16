@@ -347,7 +347,7 @@ CPathTrack *CPathTrack::GetNext( void )
 	}
 	
 	// The paths shouldn't normally be getting deleted so assert that if it was set, it's valid.
-	Assert( !m_pnext.IsValid() || m_pnext.Get() != NULL );
+	//Assert( !m_pnext.IsValid() || m_pnext.Get() != NULL );
 	return m_pnext;
 }
 

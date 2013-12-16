@@ -3,6 +3,8 @@
 #include "cgstring_player.h"
 #include "cgstring_globals.h"
 
+static ConVar gstring_nightvision_override( "gstring_nightvision_override", "0", FCVAR_CHEAT );
+
 BEGIN_DATADESC( CGstringPlayer )
 
 	DEFINE_FIELD( m_bNightvisionActive, FIELD_BOOLEAN ),
@@ -83,13 +85,19 @@ void CGstringPlayer::ImpulseCommands()
 	{
 	case 100:
 		{
-			if ( g_pGstringGlobals != NULL )
+			extern ConVar gstring_nightvision_override;
+			const bool bOverrideNightvision = gstring_nightvision_override.GetBool();
+
+			if ( g_pGstringGlobals != NULL
+				|| bOverrideNightvision )
 			{
 				// neither flashlight nor nightvision
-				if ( !g_pGstringGlobals->IsUserLightSourceEnabled() )
+				if ( !bOverrideNightvision
+					&& !g_pGstringGlobals->IsUserLightSourceEnabled() )
 					break;
 
-				if ( g_pGstringGlobals->IsNightvisionEnabled() ) // use nightvision
+				if ( bOverrideNightvision
+					|| g_pGstringGlobals->IsNightvisionEnabled() ) // use nightvision
 				{
 					if ( FlashlightIsOn() )
 						FlashlightTurnOff();

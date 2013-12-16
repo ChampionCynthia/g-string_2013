@@ -1515,12 +1515,18 @@ void CDetailObjectSystem::ClearFlashlightStates()
 
 void CDetailObjectSystem::DrawFlashlight( IMesh *pMesh )
 {
+	if ( m_activeFlashlights.Count() < 1 )
+	{
+		pMesh->Draw();
+		return;
+	}
+
 	CMatRenderContextPtr pRenderContext( materials );
 	pRenderContext->SetFlashlightMode( true );
 
-	FOR_EACH_VEC( m_activeFlashlights, i )
+	//FOR_EACH_VEC( m_activeFlashlights, i )
 	{
-		const FlashlightEntry &entry = m_activeFlashlights[ i ];
+		const FlashlightEntry &entry = m_activeFlashlights[ 0 ]; //i ];
 
 		pRenderContext->SetFlashlightStateEx( entry.state, entry.world2Texture, entry.pDepthTexture );
 
@@ -2452,7 +2458,7 @@ void CDetailObjectSystem::RenderFastSprites( const Vector &viewOrigin, const Vec
 				if ( ! nQuadsRemaining )					// no room left?
 				{
 					meshBuilder.End();
-					pMesh->Draw();
+					//pMesh->Draw();
 					DrawFlashlight( pMesh );	// GSTRINGMIGRATION
 					nQuadsRemaining = nQuadsToDraw;
 					meshBuilder.Begin( pMesh, MATERIAL_QUADS, nQuadsToDraw );
@@ -2505,7 +2511,7 @@ void CDetailObjectSystem::RenderFastSprites( const Vector &viewOrigin, const Vec
 		}
 	}
 	meshBuilder.End();
-	pMesh->Draw();
+	//pMesh->Draw();
 	DrawFlashlight( pMesh );	// GSTRINGMIGRATION
 	pRenderContext->PopMatrix();
 }
@@ -2587,7 +2593,7 @@ void CDetailObjectSystem::RenderTranslucentDetailObjects( const Vector &viewOrig
 			if ( nQuadsDrawn + nQuadsInModel > nQuadsToDraw )
 			{
 				meshBuilder.End();
-				pMesh->Draw();
+				//pMesh->Draw();
 				DrawFlashlight( pMesh );	// GSTRINGMIGRATION
 
 				nQuadCount -= nQuadsDrawn;
@@ -2608,7 +2614,7 @@ void CDetailObjectSystem::RenderTranslucentDetailObjects( const Vector &viewOrig
 	}
 
 	meshBuilder.End();
-	pMesh->Draw();
+	//pMesh->Draw();
 	DrawFlashlight( pMesh );	// GSTRINGMIGRATION
 	pRenderContext->PopMatrix();
 }
@@ -2687,7 +2693,7 @@ void CDetailObjectSystem::RenderFastTranslucentDetailObjectsInLeaf( const Vector
 		if ( ! nQuadsRemaining )					// no room left?
 		{
 			meshBuilder.End();
-			pMesh->Draw();
+			//pMesh->Draw();
 			DrawFlashlight( pMesh );	// GSTRINGMIGRATION
 			nQuadsRemaining = nQuadsToDraw;
 			meshBuilder.Begin( pMesh, MATERIAL_QUADS, nQuadsToDraw );
@@ -2741,7 +2747,7 @@ void CDetailObjectSystem::RenderFastTranslucentDetailObjectsInLeaf( const Vector
 	pData->m_nStartSpriteIndex = pDraw - m_pFastSortInfo;
 
 	meshBuilder.End();
-	pMesh->Draw();
+	//pMesh->Draw();
 	DrawFlashlight( pMesh );	// GSTRINGMIGRATION
 	pRenderContext->PopMatrix();
 }
@@ -2831,7 +2837,7 @@ void CDetailObjectSystem::RenderTranslucentDetailObjectsInLeaf( const Vector &vi
 		if ( nQuadsDrawn + nQuadsInModel > nQuadsToDraw )
 		{
 			meshBuilder.End();
-			pMesh->Draw();
+			//pMesh->Draw();
 			DrawFlashlight( pMesh );	// GSTRINGMIGRATION
 
 			nQuadCount = ( m_nSpriteCount - m_nFirstSprite ) * 4;
@@ -2850,7 +2856,7 @@ void CDetailObjectSystem::RenderTranslucentDetailObjectsInLeaf( const Vector &vi
 		nQuadsDrawn += nQuadsInModel;
 	}
 	meshBuilder.End();
-	pMesh->Draw();
+	//pMesh->Draw();
 	DrawFlashlight( pMesh );	// GSTRINGMIGRATION
 
  	pRenderContext->PopMatrix();

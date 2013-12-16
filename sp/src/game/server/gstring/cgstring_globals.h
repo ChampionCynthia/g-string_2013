@@ -23,6 +23,7 @@ public:
 	void InputNightvisionToggle( inputdata_t &inputdata );
 
 	void SetNightvisionEnabled( bool bEnabled );
+	void SetNightvisionOverride( bool bEnabled );
 	bool IsNightvisionEnabled() const;
 
 	void InputUserLightSourceEnable( inputdata_t &inputdata );
@@ -35,6 +36,7 @@ public:
 private:
 
 	bool m_bNightvisionEnabled;
+	bool m_bNightvisionEnabledOverride;
 	bool m_bUserLightSourceEnabled;
 };
 

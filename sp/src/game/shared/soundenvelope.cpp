@@ -457,7 +457,7 @@ float CSoundPatch::GetVolume( void )
 //-----------------------------------------------------------------------------
 inline int CSoundPatch::EntIndex() const
 {
-	Assert( !m_hEnt.IsValid() || m_hEnt.Get() );
+	//Assert( !m_hEnt.IsValid() || m_hEnt.Get() );
 	return m_hEnt.Get() ? m_hEnt->entindex() : -1;
 }
 
