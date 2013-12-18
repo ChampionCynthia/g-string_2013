@@ -265,13 +265,27 @@ void DispatchParticleEffect( const char *pszParticleName, ParticleAttachment_t i
 	int iAttachment = -1;
 	if ( pEntity && pEntity->GetBaseAnimating() )
 	{
-		// Find the attachment point index
-		iAttachment = pEntity->GetBaseAnimating()->LookupAttachment( pszAttachmentName );
-		if ( iAttachment <= 0 )
+		// GSTRINGMIGRATION
+		if ( iAttachType == PATTACH_BONE_FOLLOW )
 		{
-			Warning("Model '%s' doesn't have attachment '%s' to attach particle system '%s' to.\n", STRING(pEntity->GetBaseAnimating()->GetModelName()), pszAttachmentName, pszParticleName );
-			return;
+			iAttachment = pEntity->GetBaseAnimating()->LookupBone( pszAttachmentName );
+			if ( iAttachment < 0 )
+			{
+				Warning("Model '%s' doesn't have bone '%s' to attach particle system '%s' to.\n", STRING(pEntity->GetBaseAnimating()->GetModelName()), pszAttachmentName, pszParticleName );
+				return;
+			}
 		}
+		else
+		{
+			// Find the attachment point index
+			iAttachment = pEntity->GetBaseAnimating()->LookupAttachment( pszAttachmentName );
+			if ( iAttachment <= 0 )
+			{
+				Warning("Model '%s' doesn't have attachment '%s' to attach particle system '%s' to.\n", STRING(pEntity->GetBaseAnimating()->GetModelName()), pszAttachmentName, pszParticleName );
+				return;
+			}
+		}
+		// END GSTRINGMIGRATION
 	}
 
 	DispatchParticleEffect( pszParticleName, iAttachType, pEntity, iAttachment, bResetAllParticlesOnEntity );

@@ -508,6 +508,8 @@ private:
 	// ---------------
 	CUtlVector<Relationship_t>		m_Relationship;						// Array of relationships
 
+	CNetworkVar( int, m_iKillDamageType ); // GSTRINGMIGRATION
+
 protected:
 	// shared ammo slots
 	CNetworkArrayForDerived( int, m_iAmmo, MAX_AMMO_SLOTS );

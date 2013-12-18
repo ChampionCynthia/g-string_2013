@@ -6,6 +6,9 @@
 #include "c_gstring_util.h"
 #include "bone_setup.h"
 
+ConVar gstring_gibbing_chance( "gstring_gibbing_chance", "20", FCVAR_CHEAT, "Probably of gibbing by normal impacts." );
+ConVar gstring_gibbing_explosion_chance( "gstring_gibbing_explosion_chance", "90", FCVAR_CHEAT, "Probably of gibbing by explosion impacts." );
+ConVar gstring_gibbing_explosion_recursive_chance( "gstring_gibbing_explosion_recursive_chance", "70", FCVAR_CHEAT, "Probably of gibbing multiple times by explosion impacts." );
 
 C_GibConfig C_GibConfig::instance;
 
@@ -200,6 +203,9 @@ bool C_GibConfig::GetGibsForModel( const GibbingParams_t &params, CUtlVector< ra
 
 bool C_GibConfig::GetGibsForGroup( const GibbingParamsRecursive_t &params, CUtlVector< ragdollparams_partial_t > &gibs, const char **pszSplitBone )
 {
+	if ( params.pszHitBone == NULL )
+		return false;
+
 	unsigned short ragdollLookup = m_ragdollConfigs.Find( params.pszParentName );
 
 	if ( !m_ragdollConfigs.IsValidIndex( ragdollLookup ) )
@@ -207,6 +213,83 @@ bool C_GibConfig::GetGibsForGroup( const GibbingParamsRecursive_t &params, CUtlV
 
 	const char *pszIdealJointName = GetBestCutJoint( m_ragdollConfigs[ ragdollLookup ], params.pHdr,
 		params.pszHitBone, params.pszRootBone );
+
+	if ( pszSplitBone != NULL )
+	{
+		*pszSplitBone = pszIdealJointName;
+	}
+
+	if ( !pszIdealJointName )
+		return false;
+
+	// set up cutting for this joint
+	ragdollparams_partial_t params_trunk, params_branch;
+	params_trunk.trunkBones.AddToTail( pszIdealJointName );
+	params_branch.rootBone = pszIdealJointName;
+
+	gibs.AddToTail( params_trunk );
+	gibs.AddToTail( params_branch );
+	return true;
+}
+
+bool C_GibConfig::GetRandomGibsForGroup( const GibbingParamsRecursive_t &params, CUtlVector< ragdollparams_partial_t > &gibs, const char **pszSplitBone )
+{
+	unsigned short ragdollLookup = m_ragdollConfigs.Find( params.pszParentName );
+
+	if ( !m_ragdollConfigs.IsValidIndex( ragdollLookup ) )
+		return false;
+
+	const char *pszIdealJointName = NULL;
+
+	for ( int i = 0; i < params.pHdr->numbones(); i++ )
+	{
+		const char *pszBone = params.pHdr->pBone( i )->pszName();
+
+		if ( params.pszRootBone != NULL
+			&& BoneParentDepth( params.pHdr, pszBone, params.pszRootBone ) < 1 )
+			continue;
+
+		const char *pszPotentialJoint = GetBestCutJoint( m_ragdollConfigs[ ragdollLookup ], params.pHdr,
+			pszBone, params.pszRootBone );
+
+		if ( pszPotentialJoint != NULL )
+		{
+			// this joint is cut already
+			if ( params.pJointBones->IsBitSet( Studio_BoneIndexByName( params.pHdr, pszPotentialJoint ) ) )
+				continue;
+
+			// wrong parent
+			if ( params.pszRootBone != NULL
+				&& BoneParentDepth( params.pHdr, pszPotentialJoint, params.pszRootBone ) < 1 )
+				continue;
+
+			bool bJointIsParent = false;
+
+			for ( int j = 0; j < params.pJointBones->GetNumBits(); j++ )
+			{
+				int index = params.pJointBones->Get( j );
+
+				if ( index <= 0 || index >= params.pHdr->numbones() )
+					continue;
+
+				const char *pszJointBone = params.pHdr->pBone( index )->pszName();
+
+				if ( BoneParentDepth( params.pHdr, pszPotentialJoint,
+					pszJointBone ) > 0 )
+				{
+					bJointIsParent = true;
+					break;
+				}
+			}
+
+			// is child of cut joint so no.
+			if ( bJointIsParent )
+				continue;
+
+			pszIdealJointName = pszPotentialJoint;
+			break;
+		}
+	}
 
 	if ( pszSplitBone != NULL )
 	{

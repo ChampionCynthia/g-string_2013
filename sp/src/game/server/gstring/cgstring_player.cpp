@@ -2,6 +2,7 @@
 #include "cbase.h"
 #include "cgstring_player.h"
 #include "cgstring_globals.h"
+#include "obstacle_pushaway.h"
 
 static ConVar gstring_nightvision_override( "gstring_nightvision_override", "0", FCVAR_CHEAT );
 
@@ -35,6 +36,11 @@ void CGstringPlayer::Precache()
 	PrecacheModel( "models/humans/group02/female_04.mdl" );
 
 	UTIL_PrecacheDecal( "GString.Hammer.Impact", true );
+
+	PrecacheParticleSystem( "blood_advisor_puncture_withdraw" );
+	PrecacheParticleSystem( "blood_advisor_spray_strong" );
+	PrecacheParticleSystem( "blood_advisor_spray_strong_2" );
+	PrecacheParticleSystem( "blood_advisor_spray_strong_3" );
 
 	BaseClass::Precache();
 }
@@ -129,6 +135,8 @@ void CGstringPlayer::PhysicsSimulate()
 	BaseClass::PhysicsSimulate();
 
 	m_bHasUseEntity = GetUseEntity() != NULL;
+
+	PerformObstaclePushaway( this );
 }
 
 void CGstringPlayer::UpdateStepSound( surfacedata_t *psurface, const Vector &vecOrigin, const Vector &vecVelocity )

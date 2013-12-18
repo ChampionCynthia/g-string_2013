@@ -4,6 +4,8 @@
 #include "c_baseanimating.h"
 #include "bone_setup.h"
 
+void DispatchGibParticle( C_BaseAnimating *pEntity, const char *pszBone, bool bExplosion, int iBloodType );
+
 class C_ClientPartialRagdoll : public C_ClientRagdoll
 {
 	DECLARE_CLASS( C_ClientPartialRagdoll, C_ClientRagdoll );

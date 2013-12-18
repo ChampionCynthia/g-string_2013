@@ -3,6 +3,10 @@
 
 #include "igamesystem.h"
 
+extern ConVar gstring_gibbing_chance;
+extern ConVar gstring_gibbing_explosion_chance;
+extern ConVar gstring_gibbing_explosion_recursive_chance;
+
 inline bool CaselessCUtlStringLessThan( const CUtlString &lhs, const CUtlString &rhs )
 {
 	if ( !lhs ) return false;
@@ -41,6 +45,7 @@ struct GibbingParamsRecursive_t
 	const char *pszHitBone;
 	const char *pszRootBone;
 	CStudioHdr *pHdr;
+	CBoneBitList *pJointBones;
 };
 
 class C_GibConfig : public CAutoGameSystem
@@ -61,6 +66,7 @@ public:
 
 	bool GetGibsForModel( const GibbingParams_t &params, CUtlVector< ragdollparams_partial_t > &gibs, const char **pszGibGroup );
 	bool GetGibsForGroup( const GibbingParamsRecursive_t &params, CUtlVector< ragdollparams_partial_t > &gibs, const char **pszSplitBone );
+	bool GetRandomGibsForGroup( const GibbingParamsRecursive_t &params, CUtlVector< ragdollparams_partial_t > &gibs, const char **pszSplitBone );
 
 private:
 

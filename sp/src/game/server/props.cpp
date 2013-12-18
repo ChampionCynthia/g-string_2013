@@ -2502,6 +2502,11 @@ void CPhysicsProp::Spawn( )
 		SetCollisionGroup( HasSpawnFlags( SF_PHYSPROP_FORCE_TOUCH_TRIGGERS ) ? COLLISION_GROUP_DEBRIS_TRIGGER : COLLISION_GROUP_DEBRIS );
 	}
 
+	if ( HasSpawnFlags( SF_PHYSPROP_PUSHAWAY ) )
+	{
+		SetCollisionGroup( COLLISION_GROUP_PUSHAWAY );
+	}
+
 	if ( HasSpawnFlags( SF_PHYSPROP_NO_ROTORWASH_PUSH ) )
 	{
 		AddEFlags( EFL_NO_ROTORWASH_PUSH );

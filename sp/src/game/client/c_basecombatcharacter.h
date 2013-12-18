@@ -103,6 +103,10 @@ public:
 
 	float			m_flNextAttack;
 
+	// GSTRINGMIGRATION
+	int GetKillDamageType() const { return m_iKillDamageType; }
+	// END GSTRINGMIGRATION
+
 protected:
 
 #ifdef GLOWS_ENABLE	
@@ -125,6 +129,10 @@ private:
 	bool				m_bOldGlowEnabled;
 	CGlowObject			*m_pGlowEffect;
 #endif // GLOWS_ENABLE
+
+	// GSTRINGMIGRATION
+	int m_iKillDamageType;
+	// END GSTRINGMIGRATION
 
 private:
 	C_BaseCombatCharacter( const C_BaseCombatCharacter & ); // not defined, not accessible

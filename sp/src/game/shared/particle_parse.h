@@ -29,6 +29,8 @@ enum ParticleAttachment_t
 
 	PATTACH_ROOTBONE_FOLLOW,		// Create at the root bone of the entity, and update to follow
 
+	PATTACH_BONE_FOLLOW,			// GSTRINGMIGRATION
+
 	MAX_PATTACH_TYPES,
 };
 

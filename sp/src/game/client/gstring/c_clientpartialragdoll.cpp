@@ -8,7 +8,31 @@
 #include "viewrender.h"
 #include "gamestringpool.h"
 #include "decals.h"
+#include "itempents.h"
 
+void DispatchGibParticle( C_BaseAnimating *pEntity, const char *pszBone, bool bExplosion, int iBloodType )
+{
+	if ( iBloodType != BLOOD_COLOR_RED )
+		return;
+
+	if ( pszBone == NULL )
+		return;
+
+	const char *pszParticle = "blood_advisor_puncture_withdraw";
+
+	if ( bExplosion )
+	{
+		const char *pszExplosionParticles[] = {
+			"blood_advisor_spray_strong",
+			"blood_advisor_spray_strong_2",
+			"blood_advisor_spray_strong_3",
+		};
+
+		pszParticle = pszExplosionParticles[ RandomInt( 0, ARRAYSIZE( pszExplosionParticles ) - 1 ) ];
+	}
+
+	DispatchParticleEffect( pszParticle, PATTACH_BONE_FOLLOW, pEntity, pszBone );
+}
 
 BEGIN_DATADESC( C_ClientPartialRagdoll )
 
@@ -57,8 +81,6 @@ void C_ClientPartialRagdoll::OnRestore()
 	Q_memcpy( m_jointBones.Base(), m_iBoneFlagStorage + 8, sizeof( int ) * 4 );
 }
 
-#include "itempents.h"
-
 void C_ClientPartialRagdoll::ImpactTrace( trace_t *pTrace, int iDamageType, const char *pCustomImpactName )
 {
 	BaseClass::ImpactTrace( pTrace, iDamageType, pCustomImpactName );
@@ -105,17 +127,25 @@ void C_ClientPartialRagdoll::ImpactTrace( trace_t *pTrace, int iDamageType, cons
 	if ( m_bReleaseRagdoll )
 		return;
 
+	const float flGibbingChance = ( ( iDamageType & DMG_BLAST ) != 0 ) ?
+		gstring_gibbing_explosion_chance.GetFloat() : gstring_gibbing_chance.GetFloat();
+
+	if ( RandomFloat() > flGibbingChance / 100.0f )
+		return;
+
 	CStudioHdr *pHdr = GetModelPtr();
 
 	if ( pHdr == NULL )
 		return;
 
 	int iStudioBone = ConvertPhysBoneToStudioBone( this, pTrace->physicsbone );
+	const bool bExplosionImpact = ( iDamageType & DMG_BLAST ) != 0;
 
 	// if the hit bone is a valid studio bone and we know that this bone
 	// is drawn as a normal bone (not shrunken)
 	if ( iStudioBone >= 0
-		&& m_normalBones.IsBitSet( iStudioBone ) )
+		&& m_normalBones.IsBitSet( iStudioBone )
+		|| bExplosionImpact )
 	{
 		CUtlVector< ragdollparams_partial_t > gibModels;
 
@@ -123,20 +153,22 @@ void C_ClientPartialRagdoll::ImpactTrace( trace_t *pTrace, int iDamageType, cons
 		// and try recusive splitting
 		GibbingParamsRecursive_t params;
 		params.pHdr = pHdr;
-		params.pszHitBone = pHdr->pBone( iStudioBone )->pszName();
+		params.pszHitBone = ( iStudioBone >= 0 && !bExplosionImpact ) ? pHdr->pBone( iStudioBone )->pszName() : NULL;
 		params.pszParentName = STRING( m_strRecursiveParent );
 		params.pszRootBone = ( m_iBranchRootBone >= 0 && m_iBranchRootBone < pHdr->numbones() )
 			? pHdr->pBone( m_iBranchRootBone )->pszName() : NULL;
+		params.pJointBones = &m_trunkBones;
 
 		const char *pszParentSplitBone;
 
 		// find a suitable joint to cut
-		if ( C_GibConfig::GetInstance()->GetGibsForGroup( params, gibModels, &pszParentSplitBone ) )
+		if ( C_GibConfig::GetInstance()->GetGibsForGroup( params, gibModels, &pszParentSplitBone )
+			|| bExplosionImpact && C_GibConfig::GetInstance()->GetRandomGibsForGroup( params, gibModels, &pszParentSplitBone ) )
 		{
 			int iSplitboneIndex = Studio_BoneIndexByName( pHdr, pszParentSplitBone );
 
 			// don't do cutting if we cut this joint in the past
-			// or if this join is our current branch root
+			// or if this joint is our current branch root
 			if ( iSplitboneIndex < 0
 				|| m_jointBones.IsBitSet( iSplitboneIndex )
 				|| m_iBranchRootBone == iSplitboneIndex )
@@ -199,6 +231,20 @@ void C_ClientPartialRagdoll::ImpactTrace( trace_t *pTrace, int iDamageType, cons
 				}
 
 				pGib->InitAsClientRagdoll( boneDelta0, boneDelta1, currentBones, boneDt, false, &partial );
+
+				if ( bExplosionImpact
+					&& RandomFloat() <= gstring_gibbing_explosion_recursive_chance.GetFloat() / 100.0f )
+				{
+					pGib->ImpactTrace( pTrace, iDamageType, pCustomImpactName );
+				}
+
+				if ( BloodColor() == BLOOD_COLOR_RED
+					&& ( !pRecursiveRagdoll || !pRecursiveRagdoll->m_bReleaseRagdoll ) )
+				{
+					Assert( pszParentSplitBone != NULL );
+
+					DispatchGibParticle( pGib, pszParentSplitBone, bExplosionImpact, BloodColor() );
+				}
 			}
 
 			// the entity we've cut will be destroyed
@@ -368,7 +414,7 @@ void C_ClientPartialRagdoll::BuildPartial( ragdollparams_partial_t &params )
 					{
 						params.cutBones.AddToTail( pszBone );
 
-						m_trunkBones.Set( LookupBone( pszBone ) );
+						m_trunkBones.Set( i );
 					}
 				}
 				else if ( m_iBranchRootBone < 0 // otherwise it will potentially be visible

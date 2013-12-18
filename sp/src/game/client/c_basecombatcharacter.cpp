@@ -24,6 +24,7 @@
 // Purpose: 
 //-----------------------------------------------------------------------------
 C_BaseCombatCharacter::C_BaseCombatCharacter()
+	: m_iKillDamageType( 0 )
 {
 	for ( int i=0; i < m_iAmmo.Count(); i++ )
 	{
@@ -167,7 +168,10 @@ BEGIN_RECV_TABLE(C_BaseCombatCharacter, DT_BaseCombatCharacter)
 	RecvPropInt( RECVINFO( m_iPowerups ) ),
 #endif
 
-	RecvPropInt( RECVINFO( m_bloodColor ) ), // GSTRINGMIGRATION
+	// GSTRINGMIGRATION
+	RecvPropInt( RECVINFO( m_bloodColor ) ),
+	RecvPropInt( RECVINFO( m_iKillDamageType ) ),
+	// END GSTRINGMIGRATION
 
 END_RECV_TABLE()
 

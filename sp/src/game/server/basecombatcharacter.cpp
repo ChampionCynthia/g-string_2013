@@ -203,7 +203,10 @@ IMPLEMENT_SERVERCLASS_ST(CBaseCombatCharacter, DT_BaseCombatCharacter)
 	SendPropInt( SENDINFO(m_iPowerups), MAX_POWERUPS, SPROP_UNSIGNED ), 
 #endif
 
-	SendPropInt( SENDINFO( m_bloodColor ), 5 ), // GSTRINGMIGRATION
+	// GSTRINGMIGRATION
+	SendPropInt( SENDINFO( m_bloodColor ), 5 ),
+	SendPropInt( SENDINFO( m_iKillDamageType ), -1 ),
+	// END GSTRINGMIGRATION
 
 END_SEND_TABLE()
 
@@ -745,6 +748,8 @@ CBaseCombatCharacter::CBaseCombatCharacter( void )
 	m_impactEnergyScale = 1.0f;
 
 	m_bForceServerRagdoll = ai_force_serverside_ragdoll.GetBool();
+
+	m_iKillDamageType = 0;
 
 #ifdef GLOWS_ENABLE
 	m_bGlowEnabled.Set( false );
@@ -1591,6 +1596,8 @@ void CBaseCombatCharacter::Event_Killed( const CTakeDamageInfo &info )
 
 	// Advance life state to dying
 	m_lifeState = LIFE_DYING;
+
+	m_iKillDamageType = info.GetDamageType(); // GSTRINGMIGRATION
 
 	// Calculate death force
 	Vector forceVector = CalcDamageForceVector( info );
