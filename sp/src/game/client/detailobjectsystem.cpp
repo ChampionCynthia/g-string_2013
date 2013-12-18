@@ -1454,30 +1454,46 @@ CDetailObjectSystem::CDetailObjectSystem() : m_DetailSpriteDict( 0, 32 ), m_Deta
 // GSTRINGMIGRATION
 void CDetailObjectSystem::SetupFlashlightStates()
 {
-	CUtlVector< Frustum_t > flashlightFrusta;
-	EnumFlashlights enumList;
+	C_GstringPlayer *pPlayer = LocalGstringPlayer();
 
-	IWorldRenderList *pWorldRenderList = render->CreateWorldList();
-	WorldListInfo_t *pListInfo = new WorldListInfo_t;
-	VisOverrideData_t vOverride;
-	vOverride.m_vecVisOrigin = CurrentViewOrigin();
-	vOverride.m_fDistToAreaPortalTolerance = FLT_MAX;
-	render->BuildWorldLists( pWorldRenderList, pListInfo, -1, &vOverride );
+	if ( pPlayer == NULL )
+		return;
 
-	ClientLeafSystem()->EnumerateShadowsInLeaves( pListInfo->m_LeafCount, pListInfo->m_pLeafList, &enumList );
-	for ( int i = 0; i < enumList.shadowList.Count(); i++ )
-		flashlightFrusta.AddToTail( shadowmgr->GetFlashlightFrustum( enumList.shadowList[i] ) );
+	ShadowHandle_t shadowHandle = pPlayer->GetFlashlightHandle();
 
-	Assert( enumList.shadowList.Count() == flashlightFrusta.Count() );
+	if ( shadowHandle == SHADOW_HANDLE_INVALID )
+		return;
 
-	SafeRelease( pWorldRenderList );
-	delete pListInfo;
+	//CUtlVector< Frustum_t > flashlightFrusta;
+	//EnumFlashlights enumList;
 
-	if ( flashlightFrusta.Count() > 0 )
+	//IWorldRenderList *pWorldRenderList = render->CreateWorldList();
+	//WorldListInfo_t *pListInfo = new WorldListInfo_t;
+	//VisOverrideData_t vOverride;
+	//vOverride.m_vecVisOrigin = CurrentViewOrigin();
+	//vOverride.m_fDistToAreaPortalTolerance = FLT_MAX;
+	//render->BuildWorldLists( pWorldRenderList, pListInfo, -1, &vOverride );
+
+	//ClientLeafSystem()->EnumerateShadowsInLeaves( pListInfo->m_LeafCount, pListInfo->m_pLeafList, &enumList );
+	//for ( int i = 0; i < enumList.shadowList.Count(); i++ )
+	//	flashlightFrusta.AddToTail( shadowmgr->GetFlashlightFrustum( enumList.shadowList[i] ) );
+
+	//Assert( enumList.shadowList.Count() == flashlightFrusta.Count() );
+
+	//SafeRelease( pWorldRenderList );
+	//delete pListInfo;
+
+	//if ( flashlightFrusta.Count() > 0 )
 	{
-		for ( int i = 0; i < flashlightFrusta.Count(); i++ )
+		for ( int i = 0; i < g_pClientShadowMgr->GetNumShadowDepthtextures(); i++ )
 		{
-			const FlashlightState_t &flState = shadowmgr->GetFlashlightState( enumList.shadowList[i] );
+			ShadowHandle_t handle = g_pClientShadowMgr->GetShadowDepthHandle( i );
+
+			if ( handle != shadowHandle )
+				continue;
+
+			const FlashlightState_t &flState = shadowmgr->GetFlashlightState( handle );
+
 			ITexture *pTex = g_pClientShadowMgr->GetShadowDepthTex( i );
 
 			VMatrix a,b,c,d;
@@ -1504,6 +1520,7 @@ void CDetailObjectSystem::SetupFlashlightStates()
 			entry.world2Texture = d;
 			entry.pDepthTexture = pTex;
 			m_activeFlashlights.AddToTail( entry );
+			break;
 		}
 	}
 }

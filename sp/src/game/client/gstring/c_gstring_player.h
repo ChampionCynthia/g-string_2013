@@ -41,10 +41,16 @@ public:
 	virtual void GetRagdollInitBoneArrays( matrix3x4_t *pDeltaBones0, matrix3x4_t *pDeltaBones1, matrix3x4_t *pCurrentBones, float boneDt );
 	C_ClientRagdoll *CreateRagdollCopyInstance();
 
+	static ShadowHandle_t GetFlashlightHandle();
+	static bool ShouldFirstpersonModelCastShadow();
+
 protected:
 
 private:
 	void UpdateBodyModel();
+
+	CNetworkVar( unsigned char, m_nReloadParity );
+	unsigned char m_nOldReloadParity;
 
 	CNetworkVar( bool, m_bNightvisionActive );
 
@@ -76,6 +82,7 @@ private:
 	bool m_bBodyWasInAir;
 	bool m_bBodyWasHidden;
 	bool m_bBodyPlayingLandAnim;
+	int m_iBodyNextAttackLayer;
 };
 
 inline C_GstringPlayer *ToGstringPlayer( C_BaseEntity *pPlayer )

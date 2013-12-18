@@ -9,6 +9,7 @@ static ConVar gstring_nightvision_override( "gstring_nightvision_override", "0",
 BEGIN_DATADESC( CGstringPlayer )
 
 	DEFINE_FIELD( m_bNightvisionActive, FIELD_BOOLEAN ),
+	DEFINE_FIELD( m_nReloadParity, FIELD_CHARACTER ),
 
 END_DATADESC()
 
@@ -16,6 +17,7 @@ IMPLEMENT_SERVERCLASS_ST( CGstringPlayer, DT_CGstringPlayer )
 
 	SendPropBool( SENDINFO( m_bNightvisionActive ) ),
 	SendPropBool( SENDINFO( m_bHasUseEntity ) ),
+	SendPropInt( SENDINFO( m_nReloadParity ), EF_MUZZLEFLASH_BITS, SPROP_UNSIGNED ),
 
 END_SEND_TABLE()
 
@@ -50,6 +52,11 @@ void CGstringPlayer::Spawn()
 	BaseClass::Spawn();
 
 	SetModel( "models/humans/group02/female_04.mdl" );
+}
+
+void CGstringPlayer::DoReloadAnim()
+{
+	m_nReloadParity = (m_nReloadParity+1) & ((1 << EF_MUZZLEFLASH_BITS) - 1);
 }
 
 bool CGstringPlayer::IsNightvisionActive() const

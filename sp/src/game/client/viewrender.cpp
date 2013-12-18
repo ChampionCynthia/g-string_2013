@@ -904,6 +904,13 @@ view_id_t CurrentViewID()
 	return ( view_id_t )g_CurrentViewID;
 }
 
+// GSTRINGMIGRATION
+bool IsCurrentViewIdAccessAllowed()
+{
+	return g_CurrentViewID != VIEW_ILLEGAL;
+}
+// END GSTRINGMIGRATION
+
 //-----------------------------------------------------------------------------
 // Purpose: Portal views are considered 'Main' views. This function tests a view id 
 //			against all view ids used by portal renderables, as well as the main view.
@@ -6465,8 +6472,15 @@ void CReflectiveGlassView::Draw()
 	// Disable occlusion visualization in reflection
 	bool bVisOcclusion = r_visocclusion.GetInt();
 	r_visocclusion.SetValue( 0 );
-				   
+
+	// GSTRINGMIGRATION
+	int lastView = g_CurrentViewID;
+	g_CurrentViewID = VIEW_REFLECTION;
+	// END GSTRINGMIGRATION
+
 	BaseClass::Draw();
+
+	g_CurrentViewID = lastView; // GSTRINGMIGRATION
 
 	r_visocclusion.SetValue( bVisOcclusion );
 

@@ -15,6 +15,8 @@ public:
 	virtual void BuildTransformations( CStudioHdr *hdr, Vector *pos, Quaternion *q,
 		const matrix3x4_t &cameraTransform, int boneMask, CBoneBitList &boneComputed );
 
+	virtual RenderGroup_t GetRenderGroup() { return RENDER_GROUP_OPAQUE_ENTITY; }
+
 private:
 	int m_iBoneHead;
 };

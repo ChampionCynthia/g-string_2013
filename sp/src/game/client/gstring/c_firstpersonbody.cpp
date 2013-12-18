@@ -16,6 +16,8 @@ C_FirstpersonBody::C_FirstpersonBody()
 	, m_iBoneArmL( -1 )
 	, m_iBoneArmR( -1 )
 	, m_iPoseParam_MoveYaw( -1 )
+	, m_bBonescalingEnabled( true )
+	, m_vecPlayerOrigin( vec3_origin )
 {
 }
 
@@ -34,6 +36,11 @@ CStudioHdr *C_FirstpersonBody::OnNewModel()
 ShadowType_t C_FirstpersonBody::ShadowCastType()
 {
 	return SHADOWS_SIMPLE;
+}
+
+bool C_FirstpersonBody::ShouldReceiveProjectedTextures( int flags )
+{
+	return true;
 }
 
 void C_FirstpersonBody::BuildTransformations( CStudioHdr *hdr, Vector *pos, Quaternion *q,
@@ -169,9 +176,10 @@ void C_FirstpersonBody::BuildTransformations( CStudioHdr *hdr, Vector *pos, Quat
 			MatrixScaleBy( gstring_firstpersonbody_scale.GetFloat(), GetBoneForWrite( i ) );
 		}
 
-		if ( i == m_iBoneNeck
+		if ( m_bBonescalingEnabled
+			&& ( i == m_iBoneNeck
 			|| i == m_iBoneArmR
-			|| i == m_iBoneArmL )
+			|| i == m_iBoneArmL ) )
 		{
 			MatrixScaleBy( gstring_firstpersonbody_hiddenbone_scale.GetFloat(), GetBoneForWrite( i ) );
 		}
@@ -198,8 +206,80 @@ void C_FirstpersonBody::FireEvent( const Vector& origin, const QAngle& angles, i
 
 int C_FirstpersonBody::DrawModel( int flags )
 {
-	if ( CurrentViewID() == VIEW_SHADOW_DEPTH_TEXTURE )
+	if ( CurrentViewID() == VIEW_SHADOW_DEPTH_TEXTURE
+		&& !C_GstringPlayer::ShouldFirstpersonModelCastShadow() )
+	{
 		return 0;
+	}
 
-	return BaseClass::DrawModel( flags );
+	if ( IsInThirdPersonView() )
+	{
+		m_bBonescalingEnabled = false;
+	}
+
+	InvalidateBoneCache();
+	SetupBones( NULL, -1, BONE_USED_BY_ANYTHING, gpGlobals->curtime );
+
+	int ret = BaseClass::DrawModel( flags );
+	m_bBonescalingEnabled = true;
+
+	return ret;
+}
+
+void C_FirstpersonBody::StudioFrameAdvance()
+{
+	BaseClass::StudioFrameAdvance();
+
+	for ( int i = 0; i < GetNumAnimOverlays(); i++ )
+	{
+		C_AnimationLayer *pLayer = GetAnimOverlay( i );
+
+		if ( pLayer->m_nSequence < 0 )
+		{
+			continue;
+		}
+
+		float rate = GetSequenceCycleRate( GetModelPtr(), pLayer->m_nSequence );
+
+		pLayer->m_flCycle += rate * gpGlobals->frametime;
+
+		if ( pLayer->m_flCycle > 1.0f )
+		{
+			pLayer->m_nSequence = 1;
+			pLayer->m_flWeight = 0.0f;
+		}
+	}
+}
+
+const Vector &C_FirstpersonBody::GetRenderOrigin()
+{
+	if ( IsInThirdPersonView()
+		&& CurrentViewID() != VIEW_SHADOW_DEPTH_TEXTURE )
+		return m_vecPlayerOrigin;
+
+	return BaseClass::GetRenderOrigin();
+}
+
+void C_FirstpersonBody::GetRenderBounds( Vector &mins, Vector &maxs )
+{
+	mins.Init( -32, -32, 0.0f );
+	maxs.Init( 32, 32, 96.0f );
+}
+
+void C_FirstpersonBody::SetPlayerOrigin( const Vector &origin )
+{
+	m_vecPlayerOrigin = origin;
+}
+
+bool C_FirstpersonBody::IsInThirdPersonView()
+{
+	if ( !IsCurrentViewIdAccessAllowed() )
+		return false;
+
+	const int viewId = CurrentViewID();
+
+	return viewId == VIEW_SHADOW_DEPTH_TEXTURE
+		|| viewId == VIEW_REFLECTION
+		|| viewId == VIEW_REFRACTION
+		|| viewId == VIEW_MONITOR;
 }

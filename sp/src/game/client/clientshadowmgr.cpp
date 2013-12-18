@@ -860,11 +860,27 @@ private:
 	// GSTRINGMIGRATION
 public:
 	ShadowHandle_t GetShadowHandle( ClientShadowHandle_t clienthandle ){ return m_Shadows[ clienthandle ].m_ShadowHandle; };
+	virtual ShadowHandle_t GetActiveDepthTextureHandle() { return m_ActiveDepthTextureHandle; }
+
 	int GetNumShadowDepthtextures(){ return m_DepthTextureCache.Count(); };
 	CTextureReference GetShadowDepthTex( int num ){ return m_DepthTextureCache[num]; };
+	virtual ShadowHandle_t GetShadowDepthHandle( int num )
+	{
+		if ( num < 0 || num >= ARRAYSIZE( m_ActiveDepthTextureShadows ) )
+			return SHADOW_HANDLE_INVALID;
+
+		ClientShadowHandle_t handle = m_ActiveDepthTextureShadows[ num ];
+
+		if ( handle == CLIENTSHADOW_INVALID_HANDLE )
+			return SHADOW_HANDLE_INVALID;
+
+		return m_Shadows[ handle ].m_ShadowHandle;
+	}
 
 	ShadowType_t GetActualShadowCastType( ClientShadowHandle_t handle ) const;
 private:
+	ClientShadowHandle_t m_ActiveDepthTextureShadows[ 64 ];
+	ShadowHandle_t m_ActiveDepthTextureHandle;
 	// END GSTRINGMIGRATION
 	ShadowType_t GetActualShadowCastType( IClientRenderable *pRenderable ) const;
 
@@ -1184,6 +1200,10 @@ CClientShadowMgr::CClientShadowMgr() :
 {
 	m_nDepthTextureResolution = r_flashlightdepthres.GetInt();
 	m_bThreaded = false;
+
+// GSTRINGMIGRATION
+	m_ActiveDepthTextureHandle = SHADOW_HANDLE_INVALID;
+// END GSTRINGMIGRATION
 }
 
 
@@ -3951,6 +3971,13 @@ void CClientShadowMgr::ComputeShadowDepthTextures( const CViewSetup &viewSetup )
 	ClientShadowHandle_t pActiveDepthShadows[1024];
 	int nActiveDepthShadowCount = BuildActiveShadowDepthList( viewSetup, ARRAYSIZE( pActiveDepthShadows ), pActiveDepthShadows );
 
+	// GSTRINGMIGRATION
+	for ( int i = 0; i < m_nMaxDepthTextureShadows; i++ )
+		m_ActiveDepthTextureShadows[ i ] = SHADOW_HANDLE_INVALID;
+
+	Assert( m_nMaxDepthTextureShadows < ARRAYSIZE( m_ActiveDepthTextureShadows ) );
+	// END GSTRINGMIGRATION
+
 	// Iterate over all existing textures and allocate shadow textures
 	bool bDebugFrustum = r_flashlightdrawfrustum.GetBool();
 	for ( int j = 0; j < nActiveDepthShadowCount; ++j )
@@ -3980,6 +4007,11 @@ void CClientShadowMgr::ComputeShadowDepthTextures( const CViewSetup &viewSetup )
 			// END GSTRINGMIGRATION
 			continue;
 		}
+
+		// GSTRINGMIGRATION
+		m_ActiveDepthTextureHandle = shadow.m_ShadowHandle;
+		m_ActiveDepthTextureShadows[ j ] = shadow.m_ShadowHandle;
+		// END GSTRINGMIGRATION
 
 		CViewSetup shadowView;
 		shadowView.m_flAspectRatio = 1.0f;
@@ -4022,6 +4054,8 @@ void CClientShadowMgr::ComputeShadowDepthTextures( const CViewSetup &viewSetup )
 
 			shadowmgr->UpdateFlashlightState( shadow.m_ShadowHandle, state );
 		}
+
+		m_ActiveDepthTextureHandle = SHADOW_HANDLE_INVALID;
 		// END GSTRINGMIGRATION
 
 		// Associate the shadow depth texture and stencil bit with the flashlight for use during scene rendering

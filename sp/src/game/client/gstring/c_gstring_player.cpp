@@ -40,6 +40,7 @@ IMPLEMENT_CLIENTCLASS_DT( C_GstringPlayer, DT_CGstringPlayer, CGstringPlayer )
 
 	RecvPropBool( RECVINFO( m_bNightvisionActive ) ),
 	RecvPropBool( RECVINFO( m_bHasUseEntity ) ),
+	RecvPropInt( RECVINFO( m_nReloadParity )),
 
 END_RECV_TABLE()
 
@@ -62,7 +63,10 @@ C_GstringPlayer::C_GstringPlayer()
 	, m_bBodyWasInAir( false )
 	, m_bBodyPlayingLandAnim( false )
 	, m_bBodyWasHidden( false )
+	, m_nOldReloadParity( 0 )
+	, m_iBodyNextAttackLayer( 0 )
 {
+	m_nReloadParity = 0;
 	m_bHasUseEntity = false;
 	m_vecBodyOffset.Init( -gstring_firstpersonbody_forwardoffset_min.GetFloat(), 0, 0 );
 }
@@ -102,6 +106,9 @@ void C_GstringPlayer::OnDataChanged( DataUpdateType_t updateType )
 	if ( updateType == DATA_UPDATE_CREATED )
 	{
 		SetNextClientThink( CLIENT_THINK_ALWAYS );
+
+		ConVarRef scissor( "r_flashlightscissor" );
+		scissor.SetValue( "0" );
 	}
 	else
 	{
@@ -132,6 +139,23 @@ void C_GstringPlayer::ClientThink()
 		DisableMuzzleFlash();
 
 		ProcessMuzzleFlashEvent();
+	}
+
+	if ( m_nOldReloadParity != m_nReloadParity )
+	{
+		m_nOldReloadParity = m_nReloadParity;
+
+		C_BaseCombatWeapon *pWeapon = GetActiveWeapon();
+
+		if ( m_pBodyModel != NULL
+			&& pWeapon != NULL )
+		{
+			C_AnimationLayer *pLayer = m_pBodyModel->GetAnimOverlay( 3 );
+
+			pLayer->m_nSequence = m_pBodyModel->SelectWeightedSequence( pWeapon->ActivityOverride( ACT_GESTURE_RELOAD, NULL ) );
+			pLayer->m_flWeight = 1.0f;
+			pLayer->m_flCycle = 0.0f;
+		}
 	}
 
 	UpdateBodyModel();
@@ -296,6 +320,24 @@ void C_GstringPlayer::ProcessMuzzleFlashEvent()
 	m_flMuzzleFlashDuration = RandomFloat( 0.025f, 0.045f );
 	m_flMuzzleFlashTime = gpGlobals->curtime + m_flMuzzleFlashDuration;
 	m_flMuzzleFlashRoll = RandomFloat( 0, 360.0f );
+
+	C_BaseCombatWeapon *pWeapon = GetActiveWeapon();
+
+	if ( m_pBodyModel != NULL
+		&& pWeapon != NULL )
+	{
+		C_AnimationLayer *pLayer = m_pBodyModel->GetAnimOverlay( m_iBodyNextAttackLayer );
+
+		m_iBodyNextAttackLayer++;
+		if ( m_iBodyNextAttackLayer >= 3 )
+		{
+			m_iBodyNextAttackLayer = 0;
+		}
+
+		pLayer->m_nSequence = m_pBodyModel->SelectWeightedSequence( pWeapon->ActivityOverride( ACT_GESTURE_RANGE_ATTACK1, NULL ) );
+		pLayer->m_flWeight = 1.0f;
+		pLayer->m_flCycle = 0.0f;
+	}
 }
 
 void C_GstringPlayer::UpdateFlashlight()
@@ -317,9 +359,6 @@ void C_GstringPlayer::UpdateFlashlight()
 
 	if ( m_bFlashlightVisible )
 	{
-		ConVarRef scissor( "r_flashlightscissor" );
-		scissor.SetValue( "0" );
-
 		C_BaseViewModel *pViewModel = GetViewModel();
 
 		if ( pViewModel != NULL
@@ -412,6 +451,62 @@ void C_GstringPlayer::UpdateFlashlight()
 	}
 }
 
+ShadowHandle_t C_GstringPlayer::GetFlashlightHandle()
+{
+	C_GstringPlayer *pPlayer = LocalGstringPlayer();
+
+	if ( pPlayer )
+	{
+		if ( pPlayer->m_pFlashlight )
+			return pPlayer->m_pFlashlight->GetFlashlightHandle();
+
+		if ( pPlayer->m_pMuzzleFlashEffect )
+			return pPlayer->m_pMuzzleFlashEffect->GetFlashlightHandle();
+	}
+
+	return SHADOW_HANDLE_INVALID;
+}
+
+bool C_GstringPlayer::ShouldFirstpersonModelCastShadow()
+{
+	C_GstringPlayer *pPlayer = LocalGstringPlayer();
+
+	if ( pPlayer )
+	{
+		if ( pPlayer->m_pFlashlight )
+		{
+			ClientShadowHandle_t clientHandle = pPlayer->m_pFlashlight->GetFlashlightHandle();
+
+			ShadowHandle_t shadowHandle = ( clientHandle != CLIENTSHADOW_INVALID_HANDLE ) ?
+				g_pClientShadowMgr->GetShadowHandle( clientHandle ) : SHADOW_HANDLE_INVALID;
+
+			if ( shadowHandle != SHADOW_HANDLE_INVALID
+				&& shadowHandle == g_pClientShadowMgr->GetActiveDepthTextureHandle() )
+			{
+				return false;
+			}
+		}
+
+		if ( pPlayer->m_pMuzzleFlashEffect )
+		{
+			ClientShadowHandle_t clientHandle = pPlayer->m_pMuzzleFlashEffect->GetFlashlightHandle();
+
+			ShadowHandle_t shadowHandle = ( clientHandle != CLIENTSHADOW_INVALID_HANDLE ) ?
+				g_pClientShadowMgr->GetShadowHandle( clientHandle ) : SHADOW_HANDLE_INVALID;
+
+			if ( shadowHandle != SHADOW_HANDLE_INVALID
+				&& shadowHandle == g_pClientShadowMgr->GetActiveDepthTextureHandle() )
+			{
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	return false;
+}
+
 bool C_GstringPlayer::IsRenderingFlashlight() const
 {
 	return m_bFlashlightVisible;
@@ -448,10 +543,28 @@ void C_GstringPlayer::UpdateBodyModel()
 
 	if ( m_pBodyModel == NULL )
 	{
+		const char *pszModel = "models/humans/group02/female_04.mdl";
+
 		m_pBodyModel = new C_FirstpersonBody();
-		m_pBodyModel->InitializeAsClientEntity( "models/humans/group02/female_04.mdl", RENDER_GROUP_OPAQUE_ENTITY );
-		m_pBodyModel->Spawn();
+		m_pBodyModel->InitializeAsClientEntity( pszModel, RENDER_GROUP_OPAQUE_ENTITY );
+		m_pBodyModel->SetModelName( pszModel );
+
+		m_pBodyModel->SetNumAnimOverlays( 4 );
+
+		for ( int i = 0; i < m_pBodyModel->GetNumAnimOverlays(); i++ )
+		{
+			m_pBodyModel->GetAnimOverlay( i )->Reset();
+			m_pBodyModel->GetAnimOverlay( i )->SetOrder( i );
+		}
+
+		//m_pBodyModel->Spawn();
 		m_pBodyModel->AddEffects( EF_NOINTERP );
+		m_pBodyModel->AddEFlags( EFL_USE_PARTITION_WHEN_NOT_SOLID );
+
+		m_pBodyModel->UpdatePartitionListEntry();
+		m_pBodyModel->UpdateVisibility();
+
+		m_pBodyModel->DestroyShadow();
 	}
 
 	QAngle angle = GetRenderAngles();
@@ -513,11 +626,13 @@ void C_GstringPlayer::UpdateBodyModel()
 	Vector origin = GetRenderOrigin() + fwd * m_vecBodyOffset.x
 		+ right * m_vecBodyOffset.y
 		+ up * m_vecBodyOffset.z;
+	Vector playerOrigin = GetRenderOrigin();
 
 	if ( !bDuck
 		|| m_Local.m_bInDuckJump && bInAir )
 	{
 		origin.z += GetViewOffset().z - VEC_VIEW.z;
+		playerOrigin.z += GetViewOffset().z - VEC_VIEW.z;
 	}
 	else if ( bDuck && flViewPitch < -20.0f ) // hide body when ducking and looking up
 	{
@@ -527,6 +642,7 @@ void C_GstringPlayer::UpdateBodyModel()
 	m_pBodyModel->m_EntClientFlags |= ENTCLIENTFLAG_DONTUSEIK;
 	m_pBodyModel->SetAbsOrigin( origin );
 	m_pBodyModel->SetAbsAngles( angle );
+	m_pBodyModel->SetPlayerOrigin( playerOrigin );
 
 	Activity actDesired = ACT_IDLE;
 	float flPlaybackrate = 1.0f;
@@ -590,11 +706,11 @@ void C_GstringPlayer::UpdateBodyModel()
 		float flYaw = atan2( vecVelocity.y, vecVelocity.x );
 		flYaw = AngleNormalizePositive( flYaw );
 
-		if ( m_bBodyWasMoving )
-		{
-			m_flBodyYawLast = ApproachAngle( flYaw, m_flBodyYawLast, gpGlobals->frametime * 10.0f );
-		}
-		else
+		//if ( m_bBodyWasMoving )
+		//{
+		//	m_flBodyYawLast = ApproachAngle( flYaw, m_flBodyYawLast, gpGlobals->frametime * 10.0f );
+		//}
+		//else
 		{
 			m_flBodyYawLast = flYaw;
 		}
@@ -604,10 +720,26 @@ void C_GstringPlayer::UpdateBodyModel()
 
 	m_bBodyWasMoving = bDoMoveYaw;
 
+	C_BaseCombatWeapon *pWeapon = GetActiveWeapon();
+
+	if ( pWeapon != NULL )
+	{
+		actDesired = pWeapon->ActivityOverride( actDesired, NULL );
+
+		pWeapon->FollowEntity( m_pBodyModel );
+	}
+
 	if ( m_pBodyModel->GetSequenceActivity( m_pBodyModel->GetSequence() )
 		!= actDesired )
 	{
-		m_pBodyModel->SetSequence( m_pBodyModel->SelectWeightedSequence( actDesired ) );
+		int sequence = m_pBodyModel->SelectWeightedSequence( actDesired );
+
+		Assert( sequence >= 0 );
+
+		if ( sequence >= 0 )
+		{
+			m_pBodyModel->SetSequence( sequence );
+		}
 	}
 
 	if ( !bInAir && bMoving )

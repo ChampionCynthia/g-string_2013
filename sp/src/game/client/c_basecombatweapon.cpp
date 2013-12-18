@@ -17,6 +17,10 @@
 #include "toolframework/itoolframework.h"
 #include "toolframework_client.h"
 
+#include "viewrender.h"
+#include "view.h"
+#include "view_shared.h"
+
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -80,6 +84,8 @@ void C_BaseCombatWeapon::NotifyShouldTransmit( ShouldTransmitState_t state )
 //-----------------------------------------------------------------------------
 static inline bool ShouldDrawLocalPlayerViewModel( void )
 {
+	return false; // GSTRINGMIGRATION
+
 #if defined( PORTAL )
 	return false;
 #else
@@ -388,7 +394,6 @@ bool C_BaseCombatWeapon::GetShootPosition( Vector &vOrigin, QAngle &vAngles )
 	return false;
 }
 
-
 //-----------------------------------------------------------------------------
 // Purpose: 
 // Output : Returns true on success, false on failure.
@@ -421,7 +426,8 @@ bool C_BaseCombatWeapon::ShouldDraw( void )
 		if ( !bIsActive )
 			return false;
 
-		if ( !pOwner->ShouldDraw() )
+		if ( !pOwner->ShouldDraw()
+			&& pOwner != C_BasePlayer::GetLocalPlayer() ) // GSTRINGMIGRATION
 		{
 			// Our owner is invisible.
 			// This also tests whether the player is zoomed in, in which case you don't want to draw the weapon.
@@ -433,7 +439,7 @@ bool C_BaseCombatWeapon::ShouldDraw( void )
 			return true;
 
 		// don't draw active weapon if not in some kind of 3rd person mode, the viewmodel will do that
-		return false;
+		return true; // GSTRINGMIGRATION
 	}
 
 	// If it's a player, then only show active weapons
@@ -486,8 +492,23 @@ int C_BaseCombatWeapon::DrawModel( int flags )
 		
 		if ( localplayer->GetObserverMode() == OBS_MODE_IN_EYE &&
 			 localplayer->GetObserverTarget() == GetOwner() ) 
-			return false;
+			return 0;
 	}
+
+	// GSTRINGMIGRATION
+	if ( localplayer
+		&& GetOwner() == localplayer )
+	{
+		if ( CurrentViewID() != VIEW_REFLECTION
+			&& CurrentViewID() != VIEW_REFRACTION
+			&& CurrentViewID() != VIEW_MONITOR
+			&& CurrentViewID() != VIEW_SHADOW_DEPTH_TEXTURE )
+			return 0;
+
+		SetAbsOrigin( localplayer->GetAbsOrigin() );
+		RemoveEffects( EF_NODRAW );
+	}
+	// END GSTRINGMIGRATION
 
 	return BaseClass::DrawModel( flags );
 }

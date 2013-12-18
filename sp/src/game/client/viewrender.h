@@ -82,6 +82,8 @@ enum view_id_t
 };
 view_id_t CurrentViewID();
 
+bool IsCurrentViewIdAccessAllowed(); // GSTRINGMIGRATION
+
 //-----------------------------------------------------------------------------
 // Purpose: Stored pitch drifting variables
 //-----------------------------------------------------------------------------

@@ -14,6 +14,8 @@ public:
 
 	float GetHorizontalFOV() const { return m_flHorizontalFOV; }
 
+	ClientShadowHandle_t GetFlashlightHandle( void ) { return m_FlashlightHandle; }
+
 protected:
 
 	void UpdateLightNew(const Vector &vecPos, const Vector &vecDir, const Vector &vecRight, const Vector &vecUp);

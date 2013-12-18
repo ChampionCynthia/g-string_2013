@@ -26,6 +26,8 @@ public:
 	virtual bool ShouldGib( const CTakeDamageInfo &info );
 	virtual bool CanBecomeRagdoll();
 
+	virtual void DoReloadAnim();
+
 protected:
 
 private:
@@ -33,6 +35,7 @@ private:
 	CNetworkVar( bool, m_bNightvisionActive );
 
 	CNetworkVar( bool, m_bHasUseEntity );
+	CNetworkVar( unsigned char, m_nReloadParity );
 
 };
 

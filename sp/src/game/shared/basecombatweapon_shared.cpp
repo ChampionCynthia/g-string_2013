@@ -38,6 +38,12 @@
 
 #endif
 
+// GSTRINGMIGRATION
+#ifdef GAME_DLL
+#include "gstring\cgstring_player.h"
+#endif
+// END GSTRINGMIGRATION
+
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -1991,6 +1997,17 @@ bool CBaseCombatWeapon::DefaultReload( int iClipSize1, int iClipSize2, int iActi
 
 	if ( !bReload )
 		return false;
+
+	// GSTRINGMIGRATION
+#ifdef GAME_DLL
+	CGstringPlayer *pPlayer = ToGstringPlayer( pOwner );
+
+	if ( pPlayer )
+	{
+		pPlayer->DoReloadAnim();
+	}
+#endif
+	// END GSTRINGMIGRATION
 
 #ifdef CLIENT_DLL
 	// Play reload
