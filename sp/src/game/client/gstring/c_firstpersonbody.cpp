@@ -253,8 +253,10 @@ void C_FirstpersonBody::StudioFrameAdvance()
 
 const Vector &C_FirstpersonBody::GetRenderOrigin()
 {
-	if ( IsInThirdPersonView()
-		&& CurrentViewID() != VIEW_SHADOW_DEPTH_TEXTURE )
+	const int viewId = CurrentViewID();
+
+	if ( viewId == VIEW_REFLECTION
+		|| viewId == VIEW_MONITOR )
 		return m_vecPlayerOrigin;
 
 	return BaseClass::GetRenderOrigin();

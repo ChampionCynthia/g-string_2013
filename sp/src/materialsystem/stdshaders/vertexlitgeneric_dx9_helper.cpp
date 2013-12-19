@@ -1325,11 +1325,6 @@ static void DrawVertexLitGeneric_DX9_Internal( CBaseVSShader *pShader, IMaterial
 		float fWriteWaterFogToDestAlpha = bWriteWaterFogToAlpha ? 1 : 0;
 		float fVertexAlpha = bHasVertexAlpha ? 1 : 0;
 
-		// GSTRINGMIGRATION
-		if ( bHasFlashlight && !bVertexLitGeneric )
-			fVertexAlpha = 0.0f;
-		// END GSTRINGMIGRATION
-
 		// Controls for lerp-style paths through shader code (bump and non-bump have use different register)
 		float vShaderControls[4] = { fPixelFogType, fWriteDepthToAlpha, fWriteWaterFogToDestAlpha, fVertexAlpha	 };
 		DynamicCmdsOut.SetPixelShaderConstant( 12, vShaderControls, 1 );
