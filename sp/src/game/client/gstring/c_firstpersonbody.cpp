@@ -217,8 +217,12 @@ int C_FirstpersonBody::DrawModel( int flags )
 		m_bBonescalingEnabled = false;
 	}
 
-	InvalidateBoneCache();
-	SetupBones( NULL, -1, BONE_USED_BY_ANYTHING, gpGlobals->curtime );
+	{
+		CBaseAnimating::AutoAllowBoneAccess boneAccess( true, false );
+
+		InvalidateBoneCache();
+		SetupBones( NULL, -1, BONE_USED_BY_ANYTHING, gpGlobals->curtime );
+	}
 
 	int ret = BaseClass::DrawModel( flags );
 	m_bBonescalingEnabled = true;
@@ -241,11 +245,11 @@ void C_FirstpersonBody::StudioFrameAdvance()
 
 		float rate = GetSequenceCycleRate( GetModelPtr(), pLayer->m_nSequence );
 
-		pLayer->m_flCycle += rate * gpGlobals->frametime;
+		pLayer->m_flCycle += pLayer->m_flPlaybackRate * rate * gpGlobals->frametime;
 
 		if ( pLayer->m_flCycle > 1.0f )
 		{
-			pLayer->m_nSequence = 1;
+			pLayer->m_nSequence = -1;
 			pLayer->m_flWeight = 0.0f;
 		}
 	}
@@ -253,6 +257,9 @@ void C_FirstpersonBody::StudioFrameAdvance()
 
 const Vector &C_FirstpersonBody::GetRenderOrigin()
 {
+	if ( !IsCurrentViewIdAccessAllowed() )
+		return BaseClass::GetRenderOrigin();
+
 	const int viewId = CurrentViewID();
 
 	if ( viewId == VIEW_REFLECTION
@@ -282,6 +289,6 @@ bool C_FirstpersonBody::IsInThirdPersonView()
 
 	return viewId == VIEW_SHADOW_DEPTH_TEXTURE
 		|| viewId == VIEW_REFLECTION
-		|| viewId == VIEW_REFRACTION
+		//|| viewId == VIEW_REFRACTION
 		|| viewId == VIEW_MONITOR;
 }

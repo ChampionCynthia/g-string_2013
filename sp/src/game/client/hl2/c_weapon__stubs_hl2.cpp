@@ -68,7 +68,7 @@ acttable_t *C_##className::ActivityList( void ) { return actTable; } \
 
 acttable_t tableAR2[] = {
 	{ ACT_IDLE,				ACT_IDLE_AR2,	false },
-	{ ACT_RUN,				ACT_RUN_AR2,	false },
+	{ ACT_RUN,				ACT_RUN_AIM_AR2_STIMULATED,	false },
 	{ ACT_RUN_CROUCH,		ACT_RUN_CROUCH_AIM_RIFLE,	false },
 	{ ACT_GESTURE_RANGE_ATTACK1,		ACT_GESTURE_RANGE_ATTACK_AR2,	false },
 	{ ACT_GESTURE_RELOAD,				ACT_GESTURE_RELOAD_AR2,	false },
@@ -86,7 +86,7 @@ STUB_WEAPON_CLASS_ACTTABLE( weapon_pistol, WeaponPistol, C_BaseHLCombatWeapon, t
 
 acttable_t tableSmg1[] = {
 	{ ACT_IDLE,				ACT_IDLE_SMG1,	false },
-	{ ACT_RUN,				ACT_RUN_AIM_RIFLE,	false },
+	{ ACT_RUN,				ACT_RUN_AIM_RIFLE_STIMULATED,	false },
 	{ ACT_RUN_CROUCH,		ACT_RUN_CROUCH_AIM_RIFLE,	false },
 	{ ACT_GESTURE_RANGE_ATTACK1,		ACT_GESTURE_RANGE_ATTACK_SMG1,	false },
 	{ ACT_GESTURE_RELOAD,				ACT_GESTURE_RELOAD_SMG1,	false },
@@ -115,7 +115,7 @@ acttable_t tableShotgun[] = {
 STUB_WEAPON_CLASS_ACTTABLE( weapon_shotgun, WeaponShotgun, C_BaseHLCombatWeapon, tableShotgun );
 
 acttable_t tableCrowbar[] = {
-	{ ACT_IDLE,				ACT_IDLE_ANGRY,	false },
+	{ ACT_IDLE,				ACT_IDLE_PISTOL,	false },
 	{ ACT_GESTURE_RANGE_ATTACK1,		ACT_GESTURE_RANGE_ATTACK_SHOTGUN,	false },
 };
 STUB_WEAPON_CLASS_ACTTABLE( weapon_crowbar, WeaponCrowbar, C_BaseHLBludgeonWeapon, tableCrowbar );

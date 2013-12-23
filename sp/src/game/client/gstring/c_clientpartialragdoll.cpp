@@ -211,7 +211,7 @@ void C_ClientPartialRagdoll::ImpactTrace( trace_t *pTrace, int iDamageType, cons
 					partial.rootBone = pHdr->pBone( m_iBranchRootBone )->pszName();
 				}
 
-				C_BaseAnimating *pGib = CreateRagdollCopy( i == 0 );
+				C_BaseAnimating *pGib = CreateRagdollCopy( false );
 
 				C_ClientPartialRagdoll *pRecursiveRagdoll = dynamic_cast< C_ClientPartialRagdoll* >( pGib );
 

@@ -153,8 +153,25 @@ void C_GstringPlayer::ClientThink()
 			C_AnimationLayer *pLayer = m_pBodyModel->GetAnimOverlay( 3 );
 
 			pLayer->m_nSequence = m_pBodyModel->SelectWeightedSequence( pWeapon->ActivityOverride( ACT_GESTURE_RELOAD, NULL ) );
-			pLayer->m_flWeight = 1.0f;
-			pLayer->m_flCycle = 0.0f;
+
+			if ( pLayer->m_nSequence >= 0 )
+			{
+				pLayer->m_flWeight = 1.0f;
+				pLayer->m_flCycle = 0.0f;
+
+				C_BaseAnimating *pViewModel = GetViewModel( 0 );
+
+				if ( pViewModel != NULL
+					&& pViewModel->GetSequence() >= 0
+					&& pViewModel->GetSequenceActivity( pViewModel->GetSequence() ) == ACT_VM_RELOAD )
+				{
+					pLayer->m_flPlaybackRate = m_pBodyModel->SequenceDuration( pLayer->m_nSequence ) / pViewModel->SequenceDuration();
+				}
+				else
+				{
+					pLayer->m_flPlaybackRate = 1.0f;
+				}
+			}
 		}
 	}
 
@@ -337,6 +354,7 @@ void C_GstringPlayer::ProcessMuzzleFlashEvent()
 		pLayer->m_nSequence = m_pBodyModel->SelectWeightedSequence( pWeapon->ActivityOverride( ACT_GESTURE_RANGE_ATTACK1, NULL ) );
 		pLayer->m_flWeight = 1.0f;
 		pLayer->m_flCycle = 0.0f;
+		pLayer->m_flPlaybackRate = 1.0f;
 	}
 }
 
@@ -585,6 +603,7 @@ void C_GstringPlayer::UpdateBodyModel()
 		|| m_Local.m_bDucking;
 	const bool bMoving = flSpeed > flMovingMinSpeed;
 	bool bIsHidden = false;
+	const bool bFalling = GetAbsVelocity().z < -300;
 
 	// move body backwards while ducked
 	float flBackOffsetSpeed = 35.0f;
@@ -595,8 +614,8 @@ void C_GstringPlayer::UpdateBodyModel()
 		0, 0 );
 
 	// hide body while falling/swimming
-	if ( GetAbsVelocity().z < -300
-		|| GetWaterLevel() >= WL_Eyes )
+	if ( /*GetAbsVelocity().z < -300
+		||*/ GetWaterLevel() >= WL_Eyes )
 	{
 		vecOffsetDesired.x = -110.0f;
 		vecOffsetDesired.z = 200.0f;
@@ -662,7 +681,14 @@ void C_GstringPlayer::UpdateBodyModel()
 
 	if ( bInAir )
 	{
-		actDesired = ACT_JUMP;
+		if ( bFalling )
+		{
+			actDesired = ACT_WALK;
+		}
+		else
+		{
+			actDesired = ACT_JUMP;
+		}
 
 		m_bBodyPlayingLandAnim = false;
 	}
@@ -696,15 +722,21 @@ void C_GstringPlayer::UpdateBodyModel()
 	vecVelocity.z = 0.0f;
 	float flLength = vecVelocity.NormalizeInPlace();
 
-	const bool bDoMoveYaw = flLength > flMovingMinSpeed;
+	const bool bDoMoveYaw = flLength > flMovingMinSpeed
+		|| bFalling;
 
 	if ( bDoMoveYaw
 		&& m_pBodyModel->m_iPoseParam_MoveYaw >= 0 )
 	{
-		VectorYawRotate( vecVelocity, -angle.y, vecVelocity );
+		float flYaw = 0.0f;
 
-		float flYaw = atan2( vecVelocity.y, vecVelocity.x );
-		flYaw = AngleNormalizePositive( flYaw );
+		if ( !bFalling )
+		{
+			VectorYawRotate( vecVelocity, -angle.y, vecVelocity );
+
+			flYaw = atan2( vecVelocity.y, vecVelocity.x );
+			flYaw = AngleNormalizePositive( flYaw );
+		}
 
 		//if ( m_bBodyWasMoving )
 		//{
@@ -742,7 +774,11 @@ void C_GstringPlayer::UpdateBodyModel()
 		}
 	}
 
-	if ( !bInAir && bMoving )
+	if ( bFalling )
+	{
+		flPlaybackrate = 0.5f;
+	}
+	else if ( !bInAir && bMoving )
 	{
 		float flGroundSpeed = m_pBodyModel->GetSequenceGroundSpeed( m_pBodyModel->GetSequence() );
 

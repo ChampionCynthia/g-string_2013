@@ -573,3 +573,14 @@ void C_BaseCombatWeapon::GetToolRecordingState( KeyValues *msg )
 		SetModelIndex( nModelIndex );
 	}
 }
+
+// GSTRINGMIGRATION
+void C_BaseCombatWeapon::DoAnimationEvents( CStudioHdr *pStudio )
+{
+	if ( GetOwner()
+		&& GetOwner()->IsPlayer() )
+		return;
+
+	BaseClass::DoAnimationEvents( pStudio );
+}
+// END GSTRINGMIGRATION

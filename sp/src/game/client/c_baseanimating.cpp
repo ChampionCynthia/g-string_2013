@@ -4322,7 +4322,15 @@ void C_BaseAnimating::GetRenderBounds( Vector& theMins, Vector& theMaxs )
 			VectorCopy ( pStudioHdr->hull_max(), theMaxs);
 		}
 
-		mstudioseqdesc_t &seqdesc = pStudioHdr->pSeqdesc( GetSequence() );
+		// GSTRINGMIGRATION
+		int iSequence = GetSequence();
+
+		if ( iSequence >= pStudioHdr->GetNumSeq() )
+			iSequence = 0;
+
+		mstudioseqdesc_t &seqdesc = pStudioHdr->pSeqdesc( iSequence );
+		// END GSTRINGMIGRATION
+
 		VectorMin( seqdesc.bbmin, theMins, theMins );
 		VectorMax( seqdesc.bbmax, theMaxs, theMaxs );
 	}
@@ -4680,7 +4688,7 @@ C_BaseAnimating *C_BaseAnimating::BecomeRagdollOnClient()
 		{
 			ragdollparams_partial_t &partial = gibModels[ i ];
 
-			C_BaseAnimating *pGib = CreateRagdollCopy( i == 0 );
+			C_BaseAnimating *pGib = CreateRagdollCopy( false );
 
 			C_ClientPartialRagdoll *pRecursiveRagdoll = dynamic_cast< C_ClientPartialRagdoll* >( pGib );
 

@@ -512,6 +512,8 @@ public:
 	bool					WantsToOverrideViewmodelAttachments( void ) { return false; }
 #endif
 
+	virtual void DoAnimationEvents( CStudioHdr *pStudio ); // GSTRINGMIGRATION
+
 #endif // End client-only methods
 
 	virtual bool			CanLower( void ) { return false; }
