@@ -59,6 +59,26 @@ void CGstringPlayer::DoReloadAnim()
 	m_nReloadParity = (m_nReloadParity+1) & ((1 << EF_MUZZLEFLASH_BITS) - 1);
 }
 
+bool CGstringPlayer::ClientCommand( const CCommand &args )
+{
+	const char *pszCmd = args[ 0 ];
+
+	if ( Q_stricmp( "", pszCmd ) == 0 )
+	{
+		if ( !sv_cheats->GetBool() )
+		{
+			return false;
+		}
+
+		PrecacheFileWeaponInfoDatabase( filesystem, g_pGameRules->GetEncryptionKey() );
+		return true;
+	}
+	else
+	{
+		return BaseClass::ClientCommand( args );
+	}
+}
+
 bool CGstringPlayer::IsNightvisionActive() const
 {
 	return m_bNightvisionActive;

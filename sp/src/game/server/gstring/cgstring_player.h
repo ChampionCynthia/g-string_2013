@@ -28,6 +28,8 @@ public:
 
 	virtual void DoReloadAnim();
 
+	virtual bool ClientCommand( const CCommand &args );
+
 protected:
 
 private:
