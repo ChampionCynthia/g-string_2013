@@ -22,6 +22,7 @@ public:
 	virtual ShadowType_t ShadowCastType();
 
 	virtual int DrawModel( int flags );
+	virtual void DoAnimationEvents( CStudioHdr *pStudioHdr ) {}
 
 	virtual void StudioFrameAdvance();
 

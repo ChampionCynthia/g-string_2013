@@ -6,7 +6,6 @@
 #include "flashlighteffect.h"
 #include "c_muzzleflash_effect.h"
 #include "c_bobmodel.h"
-#include "c_firstpersonbody.h"
 #include "c_gstring_player_ragdoll.h"
 
 
@@ -757,8 +756,6 @@ void C_GstringPlayer::UpdateBodyModel()
 	if ( pWeapon != NULL )
 	{
 		actDesired = pWeapon->ActivityOverride( actDesired, NULL );
-
-		pWeapon->FollowEntity( m_pBodyModel );
 	}
 
 	if ( m_pBodyModel->GetSequenceActivity( m_pBodyModel->GetSequence() )

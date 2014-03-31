@@ -158,16 +158,17 @@ void ShaderEditorHandler::Update( float frametime )
 
 CThreadMutex m_Lock;
 
-void ShaderEditorHandler::PreRender()
+void ShaderEditorHandler::InitialPreRender()
 {
 	if ( IsReady() && view )
 	{
+		m_Lock.Lock();
+
 		// make sure the class matches
 		const CViewSetup *v = view->GetPlayerViewSetup();
 		CViewSetup_SEdit_Shared stableVSetup( *v );
 		shaderEdit->OnPreRender( &stableVSetup );
 
-		m_Lock.Lock();
 		PrepareCallbackData();
 		m_Lock.Unlock();
 	}

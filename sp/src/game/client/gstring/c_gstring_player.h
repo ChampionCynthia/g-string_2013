@@ -2,10 +2,10 @@
 #define C_GSTRING_PLAYER_H
 
 #include "c_basehlplayer.h"
+#include "c_firstpersonbody.h"
 
 class C_MuzzleflashEffect;
 class C_BobModel;
-class C_FirstpersonBody;
 
 class C_GstringPlayer : public C_BaseHLPlayer
 {
@@ -43,6 +43,8 @@ public:
 
 	static ShadowHandle_t GetFlashlightHandle();
 	static bool ShouldFirstpersonModelCastShadow();
+
+	C_FirstpersonBody *GetBodyModel() { return m_pBodyModel; }
 
 protected:
 

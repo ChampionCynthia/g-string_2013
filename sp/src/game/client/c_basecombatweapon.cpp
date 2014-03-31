@@ -17,9 +17,13 @@
 #include "toolframework/itoolframework.h"
 #include "toolframework_client.h"
 
+// GSTRINGMIGRATION
 #include "viewrender.h"
 #include "view.h"
 #include "view_shared.h"
+
+#include "gstring/c_gstring_player.h"
+// END GSTRINGMIGRATION
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -168,6 +172,15 @@ void C_BaseCombatWeapon::OnDataChanged( DataUpdateType_t updateType )
 			SetModelIndex( overrideModelIndex );
 		}
 	}
+
+	// GSTRINGMIGRATION
+	if ( bIsLocalPlayer )
+	{
+		C_GstringPlayer *pGStringPlayer = ToGstringPlayer( pPlayer );
+
+		FollowEntity( pGStringPlayer->GetBodyModel() );
+	}
+	// END GSTRINGMIGRATION
 
 	UpdateVisibility();
 
@@ -499,13 +512,26 @@ int C_BaseCombatWeapon::DrawModel( int flags )
 	if ( localplayer
 		&& GetOwner() == localplayer )
 	{
-		if ( CurrentViewID() != VIEW_REFLECTION
-			&& CurrentViewID() != VIEW_REFRACTION
-			&& CurrentViewID() != VIEW_MONITOR
-			&& CurrentViewID() != VIEW_SHADOW_DEPTH_TEXTURE )
+		const view_id_t viewId = CurrentViewID();
+
+		if ( viewId != VIEW_REFLECTION
+			//&& viewId != VIEW_REFRACTION
+			//&& viewId != VIEW_MONITOR
+			&& viewId != VIEW_SHADOW_DEPTH_TEXTURE )
 			return 0;
 
-		SetAbsOrigin( localplayer->GetAbsOrigin() );
+		if ( false )
+		{
+			CBaseAnimating::AutoAllowBoneAccess boneAccess( true, false );
+
+			localplayer->InvalidateBoneCache();
+			localplayer->SetupBones( NULL, -1, BONE_USED_BY_ANYTHING, gpGlobals->curtime );
+
+			InvalidateBoneCache();
+			SetupBones( NULL, -1, BONE_USED_BY_ANYTHING, gpGlobals->curtime );
+		}
+
+		//SetAbsOrigin( localplayer->GetAbsOrigin() );
 		RemoveEffects( EF_NODRAW );
 	}
 	// END GSTRINGMIGRATION

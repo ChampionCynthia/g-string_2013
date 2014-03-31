@@ -44,6 +44,7 @@
 #include "ScreenSpaceEffects.h"
 #include "headtrack/isourcevirtualreality.h"
 #include "client_virtualreality.h"
+#include "shadereditor\shadereditorsystem.h"
 
 #include "gstring\gstring_postprocess.h" // GSTRINGMIGRATION
 
@@ -1087,6 +1088,8 @@ void CViewRender::Render( vrect_t *rect )
 
     // Set for console commands, etc.
     render->SetMainView ( m_View.origin, m_View.angles );
+
+	g_ShaderEditorSystem->InitialPreRender();
 
     for( StereoEye_t eEye = GetFirstEye(); eEye <= GetLastEye(); eEye = (StereoEye_t)(eEye+1) )
 	{

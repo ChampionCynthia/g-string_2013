@@ -206,8 +206,11 @@ void C_FirstpersonBody::FireEvent( const Vector& origin, const QAngle& angles, i
 
 int C_FirstpersonBody::DrawModel( int flags )
 {
-	if ( CurrentViewID() == VIEW_SHADOW_DEPTH_TEXTURE
-		&& !C_GstringPlayer::ShouldFirstpersonModelCastShadow() )
+	const int viewId = CurrentViewID();
+
+	if ( viewId == VIEW_SHADOW_DEPTH_TEXTURE
+		&& !C_GstringPlayer::ShouldFirstpersonModelCastShadow()
+		|| viewId == VIEW_MONITOR )
 	{
 		return 0;
 	}
