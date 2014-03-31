@@ -149,12 +149,14 @@ void C_GstringPlayer::ClientThink()
 		if ( m_pBodyModel != NULL
 			&& pWeapon != NULL )
 		{
-			C_AnimationLayer *pLayer = m_pBodyModel->GetAnimOverlay( 3 );
+			const int iSequence = m_pBodyModel->SelectWeightedSequence( pWeapon->ActivityOverride( ACT_GESTURE_RELOAD, NULL ) );
 
-			pLayer->m_nSequence = m_pBodyModel->SelectWeightedSequence( pWeapon->ActivityOverride( ACT_GESTURE_RELOAD, NULL ) );
-
-			if ( pLayer->m_nSequence >= 0 )
+			if ( iSequence >= 0 )
 			{
+				C_AnimationLayer *pLayer = m_pBodyModel->GetAnimOverlay( 3 );
+
+				pLayer->m_nSequence = iSequence;
+
 				pLayer->m_flWeight = 1.0f;
 				pLayer->m_flCycle = 0.0f;
 
@@ -342,18 +344,23 @@ void C_GstringPlayer::ProcessMuzzleFlashEvent()
 	if ( m_pBodyModel != NULL
 		&& pWeapon != NULL )
 	{
-		C_AnimationLayer *pLayer = m_pBodyModel->GetAnimOverlay( m_iBodyNextAttackLayer );
+		const int iSequence = m_pBodyModel->SelectWeightedSequence( pWeapon->ActivityOverride( ACT_GESTURE_RANGE_ATTACK1, NULL ) );
 
-		m_iBodyNextAttackLayer++;
-		if ( m_iBodyNextAttackLayer >= 3 )
+		if ( iSequence >= 0 )
 		{
-			m_iBodyNextAttackLayer = 0;
-		}
+			C_AnimationLayer *pLayer = m_pBodyModel->GetAnimOverlay( m_iBodyNextAttackLayer );
 
-		pLayer->m_nSequence = m_pBodyModel->SelectWeightedSequence( pWeapon->ActivityOverride( ACT_GESTURE_RANGE_ATTACK1, NULL ) );
-		pLayer->m_flWeight = 1.0f;
-		pLayer->m_flCycle = 0.0f;
-		pLayer->m_flPlaybackRate = 1.0f;
+			m_iBodyNextAttackLayer++;
+			if ( m_iBodyNextAttackLayer >= 3 )
+			{
+				m_iBodyNextAttackLayer = 0;
+			}
+
+			pLayer->m_nSequence = iSequence;
+			pLayer->m_flWeight = 1.0f;
+			pLayer->m_flCycle = 0.0f;
+			pLayer->m_flPlaybackRate = 1.0f;
+		}
 	}
 }
 

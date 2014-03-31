@@ -445,7 +445,8 @@ void C_BaseAnimatingOverlay::DoAnimationEvents( CStudioHdr *pStudioHdr )
 	int j;
 	for (j = 0; j < m_AnimOverlay.Count(); j++)
 	{
-		if ( m_AnimOverlay[j].m_nSequence >= nSequences )
+		if ( m_AnimOverlay[j].m_nSequence < 0 // GSTRINGMIGRATION
+			|| m_AnimOverlay[j].m_nSequence >= nSequences )
 		{
 			continue;
 		}

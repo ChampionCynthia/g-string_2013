@@ -162,8 +162,10 @@ void ResetFileWeaponInfoDatabase( void )
 
 void PrecacheFileWeaponInfoDatabase( IFileSystem *filesystem, const unsigned char *pICEKey )
 {
+#ifndef DEBUG
 	if ( m_WeaponInfoDatabase.Count() )
 		return;
+#endif
 
 	KeyValues *manifest = new KeyValues( "weaponscripts" );
 	if ( manifest->LoadFromFile( filesystem, "scripts/weapon_manifest.txt", "GAME" ) )
@@ -279,8 +281,10 @@ bool ReadWeaponDataFromFileForSlot( IFileSystem* filesystem, const char *szWeapo
 	FileWeaponInfo_t *pFileInfo = GetFileWeaponInfoFromHandle( *phandle );
 	Assert( pFileInfo );
 
+#ifndef DEBUG
 	if ( pFileInfo->bParsedScript )
 		return true;
+#endif
 
 	char sz[128];
 	Q_snprintf( sz, sizeof( sz ), "scripts/%s", szWeaponName );
