@@ -824,7 +824,7 @@ static void DrawVertexLitGeneric_DX9_Internal( CBaseVSShader *pShader, IMaterial
 #endif
 			}
 
-			if ( bHasFlashlight && !IsX360() )
+			if ( bVertexLitGeneric && bHasFlashlight && !IsX360() )
 			{
 				pShader->FogToBlack();
 			}

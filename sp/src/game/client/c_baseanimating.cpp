@@ -86,6 +86,10 @@ const float RUN_SPEED_ESTIMATE_SQR = 150.0f * 150.0f;
 static ConVar dbganimmodel( "dbganimmodel", "" );
 #endif
 
+// GSTRINGMIGRATION
+static ConVar gstring_muzzleflash_particles( "gstring_muzzleflash_particles", "0" );
+// END GSTRINGMIGRATION
+
 mstudioevent_t *GetEventIndexForSequence( mstudioseqdesc_t &seqdesc );
 
 C_EntityDissolve *DissolveEffect( C_BaseEntity *pTarget, float flTime );
@@ -3534,12 +3538,19 @@ bool C_BaseAnimating::DispatchMuzzleEffect( const char *options, bool isFirstPer
 	char		token[128];
 	int			weaponType = 0;
 
+// GSTRINGMIGRATION
+	char particleName[32];
+	Q_strncpy( particleName, "muzzleflash_", sizeof( particleName ) );
+// END GSTRINGMIGRATION
+
 	// Get the first parameter
 	p = nexttoken( token, p, ' ' );
 
 	// Find the weapon type
-	if ( token ) 
+	if ( token )
 	{
+		Q_strcat( particleName, token, sizeof( particleName ) ); // GSTRINGMIGRATION
+
 		//TODO: Parse the type from a list instead
 		if ( Q_stricmp( token, "COMBINE" ) == 0 )
 		{
@@ -3573,8 +3584,10 @@ bool C_BaseAnimating::DispatchMuzzleEffect( const char *options, bool isFirstPer
 	}
 	else
 	{
+		Q_strcat( particleName, "default", sizeof( particleName ) ); // GSTRINGMIGRATION
+
 		//NOTENOTE: This means that there wasn't a proper parameter passed into the animevent
-		Assert( 0 );
+		Assert( gstring_muzzleflash_particles.GetBool() );
 		return false;
 	}
 
@@ -3604,7 +3617,16 @@ bool C_BaseAnimating::DispatchMuzzleEffect( const char *options, bool isFirstPer
 	}
 
 	// Send it out
-	tempents->MuzzleFlash( weaponType, GetRefEHandle(), attachmentIndex, isFirstPerson );
+	// GSTRINGMIGRATION
+	if ( gstring_muzzleflash_particles.GetBool() )
+	{
+		DispatchParticleEffect( particleName, PATTACH_POINT_FOLLOW, this, particleName );
+	}
+	else
+	{
+		tempents->MuzzleFlash( weaponType, GetRefEHandle(), attachmentIndex, isFirstPerson );
+	}
+	// END GSTRINGMIGRATION
 
 	return true;
 }

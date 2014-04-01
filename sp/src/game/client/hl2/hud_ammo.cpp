@@ -368,7 +368,7 @@ public:
 
 	void Init( void )
 	{
-#ifndef HL2MP
+#if !defined( HL2MP ) && !defined( GSTRING ) // GSTRINGMIGRATION
 		wchar_t *tempString = g_pVGuiLocalize->Find("#Valve_Hud_AMMO_ALT");
 		if (tempString)
 		{
