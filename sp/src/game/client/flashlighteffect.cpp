@@ -151,7 +151,7 @@ public:
 //-----------------------------------------------------------------------------
 // Purpose: Do the headlight
 //-----------------------------------------------------------------------------
-void CFlashlightEffect::UpdateLightNew(const Vector &vecPos, const Vector &vecForward, const Vector &vecRight, const Vector &vecUp )
+void CFlashlightEffect::UpdateLightNew(const Vector &vecPos, const Vector &vecForward, const Vector &vecRight, const Vector &vecUp, bool bUseOffset)
 {
 	VPROF_BUDGET( "CFlashlightEffect::UpdateLightNew", VPROF_BUDGETGROUP_SHADOW_DEPTH_TEXTURING );
 
@@ -165,7 +165,7 @@ void CFlashlightEffect::UpdateLightNew(const Vector &vecPos, const Vector &vecFo
 	const float flDistDrag = 0.2;
 
 	CTraceFilterSkipPlayerAndViewModel traceFilter;
-	float flOffsetY = r_flashlightoffsety.GetFloat();
+	float flOffsetY = bUseOffset ? r_flashlightoffsety.GetFloat() : 0.0f;
 
 	if( r_swingflashlight.GetBool() )
 	{
@@ -181,7 +181,7 @@ void CFlashlightEffect::UpdateLightNew(const Vector &vecPos, const Vector &vecFo
 	Vector vOrigin = vecPos + flOffsetY * vecUp;
 
 	// Not on ladder...trace a hull
-	if ( !bPlayerOnLadder ) 
+	if ( !bPlayerOnLadder && !bUseOffset )
 	{
 		trace_t pmOriginTrace;
 		UTIL_TraceHull( vecPos, vOrigin, Vector(-4, -4, -4), Vector(4, 4, 4), MASK_SOLID & ~(CONTENTS_HITBOX), &traceFilter, &pmOriginTrace );
@@ -423,7 +423,7 @@ void CFlashlightEffect::UpdateLightOld(const Vector &vecPos, const Vector &vecDi
 //-----------------------------------------------------------------------------
 // Purpose: Do the headlight
 //-----------------------------------------------------------------------------
-void CFlashlightEffect::UpdateLight(const Vector &vecPos, const Vector &vecDir, const Vector &vecRight, const Vector &vecUp, int nDistance)
+void CFlashlightEffect::UpdateLight(const Vector &vecPos, const Vector &vecDir, const Vector &vecRight, const Vector &vecUp, int nDistance, bool bUseOffset)
 {
 	if ( !m_bIsOn )
 	{
@@ -431,7 +431,7 @@ void CFlashlightEffect::UpdateLight(const Vector &vecPos, const Vector &vecDir, 
 	}
 	if( r_newflashlight.GetBool() )
 	{
-		UpdateLightNew( vecPos, vecDir, vecRight, vecUp );
+		UpdateLightNew( vecPos, vecDir, vecRight, vecUp, bUseOffset );
 	}
 	else
 	{

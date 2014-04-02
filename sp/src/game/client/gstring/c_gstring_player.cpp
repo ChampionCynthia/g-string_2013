@@ -64,6 +64,7 @@ C_GstringPlayer::C_GstringPlayer()
 	, m_bBodyWasHidden( false )
 	, m_nOldReloadParity( 0 )
 	, m_iBodyNextAttackLayer( 0 )
+	, m_flBodyStepSoundHack( 0.0f )
 {
 	m_nReloadParity = 0;
 	m_bHasUseEntity = false;
@@ -380,6 +381,7 @@ void C_GstringPlayer::UpdateFlashlight()
 	}
 
 	m_bFlashlightVisible = bDoFlashlight || bDoMuzzleflash;
+	bool bUseFlashlightOffset = true;
 
 	if ( m_bFlashlightVisible )
 	{
@@ -402,10 +404,14 @@ void C_GstringPlayer::UpdateFlashlight()
 			trace_t tr;
 			Vector vecIdealPos = vecPos - vecForward * 40.0f;
 
+			const float flFlashlightHullSize = 10.0f;
 			UTIL_TraceHull( EyePosition(), vecIdealPos,
-				Vector( -6, -6, -6 ), Vector( 6, 6, 6 ), MASK_SOLID, this, COLLISION_GROUP_DEBRIS, &tr );
+				Vector( -flFlashlightHullSize, -flFlashlightHullSize, -flFlashlightHullSize ),
+				Vector( flFlashlightHullSize, flFlashlightHullSize, flFlashlightHullSize ),
+				MASK_SOLID, this, COLLISION_GROUP_DEBRIS, &tr );
 
 			vecPos = tr.endpos;
+			bUseFlashlightOffset = false;
 		}
 	}
 
@@ -430,7 +436,7 @@ void C_GstringPlayer::UpdateFlashlight()
 		}
 
 		// Update the light with the new position and direction.
-		m_pFlashlight->UpdateLight( vecPos, vecForward, vecRight, vecUp, FLASHLIGHT_DISTANCE );
+		m_pFlashlight->UpdateLight( vecPos, vecForward, vecRight, vecUp, FLASHLIGHT_DISTANCE, bUseFlashlightOffset );
 
 		m_flFlashlightDot = m_pFlashlight->GetHorizontalFOV() - FLASHLIGHT_FOV_ADJUST;
 		m_flFlashlightDot = MAX( m_flFlashlightDot, FLASHLIGHT_FOV_MIN );
@@ -801,6 +807,23 @@ void C_GstringPlayer::UpdateBodyModel()
 		&& m_pBodyModel->GetShadowHandle() == CLIENTSHADOW_INVALID_HANDLE )
 	{
 		m_pBodyModel->CreateShadow();
+	}
+
+	if ( actDesired == ACT_RUN_AIM_PISTOL )
+	{
+		m_flBodyStepSoundHack -= gpGlobals->frametime;
+
+		if ( m_flBodyStepSoundHack < 0.0f )
+		{
+			const Vector &vecVelocity = GetAbsVelocity();
+			m_flBodyStepSoundHack = ( vecVelocity.LengthSqr() > 150.0f * 150.0f ) ? 0.25f : 0.45f;
+
+			BaseClass::UpdateStepSound( GetGroundSurface(), GetAbsOrigin(), vecVelocity );
+		}
+	}
+	else
+	{
+		m_flBodyStepSoundHack = 0.0f;
 	}
 }
 

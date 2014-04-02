@@ -168,6 +168,7 @@ void CGstringPlayer::PhysicsSimulate()
 
 void CGstringPlayer::UpdateStepSound( surfacedata_t *psurface, const Vector &vecOrigin, const Vector &vecVelocity )
 {
+#if 0
 	if ( m_Local.m_bDucked )
 	{
 		if ( m_flStepSoundTime > 0 )
@@ -192,6 +193,7 @@ void CGstringPlayer::UpdateStepSound( surfacedata_t *psurface, const Vector &vec
 			m_flStepSoundTime += 780.0f;
 		}
 	}
+#endif
 }
 
 bool CGstringPlayer::ShouldGib( const CTakeDamageInfo &info )

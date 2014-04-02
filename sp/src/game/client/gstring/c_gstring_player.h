@@ -85,6 +85,7 @@ private:
 	bool m_bBodyWasHidden;
 	bool m_bBodyPlayingLandAnim;
 	int m_iBodyNextAttackLayer;
+	float m_flBodyStepSoundHack;
 };
 
 inline C_GstringPlayer *ToGstringPlayer( C_BaseEntity *pPlayer )

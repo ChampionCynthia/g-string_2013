@@ -20,7 +20,7 @@ public:
 	CFlashlightEffect(int nEntIndex = 0);
 	~CFlashlightEffect();
 
-	virtual void UpdateLight(const Vector &vecPos, const Vector &vecDir, const Vector &vecRight, const Vector &vecUp, int nDistance);
+	virtual void UpdateLight(const Vector &vecPos, const Vector &vecDir, const Vector &vecRight, const Vector &vecUp, int nDistance, bool bUseOffset = true);
 	void TurnOn();
 	void TurnOff();
 	bool IsOn( void ) { return m_bIsOn;	}
@@ -36,7 +36,7 @@ protected:
 	void LightOffOld();
 	void LightOffNew();
 
-	void UpdateLightNew(const Vector &vecPos, const Vector &vecDir, const Vector &vecRight, const Vector &vecUp);
+	void UpdateLightNew(const Vector &vecPos, const Vector &vecDir, const Vector &vecRight, const Vector &vecUp, bool bUseOffset);
 	void UpdateLightOld(const Vector &vecPos, const Vector &vecDir, int nDistance);
 
 	bool m_bIsOn;
