@@ -34,7 +34,7 @@ public:
 		w = ScreenWidth();
 		h = ScreenHeight();
 
-		if ( w != m_ScreenSize[ 0 ] || 
+		if ( w != m_ScreenSize[ 0 ] ||
 			 h != m_ScreenSize[ 1 ] )
 		{
 			m_ScreenSize[ 0 ] = w;
@@ -44,10 +44,21 @@ public:
 			LoadControlSettings( "resource/LoadingDiscPanel.res" );
 		}
 
+		m_pLoadingLabel->SetFont( pScheme->GetFont( "LoadingDisc", true ) );
+
 		// center the dialog
 		int wide, tall;
 		GetSize( wide, tall );
 		SetPos( ( w - wide ) / 2, ( h - tall ) / 2 );
+	}
+
+	virtual void PerformLayout()
+	{
+		BaseClass::PerformLayout();
+
+		m_pLoadingLabel->SizeToContents();
+		m_pLoadingLabel->SetPos( GetWide() / 2 - m_pLoadingLabel->GetWide() / 2,
+			GetTall() / 2 - m_pLoadingLabel->GetTall() / 2 );
 	}
 
 	virtual void PaintBackground()
