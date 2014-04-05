@@ -229,6 +229,7 @@ struct breakablepropparams_t
 		impactEnergyScale = 0;
 		defBurstScale = 0;
 		defCollisionGroup = COLLISION_GROUP_NONE;
+		nDefaultSkin = 0;
 	}
 
 	const Vector &origin;
@@ -238,6 +239,7 @@ struct breakablepropparams_t
 	float impactEnergyScale;
 	float defBurstScale;
 	int defCollisionGroup;
+	int nDefaultSkin;
 };
 
 const char *GetMassEquivalent(float flMass);
