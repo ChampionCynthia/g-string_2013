@@ -141,15 +141,18 @@ void vParticle::SetStartSize_Absolute( float sizex, float sizey )
 void vParticle::SetStartSize_Relative( float size )
 {
 	flSize_x = size / 2 * GetRelativeScale();
+	flSize_x = MAX(flSize_x, 1.0f);
 	flSize_Default_x = flSize_x;
 	flSize_Default_y = flSize_y = flSize_x;
 }
 void vParticle::SetStartSize_Relative( float sizex, float sizey )
 {
 	flSize_x = sizex / 2 * GetRelativeScale();
+	flSize_x = MAX(flSize_x, 1.0f);
 	flSize_Default_x = flSize_x;
 
 	flSize_y = sizey / 2 * GetRelativeScale();
+	flSize_y = MAX(flSize_y, 1.0f);
 	flSize_Default_y = flSize_y;
 }
 void vParticle::SetCurrentColor( Vector col )

@@ -307,7 +307,7 @@ pFnLayerRoutine( _rain_scene )
 			int w, t;
 			l->GetSize( w, t );
 
-			int amt = RandomInt( 20, 400 );
+			int amt = RandomInt( 10, 30 );
 			for ( int i = 0; i < amt; i++ )
 			{
 				vParticle *p = new vParticle();

@@ -28,7 +28,7 @@ int ScreenTransform( const Vector& point, Vector& screen );
 
 #define	HEALTH_WARNING_THRESHOLD	25
 
-static ConVar	hud_quickinfo( "hud_quickinfo", "1", FCVAR_ARCHIVE );
+static ConVar	hud_quickinfo( "hud_quickinfo", "0", FCVAR_ARCHIVE );
 
 extern ConVar crosshair;
 
@@ -315,6 +315,8 @@ void CHUDQuickInfo::Paint()
 	Color clrNormal = gHUD.m_clrNormal;
 	clrNormal[3] = 255 * scalar;
 	m_icon_c->DrawSelf( xCenter, yCenter, clrNormal );
+
+	return; // GSTRINGMIGRATION
 
 	if( IsX360() )
 	{

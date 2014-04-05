@@ -270,7 +270,8 @@ void C_GstringPlayer::OverrideView( CViewSetup *pSetup )
 	C_BaseViewModel *pViewModel = GetViewModel();
 
 	if ( pViewModel != NULL
-		&& pViewModel->GetModelPtr() != NULL )
+		&& pViewModel->GetModelPtr() != NULL
+		&& pViewModel->GetWeapon() != NULL )
 	{
 		if ( m_pBobViewModel == NULL )
 		{

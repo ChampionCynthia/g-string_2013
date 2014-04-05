@@ -377,7 +377,9 @@ inline bool CClient_Precipitation::SimulateRain( CPrecipitationParticle* pPartic
 			(tr.endpos - MainViewOrigin()).LengthSqr() < (1024*1024) )
 		{
 			if ( tr.contents & MASK_WATER )
+			{
 				m_Splashes_Watersurface.AddToTail( tr.endpos );
+			}
 			else
 			{
 				WorldSplash_t s;
@@ -600,7 +602,7 @@ void CClient_Precipitation::CreateWaterSplashes()
 		WorldSplash_t vSplash = m_Splashes[i];
 		
 		if ( CurrentViewForward().Dot( vSplash.orig - CurrentViewOrigin() ) > 1 )
-			FX_GunshotSplash( vSplash.orig, vSplash.normal, RandomFloat( 1.5f, 3.5f ), false );
+			FX_GunshotSplash( vSplash.orig, vSplash.normal, RandomFloat( 0.5f, 1.25f ), false );
 	}
 	m_Splashes.RemoveAll();
 
