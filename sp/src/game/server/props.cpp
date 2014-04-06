@@ -1517,9 +1517,9 @@ void CBreakableProp::OnPhysGunDrop( CBasePlayer *pPhysGunUser, PhysGunDrop_t Rea
 
 	SetPhysicsAttacker( pPhysGunUser, gpGlobals->curtime );
 
-	if( Reason == PUNTED_BY_CANNON )
+	if ( Reason == LAUNCHED_BY_CANNON )
 	{
-		PlayPuntSound(); 
+		PlayPuntSound();
 	}
 
 	// Restore original BlockLOS
