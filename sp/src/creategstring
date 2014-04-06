@@ -1,0 +1,6 @@
+#!/bin/bash
+
+pushd `dirname $0`
+devtools/bin/vpc /hl2 /episodic +gstring /mksln gstring2013
+popd
+
