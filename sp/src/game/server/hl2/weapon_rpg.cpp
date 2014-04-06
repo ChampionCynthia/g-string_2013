@@ -170,7 +170,7 @@ void CMissile::Spawn( void )
 
 	m_takedamage = DAMAGE_YES;
 	m_iHealth = m_iMaxHealth = 100;
-	m_bloodColor = DONT_BLEED;
+	m_bloodColor.Set( DONT_BLEED );
 	m_flGracePeriodEndsAt = 0;
 
 	AddFlag( FL_OBJECT );

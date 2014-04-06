@@ -1,6 +1,6 @@
 
 #include "cbase.h"
-#include "Gstring/clensflare_base.h"
+#include "gstring/clensflare_base.h"
 #include "tier1/KeyValues.h"
 
 #ifdef CLIENT_DLL
@@ -8,8 +8,8 @@
 #include "filesystem.h"
 #include "cdll_client_int.h"
 #include "hud.h"
-#include "Gstring/vgui/hud_lensflarefx.h"
-#include "Gstring/vgui/vLensflare.h"
+#include "gstring/vgui/hud_lensflarefx.h"
+#include "gstring/vgui/vlensflare.h"
 
 #endif
 

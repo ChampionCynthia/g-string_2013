@@ -5,7 +5,7 @@
 // $NoKeywords: $
 //
 //===========================================================================//
-#include "basevsshader.h"
+#include "BaseVSShader.h"
 #include "skin_dx9_helper.h"
 #include "convar.h"
 #include "cpp_shader_constant_register_map.h"

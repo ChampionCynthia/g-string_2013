@@ -3,9 +3,9 @@
 
 
 #include "cbase.h"
-#include "vgui_controls/controls.h"
+#include "vgui_controls/Controls.h"
 
-#include "vgui_controls/frame.h"
+#include "vgui_controls/Frame.h"
 
 class CVGUIGstringOptions : public vgui::Frame
 {

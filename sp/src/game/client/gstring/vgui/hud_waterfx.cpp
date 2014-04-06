@@ -1,6 +1,6 @@
 
 #include "cbase.h"
-#include "Gstring/vgui/hud_waterfx.h"
+#include "gstring/vgui/hud_waterfx.h"
 #include "text_message.h"
 #include "hud_macros.h"
 #include "iclientmode.h"
@@ -8,11 +8,11 @@
 #include <KeyValues.h>
 #include <vgui_controls/AnimationController.h>
 #include <vgui/ISurface.h>
-#include "vguimatsurface/IMatSystemSurface.h"
-#include "Gstring/vgui/vUtil.h"
-#include "Gstring/gstring_cvars.h"
+#include "VGuiMatSurface/IMatSystemSurface.h"
+#include "gstring/vgui/vutil.h"
+#include "gstring/gstring_cvars.h"
 #include "view_scene.h"
-#include "Gstring/cFrametimeHelper.h"
+#include "gstring/cframetimehelper.h"
 
 using namespace vgui;
 

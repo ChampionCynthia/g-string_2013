@@ -1102,7 +1102,7 @@ void CNPC_Vortigaunt::Spawn( void )
 	SetHullType( HULL_WIDE_HUMAN );
 	SetHullSizeNormal();
 
-	m_bloodColor		= BLOOD_COLOR_GREEN;
+	m_bloodColor.Set( BLOOD_COLOR_GREEN );
 	m_iHealth			= sk_vortigaunt_health.GetFloat();
 	SetViewOffset( Vector ( 0, 0, 64 ) );// position of the eyes relative to monster's origin.
 

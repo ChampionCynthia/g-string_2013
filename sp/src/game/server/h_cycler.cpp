@@ -62,7 +62,7 @@ void CCycler::GenericCyclerSpawn(char *szModel, Vector vecMin, Vector vecMax)
 
 	SetModel( szModel );
 
-	m_bloodColor = DONT_BLEED;
+	m_bloodColor.Set( DONT_BLEED );
 
 	CCycler::Spawn( );
 

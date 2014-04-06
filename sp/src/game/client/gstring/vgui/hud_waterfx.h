@@ -4,8 +4,8 @@
 #include "cbase.h"
 #include "hud.h"
 #include "hudelement.h"
-#include "vgui_controls/panel.h"
-#include "Gstring/vgui/vParticleContainer.h"
+#include "vgui_controls/Panel.h"
+#include "gstring/vgui/vparticlecontainer.h"
 
 class CHudWaterEffects : public CHudElement, public vgui::Panel
 {

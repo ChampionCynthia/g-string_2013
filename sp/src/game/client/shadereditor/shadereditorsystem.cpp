@@ -9,8 +9,8 @@
 
 #include "cbase.h"
 #include "client_factorylist.h"
-#include "ShaderEditor/IVShaderEditor.h"
-#include "ShaderEditor/SEdit_ModelRender.h"
+#include "shadereditor/ivshadereditor.h"
+#include "shadereditor/sedit_modelrender.h"
 #include "ivrenderview.h"
 #include "iviewrender.h"
 #include "viewrender.h"
@@ -82,13 +82,13 @@ bool ShaderEditorHandler::Init()
 
 	char modulePath[MAX_PATH*4];
 #ifdef SWARM_DLL
-	Q_snprintf( modulePath, sizeof( modulePath ), "%s/bin/shadereditor_swarm.dll\0", engine->GetGameDirectory() );
+	Q_snprintf( modulePath, sizeof( modulePath ), "%s/bin/shadereditor_swarm.dll", engine->GetGameDirectory() );
 #elif SOURCE_2006
-	Q_snprintf( modulePath, sizeof( modulePath ), "%s/bin/shadereditor_2006.dll\0", engine->GetGameDirectory() );
+	Q_snprintf( modulePath, sizeof( modulePath ), "%s/bin/shadereditor_2006.dll", engine->GetGameDirectory() );
 #elif SOURCE_2013
-	Q_snprintf( modulePath, sizeof( modulePath ), "%s/bin/shadereditor_2013.dll\0", engine->GetGameDirectory() );
+	Q_snprintf( modulePath, sizeof( modulePath ), "%s/bin/shadereditor_2013.dll", engine->GetGameDirectory() );
 #else
-	Q_snprintf( modulePath, sizeof( modulePath ), "%s/bin/shadereditor_2007.dll\0", engine->GetGameDirectory() );
+	Q_snprintf( modulePath, sizeof( modulePath ), "%s/bin/shadereditor_2007.dll", engine->GetGameDirectory() );
 #endif
 	shaderEditorModule = Sys_LoadModule( modulePath );
 	if ( shaderEditorModule )

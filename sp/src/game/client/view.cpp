@@ -45,9 +45,9 @@
 #include "ScreenSpaceEffects.h"
 #include "sourcevr/isourcevirtualreality.h"
 #include "client_virtualreality.h"
-#include "shadereditor\shadereditorsystem.h"
+#include "shadereditor/shadereditorsystem.h"
 
-#include "gstring\gstring_postprocess.h" // GSTRINGMIGRATION
+#include "gstring/gstring_postprocess.h" // GSTRINGMIGRATION
 
 #if defined( REPLAY_ENABLED )
 #include "replay/ireplaysystem.h"

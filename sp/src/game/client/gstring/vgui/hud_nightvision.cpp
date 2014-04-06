@@ -1,8 +1,8 @@
 
 #include "cbase.h"
 #include "hud_nightvision.h"
-#include "Gstring/vgui/vUtil.h"
-#include "vgui_controls/animationcontroller.h"
+#include "gstring/vgui/vutil.h"
+#include "vgui_controls/AnimationController.h"
 #include "iclientmode.h"
 
 #include "materialsystem/imaterial.h"
@@ -10,7 +10,7 @@
 
 #include "../c_gstring_player.h"
 #include "../gstring_postprocess.h"
-#include "Gstring/gstring_cvars.h"
+#include "gstring/gstring_cvars.h"
 
 
 using namespace vgui;

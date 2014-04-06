@@ -556,7 +556,7 @@ void CNPC_RollerMine::Spawn( void )
 	
 	m_flFieldOfView		= -1.0f;
 	m_flForwardSpeed	= -1200;
-	m_bloodColor		= DONT_BLEED;
+	m_bloodColor.Set( DONT_BLEED );
 
 	SetHullType(HULL_SMALL_CENTERED);
 

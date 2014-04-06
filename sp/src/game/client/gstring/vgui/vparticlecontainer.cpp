@@ -1,6 +1,6 @@
 
 #include "cbase.h"
-#include "Gstring/vgui/vParticleContainer.h"
+#include "gstring/vgui/vparticlecontainer.h"
 
 using namespace vgui;
 

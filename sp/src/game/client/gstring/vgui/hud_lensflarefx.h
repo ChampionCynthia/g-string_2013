@@ -4,7 +4,7 @@
 #include "cbase.h"
 #include "hud.h"
 #include "hudelement.h"
-#include "vgui_controls/panel.h"
+#include "vgui_controls/Panel.h"
 
 struct vLensflare_Collection;
 class CGlowOverlay;

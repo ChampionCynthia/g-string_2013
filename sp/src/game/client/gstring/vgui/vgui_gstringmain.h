@@ -3,18 +3,18 @@
 
 
 #include "cbase.h"
-#include "vgui_controls/controls.h"
+#include "vgui_controls/Controls.h"
 
-#include "vgui_controls/frame.h"
+#include "vgui_controls/Frame.h"
 
-#include "Gstring/vgui/vgui_menuLabel.h"
-#include "Gstring/vgui/vgui_menuButton.h"
-#include "Gstring/vgui/vgui_menuLayer.h"
-#include "Gstring/vgui/vgui_menuEmbedded.h"
-#include "Gstring/vgui/vUtil.h"
-#include "Gstring/vgui/vParticleContainer.h"
+#include "gstring/vgui/vgui_menulabel.h"
+#include "gstring/vgui/vgui_menubutton.h"
+#include "gstring/vgui/vgui_menulayer.h"
+#include "gstring/vgui/vgui_menuembedded.h"
+#include "gstring/vgui/vutil.h"
+#include "gstring/vgui/vparticlecontainer.h"
 
-#include "Gstring/cFrametimeHelper.h"
+#include "gstring/cframetimehelper.h"
 
 class CVGUIGstringMain : public vgui::Panel
 {

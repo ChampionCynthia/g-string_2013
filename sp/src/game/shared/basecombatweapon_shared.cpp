@@ -40,7 +40,7 @@
 
 // GSTRINGMIGRATION
 #ifdef GAME_DLL
-#include "gstring\cgstring_player.h"
+#include "gstring/cgstring_player.h"
 #endif
 // END GSTRINGMIGRATION
 

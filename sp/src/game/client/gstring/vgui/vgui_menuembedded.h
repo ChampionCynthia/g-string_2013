@@ -3,9 +3,9 @@
 
 #include "cbase.h"
 
-#include "vgui_controls/controls.h"
-#include "vgui_controls/panel.h"
-#include "vgui/IVGUI.h"
+#include "vgui_controls/Controls.h"
+#include "vgui_controls/Panel.h"
+#include "vgui/IVGui.h"
 
 class CVGUIMenuLayer;
 class CVGUIMenuButton;

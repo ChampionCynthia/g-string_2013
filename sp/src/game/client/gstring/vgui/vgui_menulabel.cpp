@@ -1,6 +1,6 @@
 
 #include "cbase.h"
-#include "Gstring/vgui/vgui_gstringMain.h"
+#include "gstring/vgui/vgui_gstringmain.h"
 #include "vgui_controls/Label.h"
 
 

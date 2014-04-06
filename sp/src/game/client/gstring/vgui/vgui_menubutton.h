@@ -2,7 +2,7 @@
 #define VGUI_MENU_BUTTON_H
 
 #include "cbase.h"
-#include <vgui_controls/controls.h>
+#include <vgui_controls/Controls.h>
 #include <vgui_controls/Button.h>
 
 

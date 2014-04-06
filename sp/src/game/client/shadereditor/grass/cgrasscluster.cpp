@@ -1,14 +1,14 @@
 
 #include "cbase.h"
-#include "shaderEditor/grass/cgrasscluster.h"
+#include "shadereditor/grass/cgrasscluster.h"
 #include "view.h"
 #include "viewrender.h"
 #include "idebugoverlaypanel.h"
-#include "engine/IVDebugOverlay.h"
+#include "engine/ivdebugoverlay.h"
 #include "iclientshadowmgr.h"
 #include "clientleafsystem.h"
-#include "materialsystem/ITexture.h"
-#include "materialsystem/IMaterialVar.h"
+#include "materialsystem/itexture.h"
+#include "materialsystem/imaterialvar.h"
 #include "collisionutils.h"
 #include "fasttimer.h"
 

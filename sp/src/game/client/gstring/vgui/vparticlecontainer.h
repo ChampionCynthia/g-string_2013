@@ -2,9 +2,9 @@
 #define PARTICLE_CONTAINER_H
 
 #include "cbase.h"
-#include "vgui_controls/controls.h"
-#include "vgui_controls/panel.h"
-#include "Gstring/vgui/vParticle.h"
+#include "vgui_controls/Controls.h"
+#include "vgui_controls/Panel.h"
+#include "gstring/vgui/vparticle.h"
 
 class CVGUIParticleContainer : public vgui::Panel
 {
