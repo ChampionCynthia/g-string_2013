@@ -2,7 +2,7 @@
 #define PARTICLE_OPERATORS_LENSFLARE_H
 
 #include "cbase.h"
-#include "Gstring/vgui/vParticleOperators.h"
+#include "gstring/vgui/vparticleoperators.h"
 
 class CGlowOverlay;
 

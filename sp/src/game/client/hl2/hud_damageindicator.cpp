@@ -23,9 +23,9 @@
 #include "sourcevr/isourcevirtualreality.h"
 
 // GSTRINGMIGRATION
-#include "Gstring/gstring_postprocess.h"
-#include "Gstring/gstring_cvars.h"
-#include "Gstring/vgui/vParticleContainer.h"
+#include "gstring/gstring_postprocess.h"
+#include "gstring/gstring_cvars.h"
+#include "gstring/vgui/vparticlecontainer.h"
 // END GSTRINGMIGRATION
 
 using namespace vgui;

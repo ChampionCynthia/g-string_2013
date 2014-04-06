@@ -147,8 +147,8 @@
 #include "fbxsystem/fbxsystem.h"
 #endif
 
-#include "ShaderEditor/ShaderEditorSystem.h"
-#include "Gstring/vgui/vgui_gstringMain.h"
+#include "shadereditor/shadereditorsystem.h"
+#include "gstring/vgui/vgui_gstringmain.h"
 
 extern vgui::IInputInternal *g_InputInternal;
 

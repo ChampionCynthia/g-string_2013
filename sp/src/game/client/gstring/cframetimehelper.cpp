@@ -1,8 +1,8 @@
 
 #include "cbase.h"
-#include "Gstring/cFrametimeHelper.h"
-#include "vgui_controls/controls.h"
-#include "vgui/isystem.h"
+#include "gstring/cframetimehelper.h"
+#include "vgui_controls/Controls.h"
+#include "vgui/ISystem.h"
 
 static CFrameTimeHelper g_FrameTimeHelper;
 

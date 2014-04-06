@@ -1,11 +1,11 @@
 
 #include "cbase.h"
-#include "Gstring/vgui/vUtil.h"
-#include "Gstring/vgui/vParticle.h"
-#include "Gstring/cFrametimeHelper.h"
+#include "gstring/vgui/vutil.h"
+#include "gstring/vgui/vparticle.h"
+#include "gstring/cframetimehelper.h"
 
 #include <vgui/ISurface.h>
-#include <vgui_controls/controls.h>
+#include <vgui_controls/Controls.h>
 
 
 using namespace vgui;

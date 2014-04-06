@@ -1,7 +1,7 @@
 
 #include "cbase.h"
-#include "Gstring/vgui/vParticle.h"
-#include "Gstring/cFrametimeHelper.h"
+#include "gstring/vgui/vparticle.h"
+#include "gstring/cframetimehelper.h"
 
 
 vParticle::vParticle()

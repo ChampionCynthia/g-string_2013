@@ -119,7 +119,7 @@
 ==================================================================================================== */
 
 #include "BaseVSShader.h"
-#include "mathlib/VMatrix.h"
+#include "mathlib/vmatrix.h"
 #include "convar.h"
 #include "flesh_interior_blended_pass_helper.h"
 

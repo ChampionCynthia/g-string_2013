@@ -4,8 +4,8 @@
 #include "view_scene.h"
 #include "glow_overlay.h"
 
-#include "Gstring/vgui/vParticle.h"
-#include "Gstring/vgui/vParticleOperatorsLensflare.h"
+#include "gstring/vgui/vparticle.h"
+#include "gstring/vgui/vparticleoperatorslensflare.h"
 
 vParticleOperator_Lensflare_Base::vParticleOperator_Lensflare_Base( CGlowOverlay *src )
 {

@@ -5,7 +5,7 @@
 // $NoKeywords: $
 //
 //===========================================================================//
-#include "basevsshader.h"
+#include "BaseVSShader.h"
 #include "vertexlitgeneric_dx9_helper.h"
 #include "skin_dx9_helper.h"
 

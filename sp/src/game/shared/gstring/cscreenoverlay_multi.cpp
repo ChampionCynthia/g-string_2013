@@ -1,6 +1,6 @@
 
 #include "cbase.h"
-#include "Gstring/cscreenoverlay_multi.h"
+#include "gstring/cscreenoverlay_multi.h"
 
 #ifdef GAME_DLL
 

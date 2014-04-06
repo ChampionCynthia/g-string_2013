@@ -2,7 +2,7 @@
 #define VGUI_MENU_LABEL_H
 
 #include "cbase.h"
-#include <vgui_controls/controls.h>
+#include <vgui_controls/Controls.h>
 #include <vgui_controls/Label.h>
 
 

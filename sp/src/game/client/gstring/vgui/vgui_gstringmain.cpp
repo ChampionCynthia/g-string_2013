@@ -1,20 +1,20 @@
 
 #include "cbase.h"
 #include "tier1/KeyValues.h"
-#include "Gstring/gstring_cvars.h"
-#include "Gstring/vgui/vgui_gstringMain.h"
+#include "gstring/gstring_cvars.h"
+#include "gstring/vgui/vgui_gstringmain.h"
 #include "ienginevgui.h"
 
-#include "vgui_controls/panel.h"
+#include "vgui_controls/Panel.h"
 #include <vgui/ISurface.h>
 #include <vgui/IScheme.h>
 #include "materialsystem/itexture.h"
 
-#include "vgui_controls/checkbutton.h"
-#include "vgui_controls/combobox.h"
-#include "vgui_controls/slider.h"
-#include "vgui_controls/button.h"
-#include "ShaderEditor/ShaderEditorSystem.h"
+#include "vgui_controls/CheckButton.h"
+#include "vgui_controls/ComboBox.h"
+#include "vgui_controls/Slider.h"
+#include "vgui_controls/Button.h"
+#include "shadereditor/shadereditorsystem.h"
 
 static ConVar layer_x( "layer_x", "0" );
 static ConVar layer_y( "layer_y", "0" );

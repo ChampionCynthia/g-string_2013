@@ -3,7 +3,7 @@
 
 #include "cbase.h"
 #include "glow_overlay.h"
-#include "Gstring/vgui/vParticleContainer.h"
+#include "gstring/vgui/vparticlecontainer.h"
 
 class CGlowOverlay;
 class KeyValues;

@@ -4,7 +4,7 @@
 #include "cbase.h"
 
 #include <vgui/ISurface.h>
-#include <vgui_controls/controls.h>
+#include <vgui_controls/Controls.h>
 
 inline void SetupVGUITex( const char *szPath, int &var )
 {

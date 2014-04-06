@@ -501,7 +501,7 @@ void CNPC_Strider::Spawn()
 	m_flGroundSpeed	= STRIDER_SPEED;
 	m_flSpeedScale = m_flTargetSpeedScale = 1.0;
 	m_NPCState = NPC_STATE_NONE;
-	m_bloodColor = DONT_BLEED;
+	m_bloodColor.Set( DONT_BLEED );
 	
 	m_iHealth = sk_strider_health.GetFloat();
 	m_iMaxHealth = 500;

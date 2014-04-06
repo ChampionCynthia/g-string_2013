@@ -25,7 +25,7 @@
 
 // GSTRINGMIGRATION
 #include "hud.h"
-#include "Gstring/vgui/hud_waterfx.h"
+#include "gstring/vgui/hud_waterfx.h"
 // END GSTRINGMIGRATION
 
 // memdbgon must be the last include file in a .cpp file!!!

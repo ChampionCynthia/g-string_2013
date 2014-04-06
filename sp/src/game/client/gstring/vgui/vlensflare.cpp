@@ -1,9 +1,9 @@
 
 #include "cbase.h"
 #include "tier1/KeyValues.h"
-#include "Gstring/vgui/vUtil.h"
-#include "Gstring/vgui/vLensflare.h"
-#include "Gstring/vgui/vParticleOperatorsLensflare.h"
+#include "gstring/vgui/vutil.h"
+#include "gstring/vgui/vlensflare.h"
+#include "gstring/vgui/vparticleoperatorslensflare.h"
 
 vLensflare_Collection *vLensflare_Collection::InitFromScript( vgui::Panel *parent,
 		CGlowOverlay *pSource,

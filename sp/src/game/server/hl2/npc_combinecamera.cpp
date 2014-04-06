@@ -320,7 +320,7 @@ void CNPC_CombineCamera::Spawn()
 	m_flFieldOfView	= CAMERA_FOV_WIDE;
 	m_takedamage	= DAMAGE_YES;
 	m_iHealth		= 50;
-	m_bloodColor	= BLOOD_COLOR_MECH;
+	m_bloodColor.Set( BLOOD_COLOR_MECH );
 	
 	SetSolid(SOLID_BBOX);
 	AddSolidFlags(FSOLID_NOT_STANDABLE);

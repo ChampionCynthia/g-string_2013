@@ -3,9 +3,9 @@
 
 #include "cbase.h"
 
-#include "Gstring/vgui/vParticleOperators.h"
-#include "Gstring/vgui/vParticleRenderers.h"
-#include "Gstring/cFrametimeHelper.h"
+#include "gstring/vgui/vparticleoperators.h"
+#include "gstring/vgui/vparticlerenderers.h"
+#include "gstring/cframetimehelper.h"
 
 class vParticleOperatorBase;
 

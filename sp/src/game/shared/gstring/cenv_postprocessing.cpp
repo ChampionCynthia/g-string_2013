@@ -1,10 +1,10 @@
 
 #include "cbase.h"
-#include "Gstring/cenv_postprocessing.h"
+#include "gstring/cenv_postprocessing.h"
 
 #ifdef CLIENT_DLL
 
-#include "Gstring/gstring_postprocess.h"
+#include "gstring/gstring_postprocess.h"
 
 #endif
 

@@ -2,8 +2,8 @@
 #define VGUI_MENULAYER_H
 
 #include "cbase.h"
-#include <vgui_controls/controls.h>
-#include <vgui_controls/panel.h>
+#include <vgui_controls/Controls.h>
+#include <vgui_controls/Panel.h>
 
 class CVGUIParticleContainer;
 struct vParticle;

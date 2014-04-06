@@ -2,7 +2,7 @@
 #define PARTICLE_RENDERERS_H
 
 #include "cbase.h"
-#include "Gstring/gstring_cvars.h"
+#include "gstring/gstring_cvars.h"
 
 struct vParticle;
 

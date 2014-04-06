@@ -1,20 +1,20 @@
 
 #include "cbase.h"
 #include "tier1/KeyValues.h"
-#include "Gstring/gstring_cvars.h"
-#include "Gstring/vgui/vUtil.h"
-#include "Gstring/vgui/vgui_menuLayer.h"
-#include "Gstring/vgui/vParticleContainer.h"
+#include "gstring/gstring_cvars.h"
+#include "gstring/vgui/vutil.h"
+#include "gstring/vgui/vgui_menulayer.h"
+#include "gstring/vgui/vparticlecontainer.h"
 #include "ienginevgui.h"
 
-#include "vgui_controls/panel.h"
+#include "vgui_controls/Panel.h"
 #include <vgui/ISurface.h>
 #include "view_scene.h"
 
-#include "vgui_controls/checkbutton.h"
-#include "vgui_controls/combobox.h"
-#include "vgui_controls/slider.h"
-#include "vgui_controls/button.h"
+#include "vgui_controls/CheckButton.h"
+#include "vgui_controls/ComboBox.h"
+#include "vgui_controls/Slider.h"
+#include "vgui_controls/Button.h"
 
 using namespace vgui;
 

@@ -19,7 +19,7 @@
 #include "fx_line.h"
 #include "fx_water.h"
 
-#include "gstring\gstring_postprocess.h" // GSTRINGMIGRATION
+#include "gstring/gstring_postprocess.h" // GSTRINGMIGRATION
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"

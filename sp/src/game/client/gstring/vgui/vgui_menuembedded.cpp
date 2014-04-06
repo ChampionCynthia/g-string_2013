@@ -1,15 +1,15 @@
 
 #include "cbase.h"
 #include "tier1/KeyValues.h"
-#include "Gstring/vgui/vgui_gstringMain.h"
+#include "gstring/vgui/vgui_gstringmain.h"
 
 #include <view.h>
 #include <view_shared.h>
 #include "collisionutils.h"
 
 #include <cdll_client_int.h>
-#include "VGUIMatSurface/IMatSystemSurface.h"
-#include <vgui/IVGUI.h>
+#include "VGuiMatSurface/IMatSystemSurface.h"
+#include <vgui/IVGui.h>
 #include <vgui/ISystem.h>
 #include <vgui/IInputInternal.h>
 

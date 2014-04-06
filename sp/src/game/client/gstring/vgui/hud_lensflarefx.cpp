@@ -1,6 +1,6 @@
 
 #include "cbase.h"
-#include "Gstring/vgui/hud_lensflarefx.h"
+#include "gstring/vgui/hud_lensflarefx.h"
 #include "text_message.h"
 #include "hud_macros.h"
 #include "iclientmode.h"
@@ -8,15 +8,15 @@
 #include <KeyValues.h>
 #include <vgui_controls/AnimationController.h>
 #include <vgui/ISurface.h>
-#include "vguimatsurface/IMatSystemSurface.h"
-#include "Gstring/vgui/vUtil.h"
+#include "VGuiMatSurface/IMatSystemSurface.h"
+#include "gstring/vgui/vutil.h"
 #include "view_scene.h"
 
-#include "Gstring/gstring_postprocess.h"
+#include "gstring/gstring_postprocess.h"
 
-#include "Gstring/gstring_cvars.h"
-#include "Gstring/vgui/vLensflare.h"
-#include "Gstring/vgui/vParticleContainer.h"
+#include "gstring/gstring_cvars.h"
+#include "gstring/vgui/vlensflare.h"
+#include "gstring/vgui/vparticlecontainer.h"
 
 using namespace vgui;
 
