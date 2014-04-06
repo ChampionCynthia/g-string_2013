@@ -73,6 +73,7 @@ private:
 	QAngle m_angLastBobAngle;
 	float m_flLandBobTime;
 	float m_flLandBobDynamicScale;
+	float m_flLastFallVelocity;
 	bool m_bBobWasInAir;
 
 	CNetworkVar( bool, m_bHasUseEntity );

@@ -1317,10 +1317,10 @@ static Activity DetermineExpressionMoveActivity( CChoreoEvent *event, CAI_BaseNP
 		return activity;
 
 	// Custom distance styles are appended to param2 with a space as a separator
+	char szActName[256]; // GSTRINGMIGRATION
 	const char *pszAct = Q_strstr( sParam2, " " );
 	if ( pszAct )
 	{
-		char szActName[256];
 		Q_strncpy( szActName, sParam2, sizeof(szActName) );
 		szActName[ (pszAct-sParam2) ] = '\0';
 		pszAct = szActName;

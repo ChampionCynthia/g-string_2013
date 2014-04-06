@@ -282,6 +282,7 @@ void CParticleEffectBinding::BBoxCalcEnd( bool bboxSet, Vector &bbMin, Vector &b
 	// we don't have anything, so leave m_Min and m_Max at the sort origin.
 	if ( bboxSet )
 	{
+		Assert( bbMinWorld.IsValid() && bbMaxWorld.IsValid() );
 		m_Min = bbMinWorld;
 		m_Max = bbMaxWorld;
 	}
@@ -533,6 +534,8 @@ Particle* CParticleEffectBinding::AddParticle( int sizeInBytes, PMaterialHandle 
 
 void CParticleEffectBinding::SetBBox( const Vector &bbMin, const Vector &bbMax, bool bDisableAutoUpdate )
 {
+	Assert( bbMin.IsValid() && bbMax.IsValid() );
+
 	m_Min = bbMin;
 	m_Max = bbMax;
 	
@@ -563,6 +566,7 @@ bool CParticleEffectBinding::EnlargeBBoxToContain( const Vector &pt )
 {
 	if ( m_nActiveParticles == 0 )
 	{
+		Assert( pt.IsValid() );
 		m_Min = m_Max = pt;
 		return true;
 	}
@@ -999,6 +1003,7 @@ bool CParticleEffectBinding::RecalculateBoundingBox()
 	// Get the bbox into world space.
 	if ( m_bLocalSpaceTransformIdentity )
 	{
+		Assert( bbMin.IsValid() && bbMax.IsValid() );
 		m_Min = bbMin;
 		m_Max = bbMax;
 	}

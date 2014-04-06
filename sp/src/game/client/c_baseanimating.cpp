@@ -5456,8 +5456,10 @@ void C_BaseAnimating::ResetSequenceInfo( void )
 	m_bSequenceFinished = false;
 	m_flLastEventCheck = 0;
 
-	m_nNewSequenceParity = ( ++m_nNewSequenceParity ) & EF_PARITY_MASK;
-	m_nResetEventsParity = ( ++m_nResetEventsParity ) & EF_PARITY_MASK;
+	// GSTRINGMIGRATION
+	m_nNewSequenceParity = ( m_nNewSequenceParity + 1 ) & EF_PARITY_MASK;
+	m_nResetEventsParity = ( m_nResetEventsParity + 1 ) & EF_PARITY_MASK;
+	// END GSTRINGMIGRATION
 	
 	// FIXME: why is this called here?  Nothing should have changed to make this nessesary
 	SetEventIndexForSequence( pStudioHdr->pSeqdesc( GetSequence() ) );

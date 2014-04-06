@@ -65,6 +65,7 @@ C_GstringPlayer::C_GstringPlayer()
 	, m_nOldReloadParity( 0 )
 	, m_iBodyNextAttackLayer( 0 )
 	, m_flBodyStepSoundHack( 0.0f )
+	, m_flLastFallVelocity( 0.0f )
 {
 	m_nReloadParity = 0;
 	m_bHasUseEntity = false;
@@ -230,23 +231,24 @@ void C_GstringPlayer::OverrideView( CViewSetup *pSetup )
 	}
 
 	// land bob anim
-	const bool bIsInAir = ( GetFlags() &  FL_ONGROUND ) != 0;
+	const bool bIsInAir = ( GetFlags() & FL_ONGROUND ) == 0;
 
 	if ( m_bBobWasInAir != bIsInAir )
 	{
-		if ( bIsInAir )
+		if ( !bIsInAir && m_flLastFallVelocity > 70.0f )
 		{
-			const float flVelocityDown = GetAbsVelocity().z;
+			m_flLandBobDynamicScale = RemapValClamped( m_flLastFallVelocity, 70, 200, 0.0f, 2.0f );
 
-			if ( flVelocityDown < -70.0f )
-			{
-				m_flLandBobDynamicScale = RemapValClamped( flVelocityDown, -70, -200, 0.0f, 2.0f );
-
-				m_flLandBobTime = M_PI;
-			}
+			m_flLandBobTime = M_PI;
+			m_flLastFallVelocity = 0.0f;
 		}
 
 		m_bBobWasInAir = bIsInAir;
+	}
+
+	if ( bIsInAir )
+	{
+		m_flLastFallVelocity = m_Local.m_flFallVelocity;
 	}
 
 	if ( m_flLandBobTime > 0.0f )

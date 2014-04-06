@@ -3963,7 +3963,7 @@ void CGameMovement::CheckFalling( void )
 	//
 	// Clear the fall velocity so the impact doesn't happen again.
 	//
-	player->m_Local.m_flFallVelocity = 0;
+	// player->m_Local.m_flFallVelocity = 0;
 }
 
 void CGameMovement::PlayerRoughLandingEffects( float fvol )

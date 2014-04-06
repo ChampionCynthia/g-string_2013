@@ -235,9 +235,10 @@ int CMessageCharsPanel::AddText(
 
 	Assert( !msg->text );
 
-	msg->text = new char[ Q_strlen( data ) + 1 ];
+	const int iSize = Q_strlen( data ) + 1; // GSTRINGMIGRATION
+	msg->text = new char[ iSize ];
 	Assert( msg->text );
-	Q_strncpy( msg->text, data, sizeof( msg->text ) );
+	Q_strncpy( msg->text, data, iSize );
 
 	if ( flTime )
 		msg->fTTL = gpGlobals->curtime + flTime;
