@@ -6,7 +6,8 @@
 
 $Macro OUTBINNAME	"server"
 //$Macro OUTBINDIR	"$SRCDIR\..\game\$GAMENAME\bin"
-$Macro OUTBINDIR	"%GSTRINGGAME%\bin"
+$Macro OUTBINDIR	"/home/gstring/SteamApps/sourcemods/gstringv2/bin"	[$LINUXALL]
+$Macro OUTBINDIR	"%GSTRINGGAME%\bin"					[$WIN32]
 $Macro DEVKITBINDIR	"$GAMENAME\bin"							[$X360]
 // It's important to include $GAMENAME in the generated_proto directory
 // to avoid race conditions when multiple games are in one solution.

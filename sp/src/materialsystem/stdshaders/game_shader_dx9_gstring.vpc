@@ -7,7 +7,8 @@
 $Macro SRCDIR		"..\.."
 $Macro GAMENAME "gstringv2"
 
-$Macro OUTBINDIR	"%GSTRINGGAME%\bin"
+$Macro OUTBINDIR	"/home/gstring/SteamApps/sourcemods/gstringv2/bin"	[$LINUXALL]
+$Macro OUTBINDIR	"%GSTRINGGAME%\bin"					[$WIN32]
 
 $Include "$SRCDIR\vpc_scripts\source_dll_base.vpc"
 
