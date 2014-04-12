@@ -6,6 +6,7 @@
 
 #include "bone_setup.h"
 #include "jigglebones.h"
+#include "view.h"
 #include "viewrender.h"
 
 static ConVar gstring_firstpersonbody_scale( "gstring_firstpersonbody_scale", "1" );
@@ -213,6 +214,20 @@ int C_FirstpersonBody::DrawModel( int flags )
 		|| viewId == VIEW_MONITOR )
 	{
 		return 0;
+	}
+
+	if ( viewId == VIEW_REFLECTION )
+	{
+		const Vector &vecViewOrigin( CurrentViewOrigin() );
+		VisibleFogVolumeInfo_t fogVolumeInfo;
+		render->GetVisibleFogVolume( vecViewOrigin, &fogVolumeInfo );
+		if ( fogVolumeInfo.m_nVisibleFogVolume >= 0 )
+		{
+			if ( fogVolumeInfo.m_flWaterHeight - vecViewOrigin.z > -25.0f )
+			{
+				return 0;
+			}
+		}
 	}
 
 	if ( IsInThirdPersonView() )

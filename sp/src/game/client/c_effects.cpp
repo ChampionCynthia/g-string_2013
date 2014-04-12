@@ -575,7 +575,7 @@ inline void CClient_Precipitation::RenderParticle( CPrecipitationParticle* pPart
 	delta[2] *= scale;
 
 	// See c_tracer.* for this method
-	float flAlpha = r_rainalpha.GetFloat();
+	float flAlpha = 0.1f; // r_rainalpha.GetFloat(); GSTRINGMIGRATION
 	float flWidth = GetWidth();
 
 	float flScreenSpaceWidth = flWidth * m_flHalfScreenWidth / -start.z;

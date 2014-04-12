@@ -77,8 +77,8 @@ CVGUIMenuEmbedded::CVGUIMenuEmbedded( Panel *parent ) : BaseClass( parent )
 	SetupVGUITex( "vgui/menu/menu_bg", m_iTexture_BG );
 	SetupVGUITex( "vgui/menu/menu_line", m_iTexture_Line );
 
-	m_pTitle_1 = new CVGUIMenuLabel( this, "Main menu" );
-	m_pTitle_0 = new CVGUIMenuLabel( this, "Main menu" );
+	m_pTitle_1 = new CVGUIMenuLabel( this, "" );
+	m_pTitle_0 = new CVGUIMenuLabel( this, "" );
 
 	SetAlpha( 255 );
 	SetBounds( 0, 0, 400, 500 );
@@ -209,6 +209,10 @@ void CVGUIMenuEmbedded::PerformLayout()
 	}
 
 	m_pParticleParent->SetBounds( 0, 0, w, t );
+
+	const char *pszMenuTitle = bIngame ? "In-game menu" : "Main menu";
+	m_pTitle_0->SetText( pszMenuTitle );
+	m_pTitle_1->SetText( pszMenuTitle );
 }
 
 void CVGUIMenuEmbedded::OnCommand( const char *cmd )

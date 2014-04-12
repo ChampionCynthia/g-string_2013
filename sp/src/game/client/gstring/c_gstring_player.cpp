@@ -111,9 +111,6 @@ void C_GstringPlayer::OnDataChanged( DataUpdateType_t updateType )
 		ConVarRef scissor( "r_flashlightscissor" );
 		scissor.SetValue( "0" );
 	}
-	else
-	{
-	}
 }
 
 void C_GstringPlayer::ClientThink()

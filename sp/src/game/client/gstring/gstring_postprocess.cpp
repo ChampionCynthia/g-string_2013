@@ -163,6 +163,9 @@ static float g_flGodRaysIntensity = 1.0f;
 
 void SetGodraysColor( Vector col )
 {
+	if ( shaderEdit == NULL )
+		return;
+
 	DEFINE_SHADEREDITOR_MATERIALVAR( GODRAYS_EDITOR_NAME, "sunrays calc", "$MUTABLE_01", pVarMutable );
 	Assert( pVarMutable );
 
