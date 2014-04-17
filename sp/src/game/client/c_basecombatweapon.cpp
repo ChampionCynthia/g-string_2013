@@ -178,7 +178,10 @@ void C_BaseCombatWeapon::OnDataChanged( DataUpdateType_t updateType )
 	{
 		C_GstringPlayer *pGStringPlayer = ToGstringPlayer( pPlayer );
 
-		FollowEntity( pGStringPlayer->GetBodyModel() );
+		if ( pGStringPlayer != NULL && pGStringPlayer->GetBodyModel() != NULL )
+		{
+			FollowEntity( pGStringPlayer->GetBodyModel() );
+		}
 	}
 	// END GSTRINGMIGRATION
 

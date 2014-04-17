@@ -90,16 +90,24 @@ void CVGUIMenuButton::OnThink()
 	float flBGAlphaSpeed = IsArmed() ? 4.0f : 2.0f;
 
 	if ( abs(m_flBlurStrengthAmount-flBlurGoal) < 0.01f )
+	{
 		m_flBlurStrengthAmount = flBlurGoal;
+	}
 	else
+	{
 		m_flBlurStrengthAmount += (flBlurGoal - m_flBlurStrengthAmount) *
-		min( 1.0f, CFrameTimeHelper::GetFrameTime() );
+			min( 1.0f, CFrameTimeHelper::GetFrameTime() );
+	}
 
 	if ( abs(m_flBackgroundAlpha-flBGAlphaGoal) < 0.01f )
+	{
 		m_flBackgroundAlpha = flBGAlphaGoal;
+	}
 	else
+	{
 		m_flBackgroundAlpha += (flBGAlphaGoal - m_flBackgroundAlpha) *
-		min( 1.0f, CFrameTimeHelper::GetFrameTime() * flBGAlphaSpeed );
+			min( 1.0f, CFrameTimeHelper::GetFrameTime() * flBGAlphaSpeed );
+	}
 
 	m_pTextBlur->SetAlpha( m_flBlurStrengthAmount * 255 );
 }

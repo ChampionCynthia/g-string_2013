@@ -21,17 +21,17 @@ CVGUIGstringOptions::CVGUIGstringOptions( VPANEL parent, const char *pName ) : B
 
 	Activate();
 
-	m_pCheck_HurtFX = new CheckButton( this, "check_bars", "Enable damage effects" );
-	m_pCheck_Vignette = new CheckButton( this, "check_vignette", "Enable vignette" );
-	m_pCheck_GodRays = new CheckButton( this, "check_godrays", "Enable god-rays" );
-	m_pCheck_WaterEffects = new CheckButton( this, "check_screenwater", "Enable water screen effects" );
-	m_pCheck_LensFlare = new CheckButton( this, "check_lensflare", "Enable lens flares" );
+	m_pCheck_HurtFX = new CheckButton( this, "check_bars", "" );
+	m_pCheck_Vignette = new CheckButton( this, "check_vignette", "" );
+	m_pCheck_GodRays = new CheckButton( this, "check_godrays", "" );
+	m_pCheck_WaterEffects = new CheckButton( this, "check_screenwater", "" );
+	m_pCheck_LensFlare = new CheckButton( this, "check_lensflare", "" );
 	m_pCBox_BloomFlare = new ComboBox( this, "check_bloomflare", 3, false );
-	m_pCBox_BloomFlare->AddItem( "Never", NULL );
-	m_pCBox_BloomFlare->AddItem( "Map based", NULL );
-	m_pCBox_BloomFlare->AddItem( "Always", NULL );
-	m_pCheck_DreamBlur = new CheckButton( this, "check_dreamblur", "Enable dream effects" );
-	m_pCheck_ScreenBlur = new CheckButton( this, "check_screenblur", "Enable screen blur" );
+	m_pCBox_BloomFlare->AddItem( "#pp_bloom_flare_never", NULL );
+	m_pCBox_BloomFlare->AddItem( "#pp_bloom_flare_map_based", NULL );
+	m_pCBox_BloomFlare->AddItem( "#pp_bloom_flare_always", NULL );
+	m_pCheck_DreamBlur = new CheckButton( this, "check_dreamblur", "" );
+	m_pCheck_ScreenBlur = new CheckButton( this, "check_screenblur", "" );
 
 #define CREATE_VGUI_SLIDER( var, name, minRange, maxRange, ticks ) var = new Slider( this, name ); \
 	var->SetRange( minRange, maxRange ); \

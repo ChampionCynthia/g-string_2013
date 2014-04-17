@@ -66,13 +66,13 @@ CVGUIMenuEmbedded::CVGUIMenuEmbedded( Panel *parent ) : BaseClass( parent )
 	m_pParticleParent->AddGlobalOperator( new vParticleOperator_SizeMultiplyXY( 2, 0 ) );
 	m_pParticleParent->AddGlobalOperator( new vParticleOperator_AlphaFade( 0 ) );
 
-	m_hButtons_InGame.AddToTail( new CVGUIMenuButton( this, "Resume", "game_resume", 0 ) );
-	m_hButtons_General.AddToTail( new CVGUIMenuButton( this, "New", "game_new", 1 ) );
-	m_hButtons_General.AddToTail( new CVGUIMenuButton( this, "Load", "game_load", 2 ) );
-	m_hButtons_InGame.AddToTail( new CVGUIMenuButton( this, "Save", "game_save", 3 ) );
-	m_hButtons_General.AddToTail( new CVGUIMenuButton( this, "Options", "game_options", 4 ) );
-	m_hButtons_General.AddToTail( new CVGUIMenuButton( this, "Post-processing", "game_postprocessing", 5 ) );
-	m_hButtons_General.AddToTail( new CVGUIMenuButton( this, "Quit", "game_quit", 6 ) );
+	m_hButtons_InGame.AddToTail( new CVGUIMenuButton( this, "#menu_resume", "game_resume", 0 ) );
+	m_hButtons_General.AddToTail( new CVGUIMenuButton( this, "#menu_new", "game_new", 1 ) );
+	m_hButtons_General.AddToTail( new CVGUIMenuButton( this, "#menu_load", "game_load", 2 ) );
+	m_hButtons_InGame.AddToTail( new CVGUIMenuButton( this, "#menu_save", "game_save", 3 ) );
+	m_hButtons_General.AddToTail( new CVGUIMenuButton( this, "#menu_options", "game_options", 4 ) );
+	m_hButtons_General.AddToTail( new CVGUIMenuButton( this, "#menu_postprocessing", "game_postprocessing", 5 ) );
+	m_hButtons_General.AddToTail( new CVGUIMenuButton( this, "#menu_quit", "game_quit", 6 ) );
 
 	SetupVGUITex( "vgui/menu/menu_bg", m_iTexture_BG );
 	SetupVGUITex( "vgui/menu/menu_line", m_iTexture_Line );
@@ -210,7 +210,7 @@ void CVGUIMenuEmbedded::PerformLayout()
 
 	m_pParticleParent->SetBounds( 0, 0, w, t );
 
-	const char *pszMenuTitle = bIngame ? "In-game menu" : "Main menu";
+	const char *pszMenuTitle = bIngame ? "#menu_title_in_game" : "#menu_title_main";
 	m_pTitle_0->SetText( pszMenuTitle );
 	m_pTitle_1->SetText( pszMenuTitle );
 }
