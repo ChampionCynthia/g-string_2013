@@ -62,7 +62,7 @@ CVGUIGstringOptions::CVGUIGstringOptions( VPANEL parent, const char *pName ) : B
 	SetSizeable(false);
 	SetMoveable(true);
 
-	SetTitle( "G-string options", false );
+	SetTitle( "#pp_title", false );
 }
 
 CVGUIGstringOptions::~CVGUIGstringOptions()

@@ -10,7 +10,10 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-#define ENV_PROJECTEDTEXTURE_STARTON			(1<<0)
+#define ENV_PROJECTEDTEXTURE_STARTON					( 1 << 0 )
+// GSTRINGMIGRATION
+#define ENV_PROJECTEDTEXTURE_VOLUMETRICS_START_ON		( 1 << 1 )
+// END GSTRINGMIGRATION
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -40,6 +43,9 @@ public:
 //	void InputSetLightColor( inputdata_t &inputdata );
 	void InputSetSpotlightTexture( inputdata_t &inputdata );
 	void InputSetAmbient( inputdata_t &inputdata );
+// GSTRINGMIGRATION
+	void InputSetEnableVolumetrics( inputdata_t &inputdata );
+// END GSTRINGMIGRATION
 
 	void InitialThink( void );
 
@@ -60,6 +66,13 @@ private:
 	CNetworkVar( float, m_flNearZ );
 	CNetworkVar( float, m_flFarZ );
 	CNetworkVar( int, m_nShadowQuality );
+// GSTRINGMIGRATION
+	CNetworkVar( bool, m_bEnableVolumetrics );
+	CNetworkVar( bool, m_bEnableVolumetricsLOD );
+	CNetworkVar( float, m_flVolumetricsFadeDistance );
+	CNetworkVar( int, m_iVolumetricsQuality );
+	CNetworkVar( float, m_flVolumetricsMultiplier );
+// END GSTRINGMIGRATION
 };
 
 LINK_ENTITY_TO_CLASS( env_projectedtexture, CEnvProjectedTexture );
@@ -92,8 +105,18 @@ BEGIN_DATADESC( CEnvProjectedTexture )
 	// this is broken . . need to be able to set color and intensity like light_dynamic
 //	DEFINE_INPUTFUNC( FIELD_COLOR32, "LightColor", InputSetLightColor ),
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "Ambient", InputSetAmbient ),
-	DEFINE_INPUTFUNC( FIELD_STRING, "SpotlightTexture", InputSetSpotlightTexture ),
+	//DEFINE_INPUTFUNC( FIELD_STRING, "SpotlightTexture", InputSetSpotlightTexture ),
 	DEFINE_THINKFUNC( InitialThink ),
+
+// GSTRINGMIGRATION
+	DEFINE_INPUTFUNC( FIELD_BOOLEAN, "EnableVolumetrics", InputSetEnableVolumetrics ),
+
+	DEFINE_FIELD( m_bEnableVolumetrics, FIELD_BOOLEAN ),
+	DEFINE_KEYFIELD( m_bEnableVolumetricsLOD, FIELD_BOOLEAN, "volumetricslod" ),
+	DEFINE_KEYFIELD( m_flVolumetricsFadeDistance, FIELD_FLOAT, "volumetricsfadedistance" ),
+	DEFINE_KEYFIELD( m_iVolumetricsQuality, FIELD_INTEGER, "volumetricsquality" ),
+	DEFINE_KEYFIELD( m_flVolumetricsMultiplier, FIELD_FLOAT, "volumetricsmultiplier" ),
+// END GSTRINGMIGRATION
 END_DATADESC()
 
 IMPLEMENT_SERVERCLASS_ST( CEnvProjectedTexture, DT_EnvProjectedTexture )
@@ -108,9 +131,16 @@ IMPLEMENT_SERVERCLASS_ST( CEnvProjectedTexture, DT_EnvProjectedTexture )
 	SendPropFloat( SENDINFO( m_flAmbient ) ),
 	SendPropString( SENDINFO( m_SpotlightTextureName ) ),
 	SendPropInt( SENDINFO( m_nSpotlightTextureFrame ) ),
-	SendPropFloat( SENDINFO( m_flNearZ ), 16, SPROP_ROUNDDOWN, 0.0f,  500.0f ),
-	SendPropFloat( SENDINFO( m_flFarZ ),  18, SPROP_ROUNDDOWN, 0.0f, 1500.0f ),
+	SendPropFloat( SENDINFO( m_flNearZ ), 16, SPROP_ROUNDDOWN, 0.1f,  500.0f ),
+	SendPropFloat( SENDINFO( m_flFarZ ),  18, SPROP_ROUNDDOWN, 5.0f, 1500.0f ),
 	SendPropInt( SENDINFO( m_nShadowQuality ), 1, SPROP_UNSIGNED ),  // Just one bit for now
+// GSTRINGMIGRATION
+	SendPropBool( SENDINFO( m_bEnableVolumetrics ) ),
+	SendPropBool( SENDINFO( m_bEnableVolumetricsLOD ) ),
+	SendPropFloat( SENDINFO( m_flVolumetricsFadeDistance ) ),
+	SendPropInt( SENDINFO( m_iVolumetricsQuality ) ),
+	SendPropFloat( SENDINFO( m_flVolumetricsMultiplier ) ),
+// END GSTRINGMIGRATION
 END_SEND_TABLE()
 
 //-----------------------------------------------------------------------------
@@ -236,6 +266,8 @@ void CEnvProjectedTexture::Activate( void )
 		m_bState = true;
 	}
 
+	m_bEnableVolumetrics = HasSpawnFlags( ENV_PROJECTEDTEXTURE_VOLUMETRICS_START_ON ); // GSTRINGMIGRATION
+
 	SetThink( &CEnvProjectedTexture::InitialThink );
 	SetNextThink( gpGlobals->curtime + 0.1f );
 
@@ -252,6 +284,12 @@ int CEnvProjectedTexture::UpdateTransmitState()
 	return SetTransmitState( FL_EDICT_ALWAYS );
 }
 
+// GSTRINGMIGRATION
+void CEnvProjectedTexture::InputSetEnableVolumetrics( inputdata_t &inputdata )
+{
+	m_bEnableVolumetrics = inputdata.value.Bool();
+}
+// END GSTRINGMIGRATION
 
 // Console command for creating env_projectedtexture entities
 void CC_CreateFlashlight( const CCommand &args )

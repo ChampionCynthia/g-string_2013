@@ -12,6 +12,8 @@
 
 	void CBoneAccessor::SanityCheckBone( int iBone, bool bReadable ) const
 	{
+		return;
+
 		if ( m_pAnimating )
 		{
 			CStudioHdr *pHdr = m_pAnimating->GetModelPtr();

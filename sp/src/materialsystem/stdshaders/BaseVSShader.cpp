@@ -1979,6 +1979,9 @@ void CBaseVSShader::DrawFlashlight_dx90( IMaterialVar** params, IShaderDynamicAP
 				pFlashlightDepthTexture = (ITexture*)pShaderAPI->GetIntRenderingParameter( INT_FLASHLIGHT_DEPTHTEXTURE_FALLBACK_FIRST + iFlashlightShadowIndex );
 			}
 		}
+
+		float flFlashlightPos[4] = { XYZ( flashlightState.m_vecLightOrigin ) };
+		pShaderAPI->SetPixelShaderConstant( PSREG_FRESNEL_SPEC_PARAMS, flFlashlightPos );
 		// END GSTRINGMIGRATION
 
 		SetFlashLightColorFromState( flashlightState, pShaderAPI );

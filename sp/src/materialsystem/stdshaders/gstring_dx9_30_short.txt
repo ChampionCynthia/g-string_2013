@@ -1,2 +1,3 @@
 
-SDK_vertexlit_and_unlit_generic_ps20b.fxc
+
+sdk_flashlight_ps2x.fxc

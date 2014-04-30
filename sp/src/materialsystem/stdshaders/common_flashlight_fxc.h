@@ -618,7 +618,7 @@ float DoFlashlightShadow( sampler DepthSampler, sampler RandomRotationSampler, f
 
 #if !defined( _X360 ) //PC
 	if( nShadowLevel == NVIDIA_PCF_POISSON )
-#if defined( NEW_SHADOW_FILTERS )	
+#if defined( NEW_SHADOW_FILTERS ) && defined( SHADER_MODEL_PS_3_0 )
 		// Let's replace noise filter with gaussian blur, like in Portal 2.
 		flShadow = DoShadowNvidiaPCF5x5Gaussian( DepthSampler, vProjCoords );
 #else

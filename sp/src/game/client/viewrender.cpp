@@ -5502,7 +5502,7 @@ void CBaseWorldView::PushView( float waterHeight )
 	if( m_DrawFlags & DF_RENDER_REFRACTION )
 	{
 		pRenderContext->SetFogZ( waterHeight );
-		pRenderContext->SetHeightClipZ( waterHeight );
+		pRenderContext->SetHeightClipZ( waterHeight + 5.0f ); // GSTRINGMIGRATION
 		pRenderContext->SetHeightClipMode( clipMode );
 
 		// Have to re-set up the view since we reset the size
@@ -5523,7 +5523,7 @@ void CBaseWorldView::PushView( float waterHeight )
 			waterHeight = origin[2] + r_eyewaterepsilon.GetFloat();
 		}
 
-		pRenderContext->SetHeightClipZ( waterHeight - 15.0f ); // GSTRINGMIGRATION
+		pRenderContext->SetHeightClipZ( waterHeight + 1.0f ); // GSTRINGMIGRATION
 		pRenderContext->SetHeightClipMode( clipMode );
 
 		render->Push3DView( *this, m_ClearFlags, pTexture, GetFrustum() );
