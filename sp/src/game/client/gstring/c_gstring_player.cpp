@@ -3,43 +3,30 @@
 #include "c_gstring_player.h"
 #include "view_shared.h"
 #include "view.h"
+#include "ivieweffects.h"
 #include "flashlighteffect.h"
 #include "c_muzzleflash_effect.h"
 #include "c_bobmodel.h"
 #include "c_gstring_player_ragdoll.h"
 
-
 #define FLASHLIGHT_DISTANCE		1000
-
-//CON_COMMAND( gstring_list_recvproj, "" )
-//{
-//	for ( C_BaseEntity *pEnt = ClientEntityList().FirstBaseEntity();
-//		pEnt;
-//		pEnt = ClientEntityList().NextBaseEntity( pEnt ) )
-//	{
-//		if ( !pEnt->ShouldReceiveProjectedTextures( SHADOW_FLAGS_PROJECTED_TEXTURE_TYPE_MASK ) )
-//			continue;
-//
-//		Msg( "%i: %s - %s\n", pEnt->entindex(), pEnt->GetClassName(), pEnt->GetClassname() );
-//	}
-//}
-
 
 static ConVar gstring_firstpersonbody_forwardoffset_min( "gstring_firstpersonbody_forwardoffset_min", "13.0" );
 static ConVar gstring_firstpersonbody_forwardoffset_max( "gstring_firstpersonbody_forwardoffset_max", "18.0" );
 
-static ConVar gstring_firstpersonbody_enable( "gstring_firstpersonbody_enable", "1" );
+ConVar gstring_firstpersonbody_enable( "gstring_firstpersonbody_enable", "1", FCVAR_ARCHIVE );
+ConVar gstring_firstpersonbody_shadow_enable( "gstring_firstpersonbody_shadow_enable", "1", FCVAR_ARCHIVE );
 
 static ConVar gstring_viewbob_walk_dist( "gstring_viewbob_walk_dist", "2.5" );
 static ConVar gstring_viewbob_walk_scale( "gstring_viewbob_walk_scale", "1.5" );
 static ConVar gstring_viewbob_model_scale( "gstring_viewbob_model_scale", "1" );
 
-
 IMPLEMENT_CLIENTCLASS_DT( C_GstringPlayer, DT_CGstringPlayer, CGstringPlayer )
 
 	RecvPropBool( RECVINFO( m_bNightvisionActive ) ),
 	RecvPropBool( RECVINFO( m_bHasUseEntity ) ),
-	RecvPropInt( RECVINFO( m_nReloadParity )),
+	RecvPropInt( RECVINFO( m_nReloadParity ) ),
+	RecvPropEHandle( RECVINFO( m_hSpacecraft ) ),
 
 END_RECV_TABLE()
 
@@ -184,6 +171,12 @@ void C_GstringPlayer::OverrideView( CViewSetup *pSetup )
 	{
 		m_pRagdollEntity->GetAttachment( "eyes", pSetup->origin, pSetup->angles );
 		pSetup->fov += 10.0f;
+		return;
+	}
+
+	if ( IsInSpacecraft() )
+	{
+		GetSpacecraftCamera( pSetup->origin, pSetup->angles, pSetup->fov );
 		return;
 	}
 
@@ -332,6 +325,16 @@ void C_GstringPlayer::OverrideView( CViewSetup *pSetup )
 			* gstring_viewbob_model_scale.GetFloat()
 			* m_flBobModelAmount;
 	}
+}
+
+int C_GstringPlayer::DrawModel( int flags )
+{
+	if ( IsInSpacecraft() )
+	{
+		return 0;
+	}
+
+	return BaseClass::DrawModel( flags );
 }
 
 void C_GstringPlayer::ProcessMuzzleFlashEvent()
@@ -531,7 +534,7 @@ bool C_GstringPlayer::ShouldFirstpersonModelCastShadow()
 			}
 		}
 
-		return true;
+		return gstring_firstpersonbody_shadow_enable.GetBool();
 	}
 
 	return false;
@@ -559,13 +562,21 @@ float C_GstringPlayer::GetFlashlightDot() const
 
 void C_GstringPlayer::UpdateBodyModel()
 {
-	if ( !gstring_firstpersonbody_enable.GetBool()
-		|| !IsAlive() )
+	const bool bFirstpersonBodyEnabled = gstring_firstpersonbody_enable.GetBool();
+
+	if ( !bFirstpersonBodyEnabled
+		|| !IsAlive()
+		|| IsInSpacecraft() )
 	{
 		if ( m_pBodyModel != NULL )
 		{
 			m_pBodyModel->Release();
 			m_pBodyModel = NULL;
+		}
+
+		if ( !bFirstpersonBodyEnabled )
+		{
+			UpdateCustomStepSound();
 		}
 
 		return;
@@ -811,19 +822,31 @@ void C_GstringPlayer::UpdateBodyModel()
 
 	if ( actDesired == ACT_RUN_AIM_PISTOL )
 	{
+		UpdateCustomStepSound();
+	}
+	else
+	{
+		m_flBodyStepSoundHack = 0.0f;
+	}
+}
+
+void C_GstringPlayer::UpdateCustomStepSound()
+{
+	Vector vecVelocity = GetAbsVelocity();
+	vecVelocity.z = 0.0f;
+	const float flSpeedSqr = vecVelocity.LengthSqr();
+
+	if ( flSpeedSqr > 1600.0f)
+	{
 		m_flBodyStepSoundHack -= gpGlobals->frametime;
 
 		if ( m_flBodyStepSoundHack < 0.0f )
 		{
 			const Vector &vecVelocity = GetAbsVelocity();
-			m_flBodyStepSoundHack = ( vecVelocity.LengthSqr() > 150.0f * 150.0f ) ? 0.25f : 0.45f;
+			m_flBodyStepSoundHack = ( flSpeedSqr > 150.0f * 150.0f ) ? 0.25f : 0.45f;
 
 			BaseClass::UpdateStepSound( GetGroundSurface(), GetAbsOrigin(), vecVelocity );
 		}
-	}
-	else
-	{
-		m_flBodyStepSoundHack = 0.0f;
 	}
 }
 
@@ -858,4 +881,45 @@ void C_GstringPlayer::GetRagdollInitBoneArrays( matrix3x4_t *pDeltaBones0, matri
 C_ClientRagdoll *C_GstringPlayer::CreateRagdollCopyInstance()
 {
 	return new C_GStringPlayerRagdoll();
+}
+
+bool C_GstringPlayer::IsInSpacecraft() const
+{
+	return m_hSpacecraft != NULL;
+}
+
+CSpacecraft *C_GstringPlayer::GetSpacecraft()
+{
+	return m_hSpacecraft;
+}
+
+void C_GstringPlayer::GetSpacecraftCamera( Vector &origin, QAngle &angles, float &flFov )
+{
+	Assert( GetSpacecraft() );
+	CSpacecraft *pSpacecraft = GetSpacecraft();
+
+	const float flDistance = 40.0f;
+
+	Vector vecFwd, vecRight, vecUp;
+	AngleVectors( angles, &vecFwd, &vecRight, &vecUp );
+
+	Vector vecPivot = origin + vecFwd * 5000.0f;
+	origin = pSpacecraft->GetRenderOrigin() - vecFwd * flDistance;
+
+	origin += vecUp * 10.0f;
+
+	static Vector s_originSmooth( origin );
+	Vector delta = origin - s_originSmooth;
+	if ( delta.LengthSqr() > 10000.0f )
+	{
+		s_originSmooth = origin;
+	}
+	else
+	{
+		s_originSmooth += delta * gpGlobals->frametime * 50.0f;
+		origin = s_originSmooth;
+	}
+
+	vieweffects->CalcShake();
+	vieweffects->ApplyShake( origin, angles, 1.0f );
 }

@@ -6,6 +6,7 @@
 #include "vgui_controls/Controls.h"
 
 #include "vgui_controls/Frame.h"
+#include "vgui_controls/PropertySheet.h"
 
 class CVGUIGstringOptions : public vgui::Frame
 {
@@ -31,6 +32,9 @@ private:
 
 	void ReadValues();
 
+	vgui::PropertySheet		*m_pPropertySheet;
+
+	// Post-processing
 	vgui::CheckButton	*m_pCheck_HurtFX;
 	vgui::CheckButton	*m_pCheck_GodRays;
 	vgui::CheckButton	*m_pCheck_WaterEffects;
@@ -57,6 +61,11 @@ private:
 	vgui::Label			*m_pLabel_Value_Desaturation;
 	vgui::Label			*m_pLabel_Value_FilmGrain;
 	vgui::Label			*m_pLabel_Value_Chromatic;
+
+	// Game
+	vgui::CheckButton	*m_pCheck_FirstPersonBody;
+	vgui::CheckButton	*m_pCheck_FirstPersonShadow;
+	vgui::CheckButton	*m_pCheck_LightVolumetrics;
 };
 
 

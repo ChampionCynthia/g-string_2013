@@ -18,6 +18,11 @@
 #include "client_virtualreality.h"
 #include "sourcevr/isourcevirtualreality.h"
 
+// GSTRINGMIGRATION
+#include "gstring/c_gstring_player.h"
+#include "gstring/gstring_in_main.h"
+// END GSTRINGMIGRATION
+
 #ifdef SIXENSE
 #include "sixense/in_sixense.h"
 #endif
@@ -85,9 +90,14 @@ bool CHudCrosshair::ShouldDraw( void )
 	if ( m_bHideCrosshair )
 		return false;
 
-	C_BasePlayer* pPlayer = C_BasePlayer::GetLocalPlayer();
+	// BBMIGRATION
+	C_GstringPlayer *pPlayer = LocalGstringPlayer();
 	if ( !pPlayer )
 		return false;
+
+	if ( pPlayer->IsInSpacecraft() )
+		return true;
+	// END BBMIGRATION
 
 	C_BaseCombatWeapon *pWeapon = pPlayer->GetActiveWeapon();
 	if ( pWeapon && !pWeapon->ShouldDrawCrosshair() )
@@ -208,21 +218,23 @@ void CHudCrosshair::GetDrawPosition ( float *pX, float *pY, bool *pbBehindCamera
 	// MattB - angleCrosshairOffset is the autoaim angle.
 	// if we're not using autoaim, just draw in the middle of the 
 	// screen
-	if ( angleCrosshairOffset != vec3_angle )
-	{
-		QAngle angles;
-		Vector forward;
-		Vector point, screen;
+	// GSTRINGMIGRATION
+	//if ( angleCrosshairOffset != vec3_angle )
+	//{
+	//	QAngle angles;
+	//	Vector forward;
+	//	Vector point, screen;
 
-		// this code is wrong
-		angles = curViewAngles + angleCrosshairOffset;
-		AngleVectors( angles, &forward );
-		VectorAdd( curViewOrigin, forward, point );
-		ScreenTransform( point, screen );
+	//	// this code is wrong
+	//	angles = curViewAngles + angleCrosshairOffset;
+	//	AngleVectors( angles, &forward );
+	//	VectorAdd( curViewOrigin, forward, point );
+	//	ScreenTransform( point, screen );
 
-		x += 0.5f * screen[0] * screenWidth + 0.5f;
-		y += 0.5f * screen[1] * screenHeight + 0.5f;
-	}
+	//	x += 0.5f * screen[0] * screenWidth + 0.5f;
+	//	y += 0.5f * screen[1] * screenHeight + 0.5f;
+	//}
+	// GSTRINGMIGRATION
 
 	*pX = x;
 	*pY = y;
@@ -238,9 +250,54 @@ void CHudCrosshair::Paint( void )
 	if ( !IsCurrentViewAccessAllowed() )
 		return;
 
-	C_BasePlayer* pPlayer = C_BasePlayer::GetLocalPlayer();
+	C_GstringPlayer *pPlayer = LocalGstringPlayer(); // GSTRINGMIGRATION
 	if ( !pPlayer )
 		return;
+
+	// GSTRINGMIGRATION
+	if ( pPlayer->IsInSpacecraft() )
+	{
+		int x, y;
+		float angle;
+		GetGstringInput()->GetCrosshairPosition( x, y, angle );
+
+		if ( !m_pCrosshair->bRenderUsingFont )
+		{
+			const float flAng = DEG2RAD( angle );
+			Vector2D right( cos( flAng ), sin( flAng ) );
+			Vector2D up( right.y, -right.x );
+
+			right *= m_pCrosshair->Width() * 0.5f;
+			up *= m_pCrosshair->Height() * 0.5f;
+
+			const Vector2D pos( x - 1.0f, y );
+			Vertex_t v[4] = {
+				Vertex_t( pos + up - right, Vector2D( 0, 0 ) ),
+				Vertex_t( pos + up + right, Vector2D( 1, 0 ) ),
+				Vertex_t( pos + right - up, Vector2D( 1, 1 ) ),
+				Vertex_t( pos + -right - up, Vector2D( 0, 1 ) )
+			};
+
+			surface()->DrawSetTexture( m_pCrosshair->textureId );
+
+			surface()->DrawSetColor( Color( 255, 0, 0, 32 ) );
+			surface()->DrawTexturedPolygon( 4, v );
+
+			for ( int i = 0; i < 4; i++ )
+				v[ i ].m_Position.x += 2.0f;
+
+			surface()->DrawSetColor( Color( 0, 0, 255, 32 ) );
+			surface()->DrawTexturedPolygon( 4, v );
+
+			for ( int i = 0; i < 4; i++ )
+				v[ i ].m_Position.x -= 1.0f;
+
+			surface()->DrawSetColor( m_clrCrosshair );
+			surface()->DrawTexturedPolygon( 4, v );
+		}
+		return;
+	}
+	// END GSTRINGMIGRATION
 
 	float x, y;
 	bool bBehindCamera;

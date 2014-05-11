@@ -3,6 +3,7 @@
 
 #include "c_basehlplayer.h"
 #include "c_firstpersonbody.h"
+#include "gstring/cspacecraft.h"
 
 class C_MuzzleflashEffect;
 class C_BobModel;
@@ -24,6 +25,8 @@ public:
 	virtual void ClientThink();
 
 	virtual void OverrideView( CViewSetup *pSetup );
+	virtual const Vector &GetViewOffset() const;
+	virtual int DrawModel( int flags );
 
 	virtual void ProcessMuzzleFlashEvent();
 	virtual void UpdateFlashlight();
@@ -46,10 +49,17 @@ public:
 
 	C_FirstpersonBody *GetBodyModel() { return m_pBodyModel; }
 
+	bool IsInSpacecraft() const;
+	CSpacecraft *GetSpacecraft();
+
+	virtual	bool Weapon_CanSwitchTo( C_BaseCombatWeapon *pWeapon );
+
 protected:
 
 private:
 	void UpdateBodyModel();
+	void UpdateCustomStepSound();
+	void GetSpacecraftCamera( Vector &origin, QAngle &angles, float &flFov );
 
 	CNetworkVar( unsigned char, m_nReloadParity );
 	unsigned char m_nOldReloadParity;
@@ -87,6 +97,8 @@ private:
 	bool m_bBodyPlayingLandAnim;
 	int m_iBodyNextAttackLayer;
 	float m_flBodyStepSoundHack;
+
+	CNetworkHandle( CSpacecraft, m_hSpacecraft );
 };
 
 inline C_GstringPlayer *ToGstringPlayer( C_BaseEntity *pPlayer )

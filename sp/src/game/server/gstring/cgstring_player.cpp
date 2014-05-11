@@ -18,6 +18,7 @@ IMPLEMENT_SERVERCLASS_ST( CGstringPlayer, DT_CGstringPlayer )
 	SendPropBool( SENDINFO( m_bNightvisionActive ) ),
 	SendPropBool( SENDINFO( m_bHasUseEntity ) ),
 	SendPropInt( SENDINFO( m_nReloadParity ), EF_MUZZLEFLASH_BITS, SPROP_UNSIGNED ),
+	SendPropEHandle( SENDINFO( m_hSpacecraft ) ),
 
 END_SEND_TABLE()
 
@@ -205,3 +206,47 @@ bool CGstringPlayer::CanBecomeRagdoll()
 {
 	return true;
 }
+
+void CGstringPlayer::EnterSpacecraft( CSpacecraft *pSpacecraft )
+{
+	CBaseCombatWeapon *pActiveWeapon = GetActiveWeapon();
+	if ( pActiveWeapon != NULL )
+	{
+		pActiveWeapon->Holster();
+	}
+
+	SetMoveType( MOVETYPE_NOCLIP );
+	m_hSpacecraft.Set( pSpacecraft );
+}
+
+bool CGstringPlayer::IsInSpacecraft() const
+{
+	return m_hSpacecraft != NULL;
+}
+
+void CGstringPlayer::ExitSpacecraft()
+{
+	m_hSpacecraft.Set( NULL );
+
+	SetMoveType( MOVETYPE_WALK );
+
+	CBaseCombatWeapon *pActiveWeapon = GetActiveWeapon();
+	if ( pActiveWeapon != NULL )
+	{
+		pActiveWeapon->Deploy();
+	}
+}
+
+CSpacecraft *CGstringPlayer::GetSpacecraft()
+{
+	return m_hSpacecraft;
+}
+
+void CGstringPlayer::StartAdmireGlovesAnimation()
+{
+	if ( IsInSpacecraft() )
+		return;
+
+	BaseClass::StartAdmireGlovesAnimation();
+}
+

@@ -82,6 +82,8 @@ protected:
 	// were contacted during the move.
 	virtual void	PlayerMove(	void );
 
+	virtual void	ProcessMoveType(); // GSTRINGMIGRATION
+
 	// Set ground data, etc.
 	void			FinishMove( void );
 

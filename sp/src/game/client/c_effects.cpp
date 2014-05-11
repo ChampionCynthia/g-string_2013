@@ -270,7 +270,7 @@ static bool IsInAir( const Vector& position )
 //-----------------------------------------------------------------------------
 
 ConVar CClient_Precipitation::s_raindensity( "r_raindensity","0.001", FCVAR_CHEAT);
-ConVar CClient_Precipitation::s_rainwidth( "r_rainwidth", "0.5", FCVAR_CHEAT );
+ConVar CClient_Precipitation::s_rainwidth( "r_rainwidth", "0.1", FCVAR_CHEAT );
 ConVar CClient_Precipitation::s_rainlength( "r_rainlength", "0.01f", FCVAR_CHEAT ); // GSTRINGMIGRATION
 ConVar CClient_Precipitation::s_rainspeed( "r_rainspeed", "600.0f", FCVAR_CHEAT );
 ConVar r_rainalpha( "r_rainalpha", "0.1", FCVAR_CHEAT ); // GSTRINGMIGRATION
@@ -590,7 +590,7 @@ inline void CClient_Precipitation::RenderParticle( CPrecipitationParticle* pPart
 	flAlpha = pow( flAlpha, r_rainalphapow.GetFloat() );
 
 	float flColor[4] = { 1, 1, 1, flAlpha };
-	Tracer_Draw( &mb, start - delta, delta, flWidth, flColor, 1 ); // GSTRINGMIGRATION
+	Tracer_Draw( &mb, start - delta, delta, flWidth * 10, flColor, 0.0f, 1.0f ); // GSTRINGMIGRATION
 }
 
 

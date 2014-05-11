@@ -2,6 +2,7 @@
 #define CGSTRING_PLAYER_H
 
 #include "hl2_player.h"
+#include "gstring/cspacecraft.h"
 
 class CGstringPlayer : public CHL2_Player
 {
@@ -22,6 +23,7 @@ public:
 	virtual void PhysicsSimulate();
 
 	virtual void UpdateStepSound( surfacedata_t *psurface, const Vector &vecOrigin, const Vector &vecVelocity );
+	virtual const Vector &GetViewOffset() const;
 
 	virtual bool ShouldGib( const CTakeDamageInfo &info );
 	virtual bool CanBecomeRagdoll();
@@ -29,6 +31,14 @@ public:
 	virtual void DoReloadAnim();
 
 	virtual bool ClientCommand( const CCommand &args );
+
+	void EnterSpacecraft( CSpacecraft *pSpacecraft );
+	bool IsInSpacecraft() const;
+	void ExitSpacecraft();
+	CSpacecraft *GetSpacecraft();
+
+	virtual bool Weapon_CanSwitchTo( CBaseCombatWeapon *pWeapon );
+	virtual void StartAdmireGlovesAnimation();
 
 protected:
 
@@ -39,6 +49,7 @@ private:
 	CNetworkVar( bool, m_bHasUseEntity );
 	CNetworkVar( unsigned char, m_nReloadParity );
 
+	CNetworkHandle( CSpacecraft, m_hSpacecraft );
 };
 
 inline CGstringPlayer *ToGstringPlayer( CBaseEntity *pPlayer )

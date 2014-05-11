@@ -112,8 +112,7 @@ public:
 
 	virtual	bool		EnableJoystickMode();
 
-// Private Implementation
-private:
+protected: // GSTRINGMIGRATION
 	// Implementation specific initialization
 	void		Init_Camera( void );
 	void		Init_Keyboard( void );
@@ -127,7 +126,7 @@ private:
 	void		ComputeUpwardMove( CUserCmd *cmd );
 	void		ComputeSideMove( CUserCmd *cmd );
 	void		AdjustAngles ( float frametime );
-	void		ClampAngles( QAngle& viewangles );
+	virtual void		ClampAngles( QAngle& viewangles ); // GSTRINGMIGRATION
 	void		AdjustPitch( float speed, QAngle& viewangles );
 	virtual void AdjustYaw( float speed, QAngle& viewangles );
 	float		DetermineKeySpeed( float frametime );
@@ -135,7 +134,7 @@ private:
 	void		GetMouseDelta( float inmousex, float inmousey, float *pOutMouseX, float *pOutMouseY );
 	void		ScaleMouse( float *x, float *y );
 	void		ApplyMouse( QAngle& viewangles, CUserCmd *cmd, float mouse_x, float mouse_y );
-	void		MouseMove ( CUserCmd *cmd );
+	virtual void	MouseMove( CUserCmd *cmd ); // GSTRINGMIGRATION
 
 	// Joystick  movement input helpers
 	void		ControllerMove ( float frametime, CUserCmd *cmd );
@@ -151,8 +150,6 @@ private:
 
 	void		ValidateUserCmd( CUserCmd *usercmd, int sequence_number );
 
-// Private Data
-private:
 	typedef struct
 	{
 		unsigned int AxisFlags;

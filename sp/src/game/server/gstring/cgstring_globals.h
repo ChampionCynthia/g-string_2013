@@ -29,12 +29,11 @@ public:
 	void InputUserLightSourceEnable( inputdata_t &inputdata );
 	void InputUserLightSourceDisable( inputdata_t &inputdata );
 	void InputUserLightSourceToggle( inputdata_t &inputdata );
-	
+
 	void SetUserLightSourceEnabled( bool bEnabled );
 	bool IsUserLightSourceEnabled() const;
 
 private:
-
 	bool m_bNightvisionEnabled;
 	bool m_bNightvisionEnabledOverride;
 	bool m_bUserLightSourceEnabled;

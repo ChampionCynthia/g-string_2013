@@ -17,6 +17,19 @@ $Project
 			
 			$File	"$SRCDIR\game\shared\gstring\cscreenoverlay_multi.cpp"
 			$File	"$SRCDIR\game\shared\gstring\cscreenoverlay_multi.h"
+			
+			$File	"$SRCDIR\game\shared\gstring\cspacecraft.cpp"
+			$File	"$SRCDIR\game\shared\gstring\cspacecraft.h"
+			
+			$File	"$SRCDIR\game\shared\gstring\cspacecraftprojectile.cpp"
+			$File	"$SRCDIR\game\shared\gstring\cspacecraftprojectile.h"
+			
+			$File	"$SRCDIR\game\shared\gstring\gstring_player_shared.h"
+			$File	"$SRCDIR\game\shared\gstring\gstring_player_shared_forward.h"
+			$File	"$SRCDIR\game\shared\gstring\gstring_player_shared.cpp"
+			
+			$File	"$SRCDIR\game\shared\gstring\gstring_gamemovement.cpp"
+			$File	"$SRCDIR\game\shared\gstring\gstring_gamemovement.h"
 		}
 	}
 }

@@ -335,6 +335,10 @@ void DrawMotionBlur()
 	if ( !ShouldDrawCommon() )
 		return;
 
+	const C_GstringPlayer *pPlayer = LocalGstringPlayer();
+	if ( pPlayer && pPlayer->IsInSpacecraft() )
+		return;
+
 	static const int iMotionBlur = shaderEdit->GetPPEIndex( MOTIONBLUR_EDITOR_NAME );
 
 	if ( iMotionBlur < 0 )

@@ -12,6 +12,7 @@
 #include <vgui/ISurface.h>
 #include <vgui_controls/Panel.h>
 #include "hud_crosshair.h"
+#include "gstring/c_gstring_player.h" // GSTRINGMIGRATION
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -84,10 +85,18 @@ void CHudWeapon::PerformLayout()
 //-----------------------------------------------------------------------------
 void CHudWeapon::Paint( void )
 {
-	C_BasePlayer *player = C_BasePlayer::GetLocalPlayer();
+	C_GstringPlayer *player =LocalGstringPlayer();
 
 	if ( !player )
 		return;
+
+	// GSTRINGMIGRATION
+	if ( player->IsInSpacecraft() )
+	{
+		player->GetSpacecraft()->UpdateCrosshair( m_pCrosshair );
+		return;
+	}
+	// END GSTRINGMIGRATION
 
 	MDLCACHE_CRITICAL_SECTION();
 

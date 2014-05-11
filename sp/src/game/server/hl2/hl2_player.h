@@ -258,7 +258,7 @@ public:
 	virtual void EquipSuit( bool bPlayEffects = true );
 	virtual void RemoveSuit( void );
 	void  HandleAdmireGlovesAnimation( void );
-	void  StartAdmireGlovesAnimation( void );
+	virtual void StartAdmireGlovesAnimation( void ); // GSTRINGMIGRATION
 	
 	void  HandleSpeedChanges( void );
 

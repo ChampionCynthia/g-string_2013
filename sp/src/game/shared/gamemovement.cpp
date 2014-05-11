@@ -4645,7 +4645,11 @@ void CGameMovement::PlayerMove( void )
 
 #endif
 
-	// Handle movement modes.
+	ProcessMoveType();
+}
+
+void CGameMovement::ProcessMoveType()
+{
 	switch (player->GetMoveType())
 	{
 		case MOVETYPE_NONE:
@@ -4683,7 +4687,6 @@ void CGameMovement::PlayerMove( void )
 			break;
 	}
 }
-
 
 //-----------------------------------------------------------------------------
 // Performs the collision resolution for fliers.

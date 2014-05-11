@@ -28,7 +28,7 @@ static ConVar mat_depthbias_shadowmap(	"mat_depthbias_shadowmap", "0.0005", FCVA
 
 // GSTRINGMIGRATION
 static ConVar gstring_volumetrics_fade_range( "gstring_volumetrics_fade_range", "128.0", FCVAR_CHEAT  );
-static ConVar gstring_volumetrics_enabled( "gstring_volumetrics_enabled", "1"  );
+ConVar gstring_volumetrics_enabled( "gstring_volumetrics_enabled", "1", FCVAR_ARCHIVE );
 // END GSTRINGMIGRATION
 
 //-----------------------------------------------------------------------------
@@ -140,7 +140,7 @@ void Gstring_volumetrics_subdiv_Callback( IConVar *var, const char *pOldValue, f
 		}
 	}
 }
-static ConVar gstring_volumetrics_subdiv( "gstring_volumetrics_subdiv", "20", 0, "", Gstring_volumetrics_subdiv_Callback );
+static ConVar gstring_volumetrics_subdiv( "gstring_volumetrics_subdiv", "0", 0, "", Gstring_volumetrics_subdiv_Callback );
 // END GSTRINGMIGRATION
 
 IMPLEMENT_CLIENTCLASS_DT( C_EnvProjectedTexture, DT_EnvProjectedTexture, CEnvProjectedTexture )
