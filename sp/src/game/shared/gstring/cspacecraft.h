@@ -44,8 +44,6 @@ public:
 	virtual ShadowType_t ShadowCastType() { return SHADOWS_SIMPLE; }
 	virtual bool ShouldReceiveProjectedTextures( int flags ) { return true; }
 
-	virtual CStudioHdr *OnNewModel();
-
 	virtual void OnDataChanged( DataUpdateType_t t );
 	virtual void UpdateOnRemove();
 	virtual void ClientThink();
@@ -53,10 +51,15 @@ public:
 	void UpdateCrosshair( CHudCrosshair *pCrosshair );
 #endif
 
+	virtual CStudioHdr *OnNewModel();
 	virtual void SimulateMove( CMoveData &moveData );
 
 private:
 #ifdef GAME_DLL
+	void SimulateFire( CMoveData &moveData );
+
+	float m_flFireDelay;
+	bool m_bAlternatingWeapons;
 #else
 	CUtlVector< int > m_ThrusterAttachments;
 	CUtlVector< int > m_ThrusterSounds;
@@ -68,16 +71,19 @@ private:
 	CSmartPtr< CNewParticleEffect > m_SpaceFieldParticles;
 
 	int m_iEngineLevelLast;
+	int m_iProjectileParityLast;
 	int m_iGUID_Engine;
 	int m_iGUID_Boost;
 
 	float m_flEngineVolume;
 	float m_flShakeTimer;
 #endif
+	CUtlVector< int > m_WeaponAttachments;
 
 	CNetworkQAngle( m_AngularImpulse );
 	CNetworkVector( m_PhysVelocity );
 	CNetworkVar( int, m_iEngineLevel );
+	CNetworkVar( int, m_iProjectileParity );
 };
 
 #endif

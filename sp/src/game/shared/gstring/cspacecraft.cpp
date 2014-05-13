@@ -11,6 +11,7 @@
 #include "engine/IEngineSound.h"
 #include "ivieweffects.h"
 #else
+#include "cspacecraftprojectile.h"
 #endif
 
 #include "igamemovement.h"
@@ -73,6 +74,7 @@ IMPLEMENT_NETWORKCLASS_DT( CSpacecraft, CSpacecraft_DT )
 
 	//SendPropInt( SENDINFO( m_iRenderMode ) ),
 	SendPropInt( SENDINFO( m_iEngineLevel ) ),
+	SendPropInt( SENDINFO( m_iProjectileParity ), 8, SPROP_UNSIGNED ),
 
 	//SendPropBool( SENDINFO( m_bEngineRunning ) ),
 	SendPropVector( SENDINFO( m_AngularImpulse ) ),
@@ -82,6 +84,7 @@ IMPLEMENT_NETWORKCLASS_DT( CSpacecraft, CSpacecraft_DT )
 
 	//RecvPropInt( RECVINFO( m_iRenderMode ) ),
 	RecvPropInt( RECVINFO( m_iEngineLevel ) ),
+	RecvPropInt( RECVINFO( m_iProjectileParity ) ),
 
 	//RecvPropBool( RECVINFO( m_bEngineRunning ) ),
 	RecvPropVector( RECVINFO( m_AngularImpulse ) ),
@@ -94,8 +97,12 @@ LINK_ENTITY_TO_CLASS( prop_vehicle_spacecraft, CSpacecraft );
 PRECACHE_REGISTER( prop_vehicle_spacecraft );
 
 CSpacecraft::CSpacecraft()
-#ifdef CLIENT_DLL
+#ifdef GAME_DLL
+	: m_flFireDelay( 0.0f )
+	, m_bAlternatingWeapons( false )
+#else
 	: m_iEngineLevelLast( 0 )
+	, m_iProjectileParityLast( 0 )
 	, m_iGUID_Engine( -1 )
 	, m_iGUID_Boost( -1 )
 	, m_flEngineVolume( ENGINE_VOLUME_LOW )
@@ -164,43 +171,56 @@ void CSpacecraft::InputEnterVehicle( inputdata_t &inputdata )
 	SetPlayerSimulated( pPlayer );
 	pPlayer->EnterSpacecraft( this );
 }
-#else
-CStudioHdr *CSpacecraft::OnNewModel()
+
+void CSpacecraft::SimulateFire( CMoveData &moveData )
 {
-	m_ThrusterAttachments.RemoveAll();
-	m_EngineAttachments.RemoveAll();
-
-	CStudioHdr *pRet = BaseClass::OnNewModel();
-
-	if ( pRet != NULL )
+	if ( m_WeaponAttachments.Count() < 1 )
 	{
-		for ( int i = 0; i < pRet->GetNumAttachments(); i++ )
-		{
-			const char *pszAttachmentName = pRet->pAttachment( i ).pszName();
-			if ( Q_stristr( pszAttachmentName, "thruster" ) == pszAttachmentName )
-			{
-				m_ThrusterAttachments.AddToTail( i + 1 );
-			}
-			else if ( Q_stristr( pszAttachmentName, "engine" ) == pszAttachmentName )
-			{
-				m_EngineAttachments.AddToTail( i + 1 );
-			}
-		}
+		return;
 	}
 
-	FOR_EACH_VEC( m_ThrusterParticles, i )
+	if ( m_flFireDelay > 0.0f )
 	{
-		if ( m_ThrusterParticles[ i ].GetObject() != NULL )
-		{
-			m_ThrusterParticles[ i ]->StopEmission();
-		}
+		m_flFireDelay -= gpGlobals->frametime;
 	}
 
-	m_ThrusterParticles.SetCount( m_ThrusterAttachments.Count() );
-	m_EngineParticles.SetCount( m_EngineAttachments.Count() );
-	return pRet;
+	if ( ( moveData.m_nButtons & IN_ATTACK ) != 0 && m_flFireDelay <= 0.0f )
+	{
+		int i = 0;
+		if ( m_bAlternatingWeapons && m_WeaponAttachments.Count() > 1 )
+		{
+			i = 1;
+		}
+		m_bAlternatingWeapons = !m_bAlternatingWeapons;
+		m_iProjectileParity++;
+
+		CBasePlayer *pPlayer = ToBasePlayer( gEntList.GetBaseEntity( moveData.m_nPlayerHandle.Get()->GetRefEHandle() ) );
+		Assert( pPlayer );
+
+		for ( ; i < m_WeaponAttachments.Count(); i += 2 )
+		{
+			Vector vecProjectileOrigin;
+			QAngle angProjectileAngles;
+			GetAttachment( m_WeaponAttachments[ i ], vecProjectileOrigin, angProjectileAngles );
+
+			Vector vecProjectileVelocity;
+			//AngleVectors( angProjectileAngles, &vecProjectileVelocity );
+			const Vector vecShootTarget = pPlayer->GetLastUserCommand()->worldShootPosition;
+			vecProjectileVelocity = vecShootTarget - vecProjectileOrigin;
+			vecProjectileVelocity.NormalizeInPlace();
+
+			CSpacecraftProjectile *pProjectile = assert_cast< CSpacecraftProjectile* >(
+				CreateEntityByName( "prop_spacecraft_projectile" ) );
+			Assert( pProjectile );
+
+			vecProjectileVelocity *= 3000.0f;
+			pProjectile->Fire( pPlayer, this, vecProjectileOrigin, vecProjectileVelocity );
+		}
+
+		m_flFireDelay = 0.05f;
+	}
 }
-
+#else
 void CSpacecraft::OnDataChanged( DataUpdateType_t t )
 {
 	BaseClass::OnDataChanged( t );
@@ -411,6 +431,22 @@ void CSpacecraft::ClientThink()
 	{
 		m_flShakeTimer -= gpGlobals->frametime;
 	}
+
+	if ( m_iProjectileParityLast != m_iProjectileParity )
+	{
+		int i = 0;
+		if ( ( m_iProjectileParity % 2 ) != 0 && m_WeaponAttachments.Count() > 1 )
+		{
+			i = 1;
+		}
+
+		for ( ; i < m_WeaponAttachments.Count(); i += 2 )
+		{
+			DispatchParticleEffect( "projectile_red_spawn", PATTACH_POINT_FOLLOW, this, m_WeaponAttachments[ i ] );
+		}
+
+		m_iProjectileParityLast = m_iProjectileParity;
+	}
 }
 
 void CSpacecraft::UpdateCrosshair( CHudCrosshair *pCrosshair )
@@ -421,6 +457,57 @@ void CSpacecraft::UpdateCrosshair( CHudCrosshair *pCrosshair )
 	pCrosshair->SetCrosshair( pCrosshairTexture, white );
 }
 #endif
+
+CStudioHdr *CSpacecraft::OnNewModel()
+{
+	CStudioHdr *pRet = BaseClass::OnNewModel();
+
+#ifdef CLIENT_DLL
+	m_ThrusterAttachments.RemoveAll();
+	m_EngineAttachments.RemoveAll();
+
+	if ( pRet != NULL )
+	{
+		for ( int i = 0; i < pRet->GetNumAttachments(); i++ )
+		{
+			const char *pszAttachmentName = pRet->pAttachment( i ).pszName();
+			if ( Q_stristr( pszAttachmentName, "thruster" ) == pszAttachmentName )
+			{
+				m_ThrusterAttachments.AddToTail( i + 1 );
+			}
+			else if ( Q_stristr( pszAttachmentName, "engine" ) == pszAttachmentName )
+			{
+				m_EngineAttachments.AddToTail( i + 1 );
+			}
+		}
+	}
+
+	FOR_EACH_VEC( m_ThrusterParticles, i )
+	{
+		if ( m_ThrusterParticles[ i ].GetObject() != NULL )
+		{
+			m_ThrusterParticles[ i ]->StopEmission();
+		}
+	}
+
+	m_ThrusterParticles.SetCount( m_ThrusterAttachments.Count() );
+	m_EngineParticles.SetCount( m_EngineAttachments.Count() );
+#endif
+
+	m_WeaponAttachments.RemoveAll();
+	if ( pRet != NULL )
+	{
+		for ( int i = 0; i < pRet->GetNumAttachments(); i++ )
+		{
+			const char *pszAttachmentName = pRet->pAttachment( i ).pszName();
+			if ( Q_stristr( pszAttachmentName, "weapon" ) == pszAttachmentName )
+			{
+				m_WeaponAttachments.AddToTail( i + 1 );
+			}
+		}
+	}
+	return pRet;
+}
 
 void CSpacecraft::SimulateMove( CMoveData &moveData )
 {
@@ -549,4 +636,8 @@ void CSpacecraft::SimulateMove( CMoveData &moveData )
 	moveData.SetAbsOrigin( GetAbsOrigin() );
 
 	pPhysObject->GetVelocity( &m_PhysVelocity.GetForModify(), NULL );
+
+#ifdef GAME_DLL
+	SimulateFire( moveData );
+#endif
 }

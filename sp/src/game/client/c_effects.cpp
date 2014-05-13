@@ -270,7 +270,7 @@ static bool IsInAir( const Vector& position )
 //-----------------------------------------------------------------------------
 
 ConVar CClient_Precipitation::s_raindensity( "r_raindensity","0.001", FCVAR_CHEAT);
-ConVar CClient_Precipitation::s_rainwidth( "r_rainwidth", "0.1", FCVAR_CHEAT );
+ConVar CClient_Precipitation::s_rainwidth( "r_rainwidth", "0.02", FCVAR_CHEAT );
 ConVar CClient_Precipitation::s_rainlength( "r_rainlength", "0.01f", FCVAR_CHEAT ); // GSTRINGMIGRATION
 ConVar CClient_Precipitation::s_rainspeed( "r_rainspeed", "600.0f", FCVAR_CHEAT );
 ConVar r_rainalpha( "r_rainalpha", "0.1", FCVAR_CHEAT ); // GSTRINGMIGRATION

@@ -54,6 +54,10 @@ public:
 		mousedx = 0;
 		mousedy = 0;
 
+		// GSTRINGMIGRATION
+		worldShootPosition.Init();
+		// END GSTRINGMIGRATION
+
 		hasbeenpredicted = false;
 #if defined( HL2_DLL ) || defined( HL2_CLIENT_DLL )
 		entitygroundcontact.RemoveAll();
@@ -78,6 +82,10 @@ public:
 		random_seed			= src.random_seed;
 		mousedx				= src.mousedx;
 		mousedy				= src.mousedy;
+
+		// GSTRINGMIGRATION
+		worldShootPosition	= src.worldShootPosition;
+		// END GSTRINGMIGRATION
 
 		hasbeenpredicted	= src.hasbeenpredicted;
 
@@ -111,6 +119,9 @@ public:
 		CRC32_ProcessBuffer( &crc, &random_seed, sizeof( random_seed ) );
 		CRC32_ProcessBuffer( &crc, &mousedx, sizeof( mousedx ) );
 		CRC32_ProcessBuffer( &crc, &mousedy, sizeof( mousedy ) );
+		// GSTRINGMIGRATION
+		CRC32_ProcessBuffer( &crc, &worldShootPosition, sizeof( worldShootPosition ) );
+		// END GSTRINGMIGRATION
 		CRC32_Final( &crc );
 
 		return crc;
@@ -157,6 +168,10 @@ public:
 
 	// Client only, tracks whether we've predicted this command at least once
 	bool	hasbeenpredicted;
+
+	// GSTRINGMIGRATION
+	Vector worldShootPosition;
+	// END GSTRINGMIGRATION
 
 	// Back channel to communicate IK state
 #if defined( HL2_DLL ) || defined( HL2_CLIENT_DLL )

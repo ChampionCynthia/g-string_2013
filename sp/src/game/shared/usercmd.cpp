@@ -187,6 +187,18 @@ void WriteUsercmd( bf_write *buf, const CUserCmd *to, const CUserCmd *from )
 		buf->WriteOneBit( 0 );
 	}
 #endif
+
+	// GSTRINGMIGRATION
+	if ( to->worldShootPosition != from->worldShootPosition )
+	{
+		buf->WriteOneBit( 1 );
+		buf->WriteBitVec3Coord( to->worldShootPosition );
+	}
+	else
+	{
+		buf->WriteOneBit( 0 );
+	}
+	// END GSTRINGMIGRATION
 }
 
 //-----------------------------------------------------------------------------
@@ -303,4 +315,11 @@ void ReadUsercmd( bf_read *buf, CUserCmd *move, CUserCmd *from )
 		}
 	}
 #endif
+
+	// GSTRINGMIGRATION
+	if ( buf->ReadOneBit() )
+	{
+		buf->ReadBitVec3Coord( move->worldShootPosition );
+	}
+	// END GSTRINGMIGRATION
 }

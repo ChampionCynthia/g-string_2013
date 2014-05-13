@@ -3,6 +3,8 @@
 #include "gstring_in_main.h"
 #include "c_gstring_player.h"
 #include "iviewrender.h"
+#include "viewrender.h"
+#include "view.h"
 #include "in_buttons.h"
 
 #include "vgui_controls/Controls.h"
@@ -167,4 +169,35 @@ void CGstringInput::MouseMove( CUserCmd *cmd )
 
 	// Store out the new viewangles.
 	engine->SetViewAngles( viewangles );
+
+	Vector vecPickingRay;
+	const Vector vecViewOrigin( MainViewOrigin() );
+	extern void ScreenToWorld( int mousex, int mousey, float fov,
+					const Vector& vecRenderOrigin,
+					const QAngle& vecRenderAngles,
+					Vector& vecPickingRay );
+
+	float ratio = engine->GetScreenAspectRatio();
+	ratio = ( 1.0f / ratio ) * ( 4.0f / 3.0f );
+	float flFov = ScaleFOVByWidthRatio( view->GetViewSetup()->fov, ratio );
+	ScreenToWorld( m_MousePosition.x, m_MousePosition.y, flFov,
+		vecViewOrigin, MainViewAngles(), vecPickingRay );
+
+	trace_t tr;
+	const float flMinimumTraceDistance = 128.0f;
+	CSpacecraft *pSpacecraft = pPlayer->GetSpacecraft();
+	CTraceFilterSkipTwoEntities filter( pPlayer, pSpacecraft, COLLISION_GROUP_NONE );
+	UTIL_TraceLine( vecViewOrigin, vecViewOrigin + vecPickingRay * MAX_TRACE_LENGTH, MASK_SOLID, &filter, &tr );
+
+	Vector vecSpacecraftOrigin = pSpacecraft->GetAbsOrigin();
+	QAngle angSpacecraft = pSpacecraft->GetAbsAngles();
+	Vector vecSpacecraftForward;
+	AngleVectors( angSpacecraft, &vecSpacecraftForward );
+	const float flSpacecraftDot = DotProduct( tr.endpos - vecSpacecraftOrigin, vecSpacecraftForward );
+	if ( flSpacecraftDot < flMinimumTraceDistance )
+	{
+		tr.endpos += vecSpacecraftForward * ( flMinimumTraceDistance - flSpacecraftDot );
+	}
+
+	cmd->worldShootPosition = tr.endpos;
 }
