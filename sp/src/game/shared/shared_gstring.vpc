@@ -9,6 +9,9 @@ $Project
 			$File	"$SRCDIR\game\shared\gstring\cenv_postprocessing.cpp"
 			$File	"$SRCDIR\game\shared\gstring\cenv_postprocessing.h"
 			
+			$File	"$SRCDIR\game\shared\gstring\gstring_util.cpp"
+			$File	"$SRCDIR\game\shared\gstring\gstring_util.h"
+			
 			$File	"$SRCDIR\game\shared\gstring\gstring_cvars.cpp"
 			$File	"$SRCDIR\game\shared\gstring\gstring_cvars.h"
 			

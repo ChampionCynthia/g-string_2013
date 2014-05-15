@@ -12,7 +12,17 @@
 #include "gstring_player_shared_forward.h"
 
 #ifdef CLIENT_DLL
+
 class CHudCrosshair;
+
+#else
+class ISpacecraftAI
+{
+public:
+	virtual ~ISpacecraftAI() {}
+
+	virtual void Run( float flFrametime ) = 0;
+};
 #endif
 
 class CSpacecraft : public CBaseAnimating
@@ -28,13 +38,17 @@ public:
 	CSpacecraft();
 	virtual ~CSpacecraft();
 
+	bool IsPlayerControlled();
+
 #ifdef GAME_DLL
+	void SetAI( ISpacecraftAI *pSpacecraftAI );
+
 	virtual void Precache();
 	virtual void Spawn();
 	virtual void Activate();
 
-	virtual void PhysicsSimulate();
-	virtual void PerformCustomPhysics( Vector *pNewPosition, Vector *pNewVelocity, QAngle *pNewAngles, QAngle *pNewAngVelocity );
+	//virtual bool IsNPC() const;
+	virtual void VPhysicsUpdate( IPhysicsObject *pPhysics );
 
 	void InputEnterVehicle( inputdata_t &inputdata );
 #else
@@ -52,14 +66,17 @@ public:
 #endif
 
 	virtual CStudioHdr *OnNewModel();
-	virtual void SimulateMove( CMoveData &moveData );
+	virtual void SimulateMove( CMoveData &moveData, float flFrametime );
 
 private:
 #ifdef GAME_DLL
-	void SimulateFire( CMoveData &moveData );
+	void SimulateFire( CMoveData &moveData, float flFrametime );
 
 	float m_flFireDelay;
 	bool m_bAlternatingWeapons;
+
+	ISpacecraftAI *m_pAI;
+	float m_flLastAIThinkTime;
 #else
 	CUtlVector< int > m_ThrusterAttachments;
 	CUtlVector< int > m_ThrusterSounds;

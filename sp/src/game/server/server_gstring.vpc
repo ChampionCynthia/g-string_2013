@@ -29,6 +29,8 @@ $Project "Server (G-String)"
 			$File	"gstring\cgstring_globals.h"
 			$File	"gstring\cgstring_player.cpp"
 			$File	"gstring\cgstring_player.h"
+			$File	"gstring\cspacecraft_ai.h"
+			$File	"gstring\cspacecraft_ai.cpp"
 		}
 	
 		$File	"ai_eventresponse.cpp"

@@ -43,6 +43,6 @@ void CGstringGameMovement::SpacecraftMove()
 {
 	CSharedPlayer *pPlayer = ( CSharedPlayer* )player;
 	CSpacecraft *pSpacecraft = pPlayer->GetSpacecraft();
-	pSpacecraft->SimulateMove( *mv );
+	pSpacecraft->SimulateMove( *mv, gpGlobals->frametime );
 }
 

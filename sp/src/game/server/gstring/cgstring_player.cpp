@@ -218,6 +218,7 @@ void CGstringPlayer::EnterSpacecraft( CSpacecraft *pSpacecraft )
 	SetMoveType( MOVETYPE_NOCLIP );
 	SetSolid( SOLID_NONE );
 	m_hSpacecraft.Set( pSpacecraft );
+	pSpacecraft->SetOwnerEntity( this );
 }
 
 bool CGstringPlayer::IsInSpacecraft() const
@@ -227,6 +228,8 @@ bool CGstringPlayer::IsInSpacecraft() const
 
 void CGstringPlayer::ExitSpacecraft()
 {
+	Assert( m_hSpacecraft->GetOwnerEntity() == this );
+	m_hSpacecraft->SetOwnerEntity( NULL );
 	m_hSpacecraft.Set( NULL );
 
 	SetSolid( SOLID_BBOX );

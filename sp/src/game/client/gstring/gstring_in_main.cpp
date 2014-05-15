@@ -2,10 +2,12 @@
 #include "kbutton.h"
 #include "gstring_in_main.h"
 #include "c_gstring_player.h"
+#include "gstring/cspacecraft.h"
 #include "iviewrender.h"
 #include "viewrender.h"
 #include "view.h"
 #include "in_buttons.h"
+#include "gstring/gstring_util.h"
 
 #include "vgui_controls/Controls.h"
 #include "vgui/ISurface.h"
@@ -184,19 +186,65 @@ void CGstringInput::MouseMove( CUserCmd *cmd )
 		vecViewOrigin, MainViewAngles(), vecPickingRay );
 
 	trace_t tr;
-	const float flMinimumTraceDistance = 128.0f;
 	CSpacecraft *pSpacecraft = pPlayer->GetSpacecraft();
 	CTraceFilterSkipTwoEntities filter( pPlayer, pSpacecraft, COLLISION_GROUP_NONE );
-	UTIL_TraceLine( vecViewOrigin, vecViewOrigin + vecPickingRay * MAX_TRACE_LENGTH, MASK_SOLID, &filter, &tr );
+
+	const Vector vecEnd = vecViewOrigin + vecPickingRay * MAX_TRACE_LENGTH;
+	const Vector vecHull( 10, 10, 10 );
+	UTIL_TraceHull( vecViewOrigin, vecEnd, -vecHull, vecHull, MASK_SOLID, &filter, &tr );
+	//UTIL_TraceLine( vecViewOrigin, vecEnd, MASK_SOLID, &filter, &tr );
+
+	C_BaseEntity *pAutoAimTarget = NULL;
+	for ( C_BaseEntity *pEnt = ClientEntityList().FirstBaseEntity(); pEnt; pEnt = ClientEntityList().NextBaseEntity( pEnt ) )
+	{
+		if ( !pEnt || !pEnt->IsVisible() ||
+			pEnt->IsPlayer() || pEnt->GetOwnerEntity() == pPlayer )
+			continue;
+
+		CSpacecraft *pSpacecraft = dynamic_cast< CSpacecraft* >( pEnt );
+		if ( pSpacecraft != NULL )
+		{
+			pAutoAimTarget = pSpacecraft;
+			break;
+		}
+	}
+
+	if ( pAutoAimTarget != NULL )
+	{
+		//const Vector &vecTargetCenter = pAutoAimTarget->WorldSpaceCenter();
+		//UTIL_PredictProjectileTarget( vecTargetCenter, )
+		//tr.endpos = ;
+	}
 
 	Vector vecSpacecraftOrigin = pSpacecraft->GetAbsOrigin();
-	QAngle angSpacecraft = pSpacecraft->GetAbsAngles();
+	QAngle angSpacecraft = pSpacecraft->GetRenderAngles();
 	Vector vecSpacecraftForward;
 	AngleVectors( angSpacecraft, &vecSpacecraftForward );
-	const float flSpacecraftDot = DotProduct( tr.endpos - vecSpacecraftOrigin, vecSpacecraftForward );
+
+	Vector vecShootDirection = tr.endpos - vecSpacecraftOrigin;
+	vecShootDirection.NormalizeInPlace();
+
+	const float flSpacecraftDot = DotProduct( vecShootDirection, vecSpacecraftForward );
+	const float flMinimumTraceDistance = 0.7071f;
+
 	if ( flSpacecraftDot < flMinimumTraceDistance )
 	{
-		tr.endpos += vecSpacecraftForward * ( flMinimumTraceDistance - flSpacecraftDot );
+		vecShootDirection -= vecSpacecraftForward * flSpacecraftDot;
+		vecShootDirection.NormalizeInPlace();
+
+		Vector vecSign( Sign( vecShootDirection.x ), Sign( vecShootDirection.y ),
+			Sign( vecShootDirection.z ) );
+
+		vecShootDirection *= vecShootDirection;
+		vecShootDirection *= 1.0f - flMinimumTraceDistance * flMinimumTraceDistance;
+		vecShootDirection.x = FastSqrt( vecShootDirection.x );
+		vecShootDirection.y = FastSqrt( vecShootDirection.y );
+		vecShootDirection.z = FastSqrt( vecShootDirection.z );
+
+		vecShootDirection *= vecSign;
+		vecShootDirection += vecSpacecraftForward * flMinimumTraceDistance;
+
+		tr.endpos = vecSpacecraftOrigin + vecShootDirection * 128.0f;
 	}
 
 	cmd->worldShootPosition = tr.endpos;

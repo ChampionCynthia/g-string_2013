@@ -100,6 +100,8 @@ CSpacecraft::CSpacecraft()
 #ifdef GAME_DLL
 	: m_flFireDelay( 0.0f )
 	, m_bAlternatingWeapons( false )
+	, m_pAI( NULL )
+	, m_flLastAIThinkTime( 0.0f )
 #else
 	: m_iEngineLevelLast( 0 )
 	, m_iProjectileParityLast( 0 )
@@ -113,9 +115,25 @@ CSpacecraft::CSpacecraft()
 
 CSpacecraft::~CSpacecraft()
 {
+#ifdef GAME_DLL
+	delete m_pAI;
+#endif
+}
+
+bool CSpacecraft::IsPlayerControlled()
+{
+	return GetOwnerEntity() && GetOwnerEntity()->IsPlayer();
 }
 
 #ifdef GAME_DLL
+void CSpacecraft::SetAI( ISpacecraftAI *pSpacecraftAI )
+{
+	delete m_pAI;
+	m_pAI = pSpacecraftAI;
+
+	m_flLastAIThinkTime = gpGlobals->curtime;
+}
+
 void CSpacecraft::Precache()
 {
 	BaseClass::Precache();
@@ -155,14 +173,17 @@ void CSpacecraft::Activate()
 	VPhysicsGetObject()->EnableDrag( true );
 }
 
-void CSpacecraft::PhysicsSimulate()
+void CSpacecraft::VPhysicsUpdate( IPhysicsObject *pPhysics )
 {
-	BaseClass::PhysicsSimulate();
-	UpdatePhysicsShadowToCurrentPosition( gpGlobals->frametime );
-}
+	BaseClass::VPhysicsUpdate( pPhysics );
+	if ( m_pAI != NULL )
+	{
+		float flDeltaTime = gpGlobals->curtime - m_flLastAIThinkTime;
+		flDeltaTime = MIN( 0.25f, flDeltaTime );
 
-void CSpacecraft::PerformCustomPhysics( Vector *pNewPosition, Vector *pNewVelocity, QAngle *pNewAngles, QAngle *pNewAngVelocity )
-{
+		m_pAI->Run( flDeltaTime );
+		m_flLastAIThinkTime = gpGlobals->curtime;
+	}
 }
 
 void CSpacecraft::InputEnterVehicle( inputdata_t &inputdata )
@@ -172,7 +193,7 @@ void CSpacecraft::InputEnterVehicle( inputdata_t &inputdata )
 	pPlayer->EnterSpacecraft( this );
 }
 
-void CSpacecraft::SimulateFire( CMoveData &moveData )
+void CSpacecraft::SimulateFire( CMoveData &moveData, float flFrametime )
 {
 	if ( m_WeaponAttachments.Count() < 1 )
 	{
@@ -181,7 +202,7 @@ void CSpacecraft::SimulateFire( CMoveData &moveData )
 
 	if ( m_flFireDelay > 0.0f )
 	{
-		m_flFireDelay -= gpGlobals->frametime;
+		m_flFireDelay -= flFrametime;
 	}
 
 	if ( ( moveData.m_nButtons & IN_ATTACK ) != 0 && m_flFireDelay <= 0.0f )
@@ -204,7 +225,6 @@ void CSpacecraft::SimulateFire( CMoveData &moveData )
 			GetAttachment( m_WeaponAttachments[ i ], vecProjectileOrigin, angProjectileAngles );
 
 			Vector vecProjectileVelocity;
-			//AngleVectors( angProjectileAngles, &vecProjectileVelocity );
 			const Vector vecShootTarget = pPlayer->GetLastUserCommand()->worldShootPosition;
 			vecProjectileVelocity = vecShootTarget - vecProjectileOrigin;
 			vecProjectileVelocity.NormalizeInPlace();
@@ -239,6 +259,7 @@ void CSpacecraft::UpdateOnRemove()
 void CSpacecraft::ClientThink()
 {
 	Assert( m_ThrusterAttachments.Count() == m_ThrusterParticles.Count() );
+	const bool bIsPlayerControlled = IsPlayerControlled();
 
 	QAngle angPhysImpulse( m_AngularImpulse.Get() );
 	for ( int i = 0; i < 3; i++ )
@@ -289,8 +310,9 @@ void CSpacecraft::ClientThink()
 		}
 	}
 
-	const int iActiveThrustersSoundsDesired = ( iActiveThrusters > 0 && iActiveThrusters < 2 ) ?
-		1 : MIN( 2, iActiveThrusters / 2 );
+	const int iActiveThrustersSoundsDesired = ( iActiveThrusters > 0 && iActiveThrusters < 2 ||
+		!bIsPlayerControlled ) ?
+			1 : MIN( 2, iActiveThrusters / 2 );
 	const int iActiveThrusterSounds = m_ThrusterSounds.Count();
 	if ( iActiveThrustersSoundsDesired > iActiveThrusterSounds )
 	{
@@ -399,10 +421,14 @@ void CSpacecraft::ClientThink()
 
 	if ( m_iGUID_Engine >= 0 )
 	{
-		enginesound->SetVolumeByGuid( m_iGUID_Engine, m_flEngineVolume );
+		Assert( enginesound->IsSoundStillPlaying( m_iGUID_Engine ) );
+		if ( enginesound->IsSoundStillPlaying( m_iGUID_Engine ) )
+		{
+			enginesound->SetVolumeByGuid( m_iGUID_Engine, m_flEngineVolume );
+		}
 	}
 
-	const bool bShouldShowSpaceField = m_PhysVelocity.Get().LengthSqr() > 2000.0f;
+	const bool bShouldShowSpaceField = IsPlayerControlled() && m_PhysVelocity.Get().LengthSqr() > 2000.0f;
 	const bool bIsShowingSpaceField = m_SpaceFieldParticles.GetObject() != NULL;
 	if ( bShouldShowSpaceField != bIsShowingSpaceField )
 	{
@@ -417,19 +443,22 @@ void CSpacecraft::ClientThink()
 		}
 	}
 
-	if ( m_iEngineLevel == 3 && m_flShakeTimer <= 0.0f )
+	if ( bIsPlayerControlled )
 	{
-		ScreenShake_t shake;
-		shake.amplitude = 0.8f;
-		shake.command = SHAKE_START;
-		shake.duration = 0.4f;
-		shake.frequency = 10.0f;
-		vieweffects->Shake( shake );
-		m_flShakeTimer = 0.2f;
-	}
-	else if ( m_flShakeTimer > 0.0f )
-	{
-		m_flShakeTimer -= gpGlobals->frametime;
+		if ( m_iEngineLevel == 3 && m_flShakeTimer <= 0.0f )
+		{
+			ScreenShake_t shake;
+			shake.amplitude = 0.8f;
+			shake.command = SHAKE_START;
+			shake.duration = 0.4f;
+			shake.frequency = 10.0f;
+			vieweffects->Shake( shake );
+			m_flShakeTimer = 0.2f;
+		}
+		else if ( m_flShakeTimer > 0.0f )
+		{
+			m_flShakeTimer -= gpGlobals->frametime;
+		}
 	}
 
 	if ( m_iProjectileParityLast != m_iProjectileParity )
@@ -509,7 +538,7 @@ CStudioHdr *CSpacecraft::OnNewModel()
 	return pRet;
 }
 
-void CSpacecraft::SimulateMove( CMoveData &moveData )
+void CSpacecraft::SimulateMove( CMoveData &moveData, float flFrametime )
 {
 	const bool bCutOffEngines = ( moveData.m_nButtons & IN_JUMP ) != 0;
 
@@ -610,21 +639,21 @@ void CSpacecraft::SimulateMove( CMoveData &moveData )
 		if ( abs( flSideSpeed ) > 0.1f )
 		{
 			vecImpulse += vecRight * -flSideSpeed * MIN( 1.0f,
-				gpGlobals->frametime * gstring_spacecraft_move_drag_side.GetFloat() );
+				flFrametime * gstring_spacecraft_move_drag_side.GetFloat() );
 		}
 
 		const float flForwardSpeed = DotProduct( vecFwd, vecOldImpulse );
 		if ( abs( flForwardSpeed ) > 0.1f )
 		{
 			vecImpulse += vecFwd * -flForwardSpeed * MIN( 1.0f,
-				gpGlobals->frametime * gstring_spacecraft_move_drag_fwd.GetFloat() );
+				flFrametime * gstring_spacecraft_move_drag_fwd.GetFloat() );
 		}
 
 		const float flUpSpeed = DotProduct( vecUp, vecOldImpulse );
 		if ( abs( flUpSpeed ) > 0.1f )
 		{
 			vecImpulse += vecUp * -flUpSpeed * MIN( 1.0f,
-				gpGlobals->frametime * gstring_spacecraft_move_drag_up.GetFloat() );
+				flFrametime * gstring_spacecraft_move_drag_up.GetFloat() );
 		}
 	}
 
@@ -638,6 +667,6 @@ void CSpacecraft::SimulateMove( CMoveData &moveData )
 	pPhysObject->GetVelocity( &m_PhysVelocity.GetForModify(), NULL );
 
 #ifdef GAME_DLL
-	SimulateFire( moveData );
+	SimulateFire( moveData, flFrametime );
 #endif
 }

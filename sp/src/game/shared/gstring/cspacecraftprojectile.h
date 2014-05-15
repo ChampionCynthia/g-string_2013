@@ -30,11 +30,14 @@ private:
 	void OnTouch( CBaseEntity *pOther );
 	void OnTimeout();
 
-	EHANDLE m_hPlayerOwner;
 	EHANDLE m_hVehicleOwner;
 #else
 	CSmartPtr< CNewParticleEffect > m_hTrailParticle;
+
+	bool m_bHadImpactLast;
 #endif
+
+	CNetworkVar( bool, m_bHadImpact );
 };
 
 #endif
