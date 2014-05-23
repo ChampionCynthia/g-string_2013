@@ -2156,7 +2156,7 @@ static void DrawVGUILayer( CHud::HUDRENDERSTAGE_t stage, const CViewSetup &view,
 	// let vgui know where to render stuff for the forced-to-framebuffer panels
 	if( UseVR() )
 	{
-		vgui::surface()->SetFullscreenViewportAndRenderTarget( viewFramebufferX, viewFramebufferY, viewFramebufferWidth, viewFramebufferHeight, pSaveRenderTarget );
+		g_pMatSystemSurface->SetFullscreenViewportAndRenderTarget( viewFramebufferX, viewFramebufferY, viewFramebufferWidth, viewFramebufferHeight, pSaveRenderTarget );
 	}
 
 	// clear the render target if we need to
