@@ -532,7 +532,7 @@ void CHud::Shutdown( void )
 
 
 //-----------------------------------------------------------------------------
-// Purpose: LevelInit's called whenever a new level's starting
+// Purpose: LevelInit's called whenever a new level is starting
 //-----------------------------------------------------------------------------
 void CHud::LevelInit( void )
 {
@@ -553,11 +553,11 @@ void CHud::LevelInit( void )
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: LevelShutdown's called whenever a level's finishing
+// Purpose: LevelShutdown's called whenever a level is finishing
 //-----------------------------------------------------------------------------
 void CHud::LevelShutdown( void )
 {
-	// Tell all the registered hud elements to LevelInit
+	// Tell all the registered hud elements to LevelShutdown
 	for ( int i = 0; i < m_HudList.Size(); i++ )
 	{
 		m_HudList[i]->LevelShutdown();

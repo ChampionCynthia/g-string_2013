@@ -3718,6 +3718,8 @@ void C_BaseAnimating::FireEvent( const Vector& origin, const QAngle& angles, int
 			if ( token ) 
 			{
 				const char* mtoken = ModifyEventParticles( token );
+				if ( !mtoken || mtoken[0] == '\0' )
+					return;
 				Q_strncpy( szParticleEffect, mtoken, sizeof(szParticleEffect) );
 			}
 
