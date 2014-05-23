@@ -1,7 +1,7 @@
 
 #include "cbase.h"
 #include "cgstring_player.h"
-#include "cgstring_globals.h"
+#include "gstring/cgstring_globals.h"
 #include "obstacle_pushaway.h"
 
 static ConVar gstring_nightvision_override( "gstring_nightvision_override", "0", FCVAR_CHEAT );
@@ -204,7 +204,22 @@ bool CGstringPlayer::ShouldGib( const CTakeDamageInfo &info )
 
 bool CGstringPlayer::CanBecomeRagdoll()
 {
+	if ( IsInSpacecraft() )
+	{
+		return false;
+	}
+
 	return true;
+}
+
+bool CGstringPlayer::ShouldCollide( int collisionGroup, int contentsMask ) const
+{
+	if ( IsInSpacecraft() )
+	{
+		return false;
+	}
+
+	return BaseClass::ShouldCollide( collisionGroup, contentsMask );
 }
 
 void CGstringPlayer::EnterSpacecraft( CSpacecraft *pSpacecraft )
@@ -217,6 +232,7 @@ void CGstringPlayer::EnterSpacecraft( CSpacecraft *pSpacecraft )
 
 	SetMoveType( MOVETYPE_NOCLIP );
 	SetSolid( SOLID_NONE );
+	AddSolidFlags( FSOLID_NOT_SOLID );
 	m_hSpacecraft.Set( pSpacecraft );
 	pSpacecraft->SetOwnerEntity( this );
 }
@@ -232,6 +248,7 @@ void CGstringPlayer::ExitSpacecraft()
 	m_hSpacecraft->SetOwnerEntity( NULL );
 	m_hSpacecraft.Set( NULL );
 
+	RemoveSolidFlags( FSOLID_NOT_SOLID );
 	SetSolid( SOLID_BBOX );
 	SetMoveType( MOVETYPE_WALK );
 

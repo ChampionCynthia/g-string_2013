@@ -13,6 +13,9 @@ public:
 
 	void GetCrosshairPosition( int &x, int &y, float &angle );
 
+	const CUtlVector< EHANDLE > &GetPotentialAutoAimTargets() const;
+	CBaseEntity *GetAutoAimTarget() const;
+
 protected:
 	virtual void ClampAngles( QAngle &viewangles );
 	virtual void MouseMove( CUserCmd *cmd );
@@ -20,6 +23,11 @@ protected:
 private:
 	Vector2D m_MousePosition;
 	bool m_bIsUsingCustomCrosshair;
+
+	float m_flAutoAimUpdateTick;
+	float m_flLockFraction;
+	CUtlVector< EHANDLE > m_PotentialAutoAimTargets;
+	EHANDLE m_AutoAimTarget;
 };
 
 extern CGstringInput *GetGstringInput();

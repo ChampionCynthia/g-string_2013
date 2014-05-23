@@ -193,6 +193,9 @@ void CPlayerMove::SetupMove( CBasePlayer *player, CUserCmd *ucmd, IMoveHelper *p
 	move->m_flConstraintRadius = player->m_flConstraintRadius;
 	move->m_flConstraintWidth = player->m_flConstraintWidth;
 	move->m_flConstraintSpeedFactor = player->m_flConstraintSpeedFactor;
+
+	move->m_iAutoAimEntityIndex = ucmd->autoAimTarget;
+	move->m_vecWorldShootPosition = ucmd->worldShootPosition;
 }
 
 //-----------------------------------------------------------------------------

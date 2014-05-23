@@ -472,6 +472,10 @@ private:
 	void			SetupMain3DView( const CViewSetup &view, int &nClearFlags );
 	void			CleanupMain3DView( const CViewSetup &view );
 
+	// GSTRINGMIGRATION
+	void			UpdateCascadedShadow( const CViewSetup &view );
+	// END GSTRINGMIGRATION
+
 
 	// This stores the current view
  	CViewSetup		m_CurrentView;

@@ -309,7 +309,7 @@ void DrawSkin_DX9_Internal( CBaseVSShader *pShader, IMaterialVar** params, IShad
 			pShaderShadow->AlphaFunc( SHADER_ALPHAFUNC_GEQUAL, params[info.m_nAlphaTestReference]->GetFloatValue() );
 		}
 
-		int nShadowFilterMode = 0;
+		const int nShadowFilterMode = g_pHardwareConfig->GetShadowFilterMode();
 		if( bHasFlashlight )
 		{
 			if (params[info.m_nBaseTexture]->IsTexture())
@@ -330,7 +330,7 @@ void DrawSkin_DX9_Internal( CBaseVSShader *pShader, IMaterialVar** params, IShad
 			// Be sure not to write to dest alpha
 			pShaderShadow->EnableAlphaWrites( false );
 
-			nShadowFilterMode = g_pHardwareConfig->GetShadowFilterMode();	// Based upon vendor and device dependent formats
+			//nShadowFilterMode = g_pHardwareConfig->GetShadowFilterMode();	// Based upon vendor and device dependent formats
 		}
 		else // not flashlight pass
 		{
@@ -390,6 +390,12 @@ void DrawSkin_DX9_Internal( CBaseVSShader *pShader, IMaterialVar** params, IShad
 			pShaderShadow->EnableTexture( SHADER_SAMPLER5, true );	// Noise map
 			pShaderShadow->EnableTexture( SHADER_SAMPLER6, true );	// Flashlight cookie
 			userDataSize = 4; // tangent S
+		}
+		else
+		{
+			pShaderShadow->EnableTexture( SHADER_SAMPLER4, true );	// Shadow depth map
+			pShaderShadow->SetShadowDepthFiltering( SHADER_SAMPLER4 );
+			pShaderShadow->EnableSRGBRead( SHADER_SAMPLER4, false );
 		}
 
 		// Always enable, since flat normal will be bound
@@ -606,6 +612,9 @@ void DrawSkin_DX9_Internal( CBaseVSShader *pShader, IMaterialVar** params, IShad
 			}
 		}
 
+		float vRimBoost[4] = {1, 1, 1, 1};
+		ITexture *pCascadedDepthTexture = NULL;
+
 		LightState_t lightState = { 0, false, false };
 		bool bFlashlightShadows = false;
 		if( bHasFlashlight )
@@ -617,7 +626,7 @@ void DrawSkin_DX9_Internal( CBaseVSShader *pShader, IMaterialVar** params, IShad
 			FlashlightState_t state = pShaderAPI->GetFlashlightStateEx( worldToTexture, &pFlashlightDepthTexture );
 			bFlashlightShadows = state.m_bEnableShadows;
 
-			SetFlashLightColorFromState( state, pShaderAPI, PSREG_FLASHLIGHT_COLOR );
+			//SetFlashLightColorFromState( state, pShaderAPI, PSREG_FLASHLIGHT_COLOR );
 
 			if( pFlashlightDepthTexture && g_pConfig->ShadowDepthTexture() && state.m_bEnableShadows )
 			{
@@ -633,6 +642,61 @@ void DrawSkin_DX9_Internal( CBaseVSShader *pShader, IMaterialVar** params, IShad
 			}
 
 			pShaderAPI->GetDX9LightState( &lightState );
+
+			pCascadedDepthTexture = (ITexture*)pShaderAPI->GetIntRenderingParameter( INT_CASCADED_DEPTHTEXTURE );
+			if ( pCascadedDepthTexture != NULL )
+			{
+				pShader->BindTexture( SHADER_SAMPLER4, pCascadedDepthTexture, 0 );
+
+				const int iCascadedCount = 2;
+				Vector vecMatrixParts[iCascadedCount][6];
+				VMatrix worldToTexture[iCascadedCount];
+				for ( int i = 0; i < 6; i++ )
+				{
+					vecMatrixParts[0][i] = pShaderAPI->GetVectorRenderingParameter( VECTOR_RENDERPARM_GSTRING_CASCADED_MATRIX_0 + i );
+					vecMatrixParts[1][i] = pShaderAPI->GetVectorRenderingParameter( VECTOR_RENDERPARM_GSTRING_CASCADED_2_MATRIX_0 + i );
+				}
+
+				for ( int i = 0; i < iCascadedCount; i++ )
+				{
+					Q_memcpy( worldToTexture[i].Base(), vecMatrixParts[i][0].Base(), sizeof( float ) * 16 );
+				}
+
+				pShaderAPI->SetPixelShaderConstant( PSREG_FLASHLIGHT_TO_WORLD_TEXTURE, worldToTexture[1].Base(), 4 );
+				pShaderAPI->SetVertexShaderConstant( 240, worldToTexture[0].Base(), 4 );
+
+				Vector vecCascadedFwd = pShaderAPI->GetVectorRenderingParameter( VECTOR_RENDERPARM_GSTRING_CASCADED_FORWARD );
+				vRimBoost[0] = vecCascadedFwd.x;
+				vRimBoost[1] = vecCascadedFwd.y;
+				vRimBoost[2] = vecCascadedFwd.z;
+
+				float vScreenScale[4] = {1280.0f / 32.0f, 720.0f / 32.0f, 0, 0};
+				int nWidth, nHeight;
+				pShaderAPI->GetBackBufferDimensions( nWidth, nHeight );
+				vScreenScale[0] = (float) nWidth  / 32.0f;
+				vScreenScale[1] = (float) nHeight / 32.0f;
+				pShaderAPI->SetPixelShaderConstant( PSREG_FLASHLIGHT_SCREEN_SCALE, vScreenScale, 1 );
+
+				float vDirectionalLights[4] = { 0.0f };
+				const int maxLights = MIN( 4, lightState.m_nNumLights );
+				if ( maxLights > 0 )
+				{
+					for( int i = 0; i < maxLights; i++ )
+					{
+						//const LightDesc_t & lightDesc = pShaderAPI->GetLight( i );
+						const LightDesc_t & lightDesc = pShaderAPI->GetLight( maxLights - 1 - i );
+						if ( lightDesc.m_Type == MATERIAL_LIGHT_DIRECTIONAL )
+						{
+							vDirectionalLights[i] = 1.0f;
+						}
+					}
+				}
+				//if ( maxLights > 0 )
+				//{
+				//	vDirectionalLights[ maxLights - 1 ] = 1.0f;
+				//}
+				pShaderAPI->SetPixelShaderConstant( PSREG_FLASHLIGHT_COLOR, vDirectionalLights );
+			}
 		}
 
 		MaterialFogMode_t fogType = pShaderAPI->GetSceneFogMode();
@@ -671,6 +735,7 @@ void DrawSkin_DX9_Internal( CBaseVSShader *pShader, IMaterialVar** params, IShad
 		else
 		{
 			const bool bFastVertexTextures = g_pHardwareConfig->HasFastVertexTextures();
+			const int iCascadedShadowCombo = ( pCascadedDepthTexture != NULL ) ? 1 : 0;
 
 			if ( bFastVertexTextures )
 				pShader->SetHWMorphVertexShaderState( VERTEX_SHADER_SHADER_SPECIFIC_CONST_6, VERTEX_SHADER_SHADER_SPECIFIC_CONST_7, SHADER_VERTEXTEXTURE_SAMPLER0 );
@@ -681,6 +746,7 @@ void DrawSkin_DX9_Internal( CBaseVSShader *pShader, IMaterialVar** params, IShad
 			SET_DYNAMIC_VERTEX_SHADER_COMBO( LIGHTING_PREVIEW, pShaderAPI->GetIntRenderingParameter(INT_RENDERPARM_ENABLE_FIXED_LIGHTING)!=0);
 			SET_DYNAMIC_VERTEX_SHADER_COMBO( MORPHING, pShaderAPI->IsHWMorphingEnabled() && bFastVertexTextures );
 			SET_DYNAMIC_VERTEX_SHADER_COMBO( COMPRESSED_VERTS, (int)vertexCompression );
+			SET_DYNAMIC_VERTEX_SHADER_COMBO( CASCADED_SHADOW, iCascadedShadowCombo );
 			SET_DYNAMIC_VERTEX_SHADER( sdk_skin_vs30 );
 
 			DECLARE_DYNAMIC_PIXEL_SHADER( sdk_skin_ps30 );
@@ -689,6 +755,7 @@ void DrawSkin_DX9_Internal( CBaseVSShader *pShader, IMaterialVar** params, IShad
 			SET_DYNAMIC_PIXEL_SHADER_COMBO( WRITE_DEPTH_TO_DESTALPHA, bWriteDepthToAlpha );
 			SET_DYNAMIC_PIXEL_SHADER_COMBO( PIXELFOGTYPE, pShaderAPI->GetPixelFogCombo() );
 			SET_DYNAMIC_PIXEL_SHADER_COMBO( FLASHLIGHTSHADOWS, bFlashlightShadows );
+			SET_DYNAMIC_PIXEL_SHADER_COMBO( CASCADED_SHADOW, iCascadedShadowCombo );
 			SET_DYNAMIC_PIXEL_SHADER( sdk_skin_ps30 );
 
 			if ( bFastVertexTextures )
@@ -764,7 +831,14 @@ void DrawSkin_DX9_Internal( CBaseVSShader *pShader, IMaterialVar** params, IShad
 
 		if( !bHasFlashlight )
 		{
-			pShaderAPI->BindStandardTexture( SHADER_SAMPLER5, TEXTURE_NORMALIZATION_CUBEMAP_SIGNED );
+			if ( g_pHardwareConfig->SupportsShaderModel_3_0() )
+			{
+				pShaderAPI->BindStandardTexture( SHADER_SAMPLER5, TEXTURE_SHADOW_NOISE_2D );
+			}
+			else
+			{
+				pShaderAPI->BindStandardTexture( SHADER_SAMPLER5, TEXTURE_NORMALIZATION_CUBEMAP_SIGNED );
+			}
 
 			// Setting .x to 1 means to apply Fresnel to env map.  Setting w to 1 means use separate selfillummask
 			float vEnvMapFresnel_SelfIllumMask[4] = {0.0f, 0.0f, 0.0f, 0.0f};
@@ -800,7 +874,7 @@ void DrawSkin_DX9_Internal( CBaseVSShader *pShader, IMaterialVar** params, IShad
 		pShaderAPI->CommitPixelShaderLighting( PSREG_LIGHT_INFO_ARRAY );
 
 		// Pack Phong exponent in with the eye position
-		float vEyePos_SpecExponent[4], vFresnelRanges_SpecBoost[4] = {0, 0.5, 1, 1}, vRimBoost[4] = {1, 1, 1, 1};
+		float vEyePos_SpecExponent[4], vFresnelRanges_SpecBoost[4] = {0, 0.5, 1, 1};
 		float vSpecularTint[4] = {1, 1, 1, 4};
 		pShaderAPI->GetWorldSpaceCameraPosition( vEyePos_SpecExponent );
 

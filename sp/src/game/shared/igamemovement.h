@@ -75,6 +75,11 @@ public:
 	void			SetAbsOrigin( const Vector &vec );
 	const Vector	&GetAbsOrigin() const;
 
+	// GSTRINGMIGRATION
+	uint16			m_iAutoAimEntityIndex;
+	Vector			m_vecWorldShootPosition;
+	// END GSTRINGMIGRATION
+
 private:
 	Vector			m_vecAbsOrigin;		// edict::origin
 };

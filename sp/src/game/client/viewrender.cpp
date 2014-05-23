@@ -78,11 +78,15 @@
 #include "C_Env_Projected_Texture.h"
 
 // GSTRINGMIGRATION
-#include "gstring/gstring_postprocess.h"
-#include "gstring/cscreenoverlay_multi.h"
-#include "gstring/gstring_cvars.h"
+#include "gstring_postprocess.h"
+#include "cgstring_globals.h"
+#include "cscreenoverlay_multi.h"
+#include "c_gstring_util.h"
+#include "gstring_cvars.h"
 #include "shadereditor/shadereditorsystem.h"
 #include "shadereditor/grass/cgrasscluster.h"
+
+#include "materialsystem/imaterialsystemhardwareconfig.h"
 // END GSTRINGMIGRATION
 
 // memdbgon must be the last include file in a .cpp file!!!
@@ -1339,9 +1343,23 @@ void CViewRender::ViewDrawScene( bool bDrew3dSkybox, SkyboxVisibility_t nSkyboxV
 	g_pClientShadowMgr->PreRender();
 
 	// Shadowed flashlights supported on ps_2_b and up...
-	if ( r_flashlightdepthtexture.GetBool() && (viewID == VIEW_MAIN) )
+	if ( r_flashlightdepthtexture.GetBool() && ( viewID == VIEW_MAIN ) )
 	{
 		g_pClientShadowMgr->ComputeShadowDepthTextures( view );
+
+		CMatRenderContextPtr pRenderContext( materials );
+
+		// GSTRINGMIGRATION
+		if ( g_pGstringGlobals != NULL && g_pGstringGlobals->IsCascadedShadowMappingEnabled() &&
+			SupportsCascadedShadows() )
+		{
+			UpdateCascadedShadow( view );
+		}
+		else
+		{
+			pRenderContext->SetIntRenderingParameter( INT_CASCADED_DEPTHTEXTURE, 0 );
+		}
+		// END GSTRINGMIGRATION
 	}
 
 	m_BaseDrawFlags = baseDrawFlags;
@@ -1878,6 +1896,110 @@ void CViewRender::CleanupMain3DView( const CViewSetup &view )
 	render->PopView( GetFrustum() );
 }
 
+void CViewRender::UpdateCascadedShadow( const CViewSetup &view )
+{
+	static CTextureReference s_CascadedShadowDepthTexture;
+	static CTextureReference s_CascadedShadowColorTexture;
+	if ( !s_CascadedShadowDepthTexture.IsValid() )
+	{
+		s_CascadedShadowDepthTexture.Init( materials->FindTexture( "_rt_CascadedShadowDepth", TEXTURE_GROUP_OTHER ) );
+	}
+
+	if ( !s_CascadedShadowColorTexture.IsValid() )
+	{
+		s_CascadedShadowColorTexture.Init( materials->FindTexture( "_rt_CascadedShadowColor", TEXTURE_GROUP_OTHER ) );
+	}
+
+	ITexture *pDepthTexture = s_CascadedShadowDepthTexture;
+	CMatRenderContextPtr pRenderContext( materials );
+	pRenderContext->SetIntRenderingParameter( INT_CASCADED_DEPTHTEXTURE, int(pDepthTexture) );
+
+	C_BasePlayer *pPlayer = C_BasePlayer::GetLocalPlayer();
+
+	const QAngle angCascadedAngles( 10.0f, -90.0f, 0.0f );
+	Vector vecFwd, vecRight, vecUp;
+	AngleVectors( angCascadedAngles, &vecFwd, &vecRight, &vecUp );
+
+	pRenderContext->SetVectorRenderingParameter( VECTOR_RENDERPARM_GSTRING_CASCADED_FORWARD, vecFwd );
+
+	Vector vecMainViewFwd;
+	AngleVectors( view.angles, &vecMainViewFwd );
+
+	CViewSetup cascadedShadowView;
+	cascadedShadowView.angles = angCascadedAngles;
+	cascadedShadowView.m_bOrtho = true;
+
+	cascadedShadowView.width = s_CascadedShadowDepthTexture->GetMappingWidth() / 2;
+	cascadedShadowView.height = s_CascadedShadowDepthTexture->GetMappingHeight();
+
+	cascadedShadowView.m_flAspectRatio = 1.0f;
+	cascadedShadowView.m_bDoBloomAndToneMapping = false;
+	cascadedShadowView.zFar = cascadedShadowView.zFarViewmodel = 2000.0f;
+	cascadedShadowView.zNear = cascadedShadowView.zNearViewmodel = 7.0f;
+	cascadedShadowView.fov = cascadedShadowView.fovViewmodel = 90.0f;
+
+	const struct ShadowConfig_t
+	{
+		float flOrthoSize;
+		float flForwardOffset;
+		float flUVOffsetX;
+		int iParamIndex;
+	} shadowConfigs[] = {
+		{ 64.0f, 0.0f, 0.25f, VECTOR_RENDERPARM_GSTRING_CASCADED_MATRIX_0 },
+		{ 384.0f, 256.0f, 0.75f, VECTOR_RENDERPARM_GSTRING_CASCADED_2_MATRIX_0 }
+	};
+	const int iCascadedShadowCount = ARRAYSIZE( shadowConfigs );
+
+	for ( int i = 0; i < iCascadedShadowCount; i++ )
+	{
+		const ShadowConfig_t &shadowConfig = shadowConfigs[i];
+		cascadedShadowView.m_OrthoTop = -shadowConfig.flOrthoSize;
+		cascadedShadowView.m_OrthoRight = shadowConfig.flOrthoSize;
+		cascadedShadowView.m_OrthoBottom = shadowConfig.flOrthoSize;
+		cascadedShadowView.m_OrthoLeft = -shadowConfig.flOrthoSize;
+
+		cascadedShadowView.x = i * cascadedShadowView.width;
+		cascadedShadowView.y = 0;
+
+		if ( pPlayer != NULL )
+		{
+			cascadedShadowView.origin = pPlayer->GetRenderOrigin() - vecFwd * 1024.0f;
+		}
+		else
+		{
+			cascadedShadowView.origin = vec3_origin;
+		}
+
+		cascadedShadowView.origin += vecMainViewFwd * shadowConfig.flForwardOffset;
+
+		const float flViewFrustumWidthScale = cascadedShadowView.m_OrthoRight * 2.0f / cascadedShadowView.width;
+		const float flViewFrustumHeightScale = cascadedShadowView.m_OrthoBottom * 2.0f / cascadedShadowView.height;
+
+		cascadedShadowView.origin -= fmod( DotProduct( cascadedShadowView.origin, vecRight ), flViewFrustumWidthScale ) * vecRight;
+		cascadedShadowView.origin -= fmod( DotProduct( cascadedShadowView.origin, vecUp ), flViewFrustumHeightScale ) * vecUp;
+
+		VMatrix worldToView, viewToProjection, worldToProjection, worldToTexture;
+		render->GetMatricesForView( cascadedShadowView, &worldToView, &viewToProjection, &worldToProjection, &worldToTexture );
+
+		VMatrix tmp, shadowToUnit;
+		MatrixBuildScale( tmp, 0.25f, -0.5f, 1.0f );
+		tmp[0][3] = shadowConfig.flUVOffsetX;
+		tmp[1][3] = 0.5f;
+		MatrixMultiply( tmp, worldToProjection, shadowToUnit );
+
+		Vector vecMatrixPart[6];
+		vecMatrixPart[5].Init();
+		Q_memcpy( vecMatrixPart, shadowToUnit.Base(), sizeof( float ) * 16 );
+		for ( int i = 0; i < 6; i++ )
+		{
+			pRenderContext->SetVectorRenderingParameter( shadowConfig.iParamIndex + i, vecMatrixPart[ i ] );
+		}
+
+		//pRenderContext->SetShadowDepthBiasFactors( 16.0f, 0.0005f );
+		pRenderContext->SetShadowDepthBiasFactors( 8.0f, 0.0005f );
+		UpdateShadowDepthTexture( s_CascadedShadowColorTexture, s_CascadedShadowDepthTexture, cascadedShadowView );
+	}
+}
 
 //-----------------------------------------------------------------------------
 // Queues up an overlay rendering
@@ -5298,6 +5420,9 @@ void CShadowDepthView::Draw()
 		render->Push3DView( (*this), VIEW_CLEAR_DEPTH, m_pRenderTarget, GetFrustum() );
 	}
 
+	pRenderContext.GetFrom( materials );
+	pRenderContext->PushRenderTargetAndViewport( m_pRenderTarget, m_pDepthTexture, x, y, width, height );
+	pRenderContext.SafeRelease();
 	SetupCurrentView( origin, angles, VIEW_SHADOW_DEPTH_TEXTURE );
 
 	MDLCACHE_CRITICAL_SECTION();
@@ -5342,6 +5467,7 @@ void CShadowDepthView::Draw()
 		pRenderContext->CopyRenderTargetToTextureEx( m_pDepthTexture, -1, NULL, NULL );
 	}
 
+	pRenderContext->PopRenderTargetAndViewport();
 	render->PopView( GetFrustum() );
 
 #if defined( _X360 )
@@ -6586,3 +6712,4 @@ void CRefractiveGlassView::Draw()
 	pRenderContext->ClearColor4ub( 0, 0, 0, 255 );
 	pRenderContext->Flush();
 }
+

@@ -3,6 +3,7 @@
 #include "in_buttons.h"
 #include "gstring/cspacecraft.h"
 #include "gstring/gstring_player_shared.h"
+#include "gstring/gstring_util.h"
 
 #ifdef CLIENT_DLL
 #include "cdll_client_int.h"
@@ -44,7 +45,7 @@ static ConVar gstring_spacecraft_acceleration_side( "gstring_spacecraft_accelera
 static ConVar gstring_spacecraft_physics_drag( "gstring_spacecraft_physics_drag", "10.0", FCVAR_REPLICATED );
 static ConVar gstring_spacecraft_physics_angulardrag( "gstring_spacecraft_physics_angulardrag", "5000.0", FCVAR_REPLICATED );
 
-static ConVar gstring_spacecraft_move_ang_approach_speed( "gstring_spacecraft_move_ang_approach_speed", "2.0", FCVAR_REPLICATED );
+static ConVar gstring_spacecraft_move_ang_approach_speed( "gstring_spacecraft_move_ang_approach_speed", "4.5", FCVAR_REPLICATED );
 static ConVar gstring_spacecraft_move_drag_side( "gstring_spacecraft_move_drag_side", "2.0", FCVAR_REPLICATED );
 static ConVar gstring_spacecraft_move_drag_fwd( "gstring_spacecraft_move_drag_fwd", "1.0", FCVAR_REPLICATED );
 static ConVar gstring_spacecraft_move_drag_up( "gstring_spacecraft_move_drag_up", "2.0", FCVAR_REPLICATED );
@@ -117,6 +118,16 @@ CSpacecraft::~CSpacecraft()
 {
 #ifdef GAME_DLL
 	delete m_pAI;
+#else
+	if ( m_iGUID_Engine >= 0 && enginesound->IsSoundStillPlaying( m_iGUID_Engine ) )
+	{
+		enginesound->StopSoundByGuid( m_iGUID_Engine );
+	}
+
+	if ( m_iGUID_Boost >= 0 && enginesound->IsSoundStillPlaying( m_iGUID_Boost ) )
+	{
+		enginesound->StopSoundByGuid( m_iGUID_Boost );
+	}
 #endif
 }
 
@@ -171,6 +182,10 @@ void CSpacecraft::Activate()
 	VPhysicsGetObject()->Wake();
 	VPhysicsGetObject()->EnableGravity( false );
 	VPhysicsGetObject()->EnableDrag( true );
+
+	m_takedamage = DAMAGE_YES;
+	SetMaxHealth( 100 );
+	SetHealth( GetMaxHealth() );
 }
 
 void CSpacecraft::VPhysicsUpdate( IPhysicsObject *pPhysics )
@@ -181,8 +196,11 @@ void CSpacecraft::VPhysicsUpdate( IPhysicsObject *pPhysics )
 		float flDeltaTime = gpGlobals->curtime - m_flLastAIThinkTime;
 		flDeltaTime = MIN( 0.25f, flDeltaTime );
 
-		m_pAI->Run( flDeltaTime );
-		m_flLastAIThinkTime = gpGlobals->curtime;
+		if ( flDeltaTime > 0.0f )
+		{
+			m_pAI->Run( flDeltaTime );
+			m_flLastAIThinkTime = gpGlobals->curtime;
+		}
 	}
 }
 
@@ -191,6 +209,30 @@ void CSpacecraft::InputEnterVehicle( inputdata_t &inputdata )
 	CGstringPlayer *pPlayer = LocalGstringPlayer();
 	SetPlayerSimulated( pPlayer );
 	pPlayer->EnterSpacecraft( this );
+}
+
+int CSpacecraft::OnTakeDamage( const CTakeDamageInfo &info )
+{
+	int ret = BaseClass::OnTakeDamage( info );
+
+	return ret;
+}
+
+void CSpacecraft::Event_Killed( const CTakeDamageInfo &info )
+{
+	CBasePlayer *pPlayer = ToBasePlayer( GetOwnerEntity() );
+	if ( pPlayer != NULL )
+	{
+		CTakeDamageInfo playerDamage( info );
+		playerDamage.SetDamage( pPlayer->GetHealth() + 1 );
+		playerDamage.SetDamageType( playerDamage.GetDamageType() | DMG_NEVERGIB );
+		pPlayer->TakeDamage( playerDamage );
+
+		pPlayer->SetMoveType( MOVETYPE_NONE );
+		pPlayer->SetAbsVelocity( vec3_origin );
+	}
+
+	BaseClass::Event_Killed( info );
 }
 
 void CSpacecraft::SimulateFire( CMoveData &moveData, float flFrametime )
@@ -215,17 +257,85 @@ void CSpacecraft::SimulateFire( CMoveData &moveData, float flFrametime )
 		m_bAlternatingWeapons = !m_bAlternatingWeapons;
 		m_iProjectileParity++;
 
-		CBasePlayer *pPlayer = ToBasePlayer( gEntList.GetBaseEntity( moveData.m_nPlayerHandle.Get()->GetRefEHandle() ) );
-		Assert( pPlayer );
+		CBasePlayer *pPlayer = moveData.m_nPlayerHandle.IsValid() ?
+			ToBasePlayer( gEntList.GetBaseEntity( moveData.m_nPlayerHandle.Get()->GetRefEHandle() ) ) : NULL;
+
+		Vector vecEntityFwd;
+		AngleVectors( GetAbsAngles(), &vecEntityFwd );
+
+		CBaseEntity *pAutoAimEntity = NULL;
+		Vector vecInitialTarget = GetAbsOrigin() + vecEntityFwd * 1024.0f;
+
+		IHandleEntity *pAutoAimHandle = moveData.m_iAutoAimEntityIndex > 0 ?
+			gEntList.LookupEntityByNetworkIndex( moveData.m_iAutoAimEntityIndex ) : NULL;
+		pAutoAimEntity = pAutoAimHandle ? gEntList.GetBaseEntity( pAutoAimHandle->GetRefEHandle() ) : NULL;
+
+		QAngle angSpacecraft = GetAbsAngles();
+		Vector vecSpacecraftForward;
+		AngleVectors( angSpacecraft, &vecSpacecraftForward );
 
 		for ( ; i < m_WeaponAttachments.Count(); i += 2 )
 		{
+			const float flProjectileSpeed = 4000.0f;
+
 			Vector vecProjectileOrigin;
 			QAngle angProjectileAngles;
 			GetAttachment( m_WeaponAttachments[ i ], vecProjectileOrigin, angProjectileAngles );
 
+			//Vector vecAttachmentFwd;
+			//AngleVectors( angProjectileAngles, &vecAttachmentFwd );
+			//vecProjectileOrigin += vecAttachmentFwd * 20.0f;
+
+			Vector vecTarget = moveData.m_vecWorldShootPosition;
+
+			if ( pAutoAimEntity != NULL )
+			{
+				vecTarget = pAutoAimEntity->WorldSpaceCenter();
+				Vector vecVelocity( pAutoAimEntity->GetAbsVelocity() );
+
+				IPhysicsObject *pPhysicsObject( pAutoAimEntity->VPhysicsGetObject() );
+				if ( pPhysicsObject != NULL )
+				{
+					pPhysicsObject->GetVelocity( &vecVelocity, NULL );
+				}
+
+				Vector vecPredictedTarget;
+				if ( UTIL_PredictProjectileTarget( vecProjectileOrigin, vecTarget, vecVelocity,
+					flProjectileSpeed, vecPredictedTarget ) )
+				{
+					//DebugDrawLine( vecProjectileOrigin, vecTarget, 0, 0, 255, true, 1.0f );
+					vecTarget = vecPredictedTarget;
+					//DebugDrawLine( vecProjectileOrigin, vecTarget, 255, 0, 0, true, 1.0f );
+				}
+			}
+
+			Vector vecShootDirection = vecTarget - vecProjectileOrigin;
+			vecShootDirection.NormalizeInPlace();
+
+			const float flSpacecraftDot = DotProduct( vecShootDirection, vecSpacecraftForward );
+			const float flMinimumTraceDistance = 0.7071f;
+			if ( flSpacecraftDot < flMinimumTraceDistance )
+			{
+				vecShootDirection -= vecSpacecraftForward * flSpacecraftDot;
+				vecShootDirection.NormalizeInPlace();
+
+				Vector vecSign( Sign( vecShootDirection.x ), Sign( vecShootDirection.y ),
+					Sign( vecShootDirection.z ) );
+
+				vecShootDirection *= vecShootDirection;
+				vecShootDirection *= 1.0f - flMinimumTraceDistance * flMinimumTraceDistance;
+				vecShootDirection.x = FastSqrt( vecShootDirection.x );
+				vecShootDirection.y = FastSqrt( vecShootDirection.y );
+				vecShootDirection.z = FastSqrt( vecShootDirection.z );
+
+				vecShootDirection *= vecSign;
+				vecShootDirection += vecSpacecraftForward * flMinimumTraceDistance;
+
+				vecTarget = vecProjectileOrigin + vecShootDirection * 128.0f;
+			}
+
 			Vector vecProjectileVelocity;
-			const Vector vecShootTarget = pPlayer->GetLastUserCommand()->worldShootPosition;
+			const Vector vecShootTarget = vecTarget;
 			vecProjectileVelocity = vecShootTarget - vecProjectileOrigin;
 			vecProjectileVelocity.NormalizeInPlace();
 
@@ -233,11 +343,11 @@ void CSpacecraft::SimulateFire( CMoveData &moveData, float flFrametime )
 				CreateEntityByName( "prop_spacecraft_projectile" ) );
 			Assert( pProjectile );
 
-			vecProjectileVelocity *= 3000.0f;
+			vecProjectileVelocity *= flProjectileSpeed;
 			pProjectile->Fire( pPlayer, this, vecProjectileOrigin, vecProjectileVelocity );
 		}
 
-		m_flFireDelay = 0.05f;
+		m_flFireDelay = 0.1f;
 	}
 }
 #else
@@ -353,7 +463,7 @@ void CSpacecraft::ClientThink()
 				m_iGUID_Engine = -1;
 				EmitSound( SPACECRAFT_SOUND_ENGINE_STOP );
 
-				if ( m_iEngineLevelLast == 1 )
+				if ( m_iEngineLevelLast == ENGINELEVEL_IDLE )
 				{
 					enginesound->SetVolumeByGuid( enginesound->GetGuidForLastSoundEmitted(), 0.4f );
 				}
@@ -395,12 +505,12 @@ void CSpacecraft::ClientThink()
 			}
 		}
 
-		if ( m_iEngineLevel == 3 )
+		if ( m_iEngineLevel == ENGINELEVEL_BOOST )
 		{
 			EmitSound( SPACECRAFT_SOUND_BOOST_START );
 			m_iGUID_Boost = enginesound->GetGuidForLastSoundEmitted();
 		}
-		else if ( m_iEngineLevelLast == 3 )
+		else if ( m_iEngineLevelLast == ENGINELEVEL_BOOST )
 		{
 			enginesound->StopSoundByGuid( m_iGUID_Boost );
 			m_iGUID_Boost = -1;
@@ -419,13 +529,9 @@ void CSpacecraft::ClientThink()
 		m_flEngineVolume = flEngineVolumeTarget;
 	}
 
-	if ( m_iGUID_Engine >= 0 )
+	if ( m_iGUID_Engine >= 0 && enginesound->IsSoundStillPlaying( m_iGUID_Engine ) )
 	{
-		Assert( enginesound->IsSoundStillPlaying( m_iGUID_Engine ) );
-		if ( enginesound->IsSoundStillPlaying( m_iGUID_Engine ) )
-		{
-			enginesound->SetVolumeByGuid( m_iGUID_Engine, m_flEngineVolume );
-		}
+		enginesound->SetVolumeByGuid( m_iGUID_Engine, m_flEngineVolume );
 	}
 
 	const bool bShouldShowSpaceField = IsPlayerControlled() && m_PhysVelocity.Get().LengthSqr() > 2000.0f;
@@ -485,6 +591,11 @@ void CSpacecraft::UpdateCrosshair( CHudCrosshair *pCrosshair )
 	const Color white( 255, 255, 255, 255 );
 	pCrosshair->SetCrosshair( pCrosshairTexture, white );
 }
+
+//const Vector &CSpacecraft::GetPhysVelocitySmooth() const
+//{
+//	return m_iv_vecVelocity.GetHead
+//}
 #endif
 
 CStudioHdr *CSpacecraft::OnNewModel()
@@ -540,11 +651,13 @@ CStudioHdr *CSpacecraft::OnNewModel()
 
 void CSpacecraft::SimulateMove( CMoveData &moveData, float flFrametime )
 {
-	const bool bCutOffEngines = ( moveData.m_nButtons & IN_JUMP ) != 0;
-
 	IPhysicsObject *pPhysObject = VPhysicsGetObject();
-	Assert( pPhysObject );
+	if ( pPhysObject == NULL )
+	{
+		return;
+	}
 
+	const bool bCutOffEngines = ( moveData.m_nButtons & IN_JUMP ) != 0;
 	float flAngularDrag = gstring_spacecraft_physics_angulardrag.GetFloat();
 	if ( bCutOffEngines )
 	{
@@ -615,8 +728,8 @@ void CSpacecraft::SimulateMove( CMoveData &moveData, float flFrametime )
 		}
 	}
 
-	m_iEngineLevel = bCutOffEngines ? 0 : ( bAccelerationEffects ?
-		( bBoostEffects ? 3 : 2 ) : 1 );
+	m_iEngineLevel = bCutOffEngines ? ENGINELEVEL_STALLED : ( bAccelerationEffects ?
+		( bBoostEffects ? ENGINELEVEL_BOOST : ENGINELEVEL_NORMAL ) : ENGINELEVEL_IDLE );
 
 	QAngle deltaAngle;
 	matrix3x4_t matModel, matModelInv, matTarget, matTargetLocal;
@@ -628,9 +741,13 @@ void CSpacecraft::SimulateMove( CMoveData &moveData, float flFrametime )
 	ConcatTransforms( matModelInv, matTarget, matTargetLocal );
 	MatrixAngles( matTargetLocal, deltaAngle );
 
+	deltaAngle.z = clamp( deltaAngle.z, -89.0f, 89.0f );
+
 	deltaAngle = ConvertSourceToPhysics( deltaAngle );
 	AngularImpulse angImpulse( XYZ( deltaAngle ) );
 	angImpulse *= gstring_spacecraft_move_ang_approach_speed.GetFloat();
+
+	AngularImpulse angDelta = angImpulse - angOldImpulse;
 	angImpulse -= angOldImpulse;
 
 	if ( !bCutOffEngines )
@@ -669,4 +786,14 @@ void CSpacecraft::SimulateMove( CMoveData &moveData, float flFrametime )
 #ifdef GAME_DLL
 	SimulateFire( moveData, flFrametime );
 #endif
+}
+
+const Vector &CSpacecraft::GetPhysVelocity() const
+{
+	return m_PhysVelocity.Get();
+}
+
+CSpacecraft::EngineLevel_e CSpacecraft::GetEngineLevel() const
+{
+	return ( EngineLevel_e )m_iEngineLevel.Get();
 }

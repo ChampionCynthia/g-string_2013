@@ -1002,6 +1002,11 @@ private:
 
 	friend class CVisibleShadowList;
 	friend class CVisibleShadowFrustumList;
+
+	// GSTRINGMIGRATION
+	CTextureReference m_CascadedDepthTexture;
+	CTextureReference m_CascadedColorTexture;
+	// END GSTRINGMIGRATION
 };
 
 //-----------------------------------------------------------------------------
@@ -1372,6 +1377,7 @@ void CClientShadowMgr::InitDepthTextureShadows()
 
 	if( !m_bDepthTextureActive )
 	{
+		m_nDepthTextureResolution = r_flashlightdepthres.GetInt();
 		m_bDepthTextureActive = true;
 
 		ImageFormat dstFormat  = materials->GetShadowDepthTextureFormat();	// Vendor-dependent depth texture format
@@ -1420,6 +1426,13 @@ void CClientShadowMgr::InitDepthTextureShadows()
 			m_DepthTextureCacheLocks.AddToTail( bFalse );
 		}
 
+		const int iCadcadedShadowWidth = 2048;
+		const int iCadcadedShadowHeight = 1024;
+		m_CascadedColorTexture.InitRenderTarget( iCadcadedShadowWidth, iCadcadedShadowHeight, RT_SIZE_NO_CHANGE,
+			nullFormat, MATERIAL_RT_DEPTH_NONE, false, "_rt_CascadedShadowColor" );
+		m_CascadedDepthTexture.InitRenderTarget( iCadcadedShadowWidth, iCadcadedShadowHeight, RT_SIZE_NO_CHANGE,
+			dstFormat, MATERIAL_RT_DEPTH_NONE, false, "_rt_CascadedShadowDepth" );
+
 		materials->EndRenderTargetAllocation();
 	}
 }
@@ -1438,6 +1451,9 @@ void CClientShadowMgr::ShutdownDepthTextureShadows()
 			m_DepthTextureCacheLocks.Remove( m_DepthTextureCache.Count()-1 );
 			m_DepthTextureCache.Remove( m_DepthTextureCache.Count()-1 );
 		}
+
+		m_CascadedDepthTexture.Shutdown();
+		m_CascadedColorTexture.Shutdown();
 
 		m_bDepthTextureActive = false;
 	}

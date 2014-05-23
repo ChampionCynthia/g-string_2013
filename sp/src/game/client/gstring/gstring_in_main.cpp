@@ -6,8 +6,8 @@
 #include "iviewrender.h"
 #include "viewrender.h"
 #include "view.h"
+#include "view_scene.h"
 #include "in_buttons.h"
-#include "gstring/gstring_util.h"
 
 #include "vgui_controls/Controls.h"
 #include "vgui/ISurface.h"
@@ -15,10 +15,13 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-static ConVar gstring_spacecraft_mouse_roll_speed( "gstring_spacecraft_mouse_roll_speed", "100.0", FCVAR_REPLICATED );
-static ConVar gstring_spacecraft_mouse_drift_speed( "gstring_spacecraft_mouse_drift_speed", "0.1", FCVAR_REPLICATED );
-static ConVar gstring_spacecraft_move_roll_speed( "gstring_spacecraft_move_roll_speed", "100.0", FCVAR_REPLICATED );
+static ConVar gstring_spacecraft_mouse_roll_speed( "gstring_spacecraft_mouse_roll_speed", "100.0" );
+static ConVar gstring_spacecraft_mouse_drift_speed( "gstring_spacecraft_mouse_drift_speed", "0.15" );
+static ConVar gstring_spacecraft_move_roll_speed( "gstring_spacecraft_move_roll_speed", "100.0" );
+static ConVar gstring_spacecraft_autoaim_maxscreendist( "gstring_spacecraft_autoaim_maxscreendist", "30" );
+static ConVar gstring_spacecraft_autoaim_maxworlddist( "gstring_spacecraft_autoaim_maxworlddist", "4096" );
 
+extern kbutton_t in_attack;
 extern kbutton_t in_duck;
 extern kbutton_t in_moveleft;
 extern kbutton_t in_moveright;
@@ -34,6 +37,8 @@ CGstringInput *GetGstringInput()
 CGstringInput::CGstringInput()
 	: m_MousePosition( vec2_origin )
 	, m_bIsUsingCustomCrosshair( false )
+	, m_flAutoAimUpdateTick( 0.0f )
+	, m_flLockFraction( 0.0f )
 {
 }
 
@@ -52,6 +57,16 @@ void CGstringInput::GetCrosshairPosition( int &x, int &y, float &angle )
 	const float flMaxCrosshairAngle = 45.0f;
 	angle = RemapValClamped( y, 0, vh, -flMaxCrosshairAngle, flMaxCrosshairAngle );
 	angle *= RemapValClamped( x, 0, vw, -1.0f, 1.0f );
+}
+
+const CUtlVector< EHANDLE > &CGstringInput::GetPotentialAutoAimTargets() const
+{
+	return m_PotentialAutoAimTargets;
+}
+
+CBaseEntity *CGstringInput::GetAutoAimTarget() const
+{
+	return m_AutoAimTarget.Get();
 }
 
 void CGstringInput::ClampAngles( QAngle &viewangles )
@@ -91,6 +106,7 @@ void CGstringInput::MouseMove( CUserCmd *cmd )
 
 	// Get view angles from engine
 	engine->GetViewAngles( viewangles );
+	const QAngle originalViewangles( viewangles );
 
 	// Validate mouse speed/acceleration settings
 	CheckMouseAcclerationVars();
@@ -118,6 +134,15 @@ void CGstringInput::MouseMove( CUserCmd *cmd )
 		// controls
 		m_MousePosition.x += mx;
 		m_MousePosition.y += my;
+
+		//Vector2D vecMouseCenter( vw * 0.5f, vh * 0.5f );
+		//Vector2D vecDelta = m_MousePosition - vecMouseCenter;
+		//if ( vecDelta.LengthSqr() > Square( vh * 0.5f ) )
+		//{
+		//	vecDelta.NormalizeInPlace();
+		//	vecDelta *= vh * 0.5f;
+		//	m_MousePosition = vecMouseCenter + vecDelta;
+		//}
 
 		const float flRollScale = gstring_spacecraft_mouse_roll_speed.GetFloat();
 		const float flDriftScale = gstring_spacecraft_mouse_drift_speed.GetFloat();
@@ -169,9 +194,6 @@ void CGstringInput::MouseMove( CUserCmd *cmd )
 	m_MousePosition.x = clamp( m_MousePosition.x, 0, vw );
 	m_MousePosition.y = clamp( m_MousePosition.y, 0, vh );
 
-	// Store out the new viewangles.
-	engine->SetViewAngles( viewangles );
-
 	Vector vecPickingRay;
 	const Vector vecViewOrigin( MainViewOrigin() );
 	extern void ScreenToWorld( int mousex, int mousey, float fov,
@@ -194,58 +216,109 @@ void CGstringInput::MouseMove( CUserCmd *cmd )
 	UTIL_TraceHull( vecViewOrigin, vecEnd, -vecHull, vecHull, MASK_SOLID, &filter, &tr );
 	//UTIL_TraceLine( vecViewOrigin, vecEnd, MASK_SOLID, &filter, &tr );
 
-	C_BaseEntity *pAutoAimTarget = NULL;
-	for ( C_BaseEntity *pEnt = ClientEntityList().FirstBaseEntity(); pEnt; pEnt = ClientEntityList().NextBaseEntity( pEnt ) )
-	{
-		if ( !pEnt || !pEnt->IsVisible() ||
-			pEnt->IsPlayer() || pEnt->GetOwnerEntity() == pPlayer )
-			continue;
+	cmd->worldShootPosition = tr.endpos;
 
-		CSpacecraft *pSpacecraft = dynamic_cast< CSpacecraft* >( pEnt );
-		if ( pSpacecraft != NULL )
+	// gstring_spacecraft_autoaim_maxscreendist
+
+	C_BaseEntity *pAutoAimTarget = NULL;
+
+	if ( m_flAutoAimUpdateTick < 0.0f )
+	{
+		m_flAutoAimUpdateTick = 0.05f;
+		m_PotentialAutoAimTargets.RemoveAll();
+
+		const float flMaxWorldDistanceSqr = gstring_spacecraft_autoaim_maxworlddist.GetFloat() *
+			gstring_spacecraft_autoaim_maxworlddist.GetFloat();
+		float flBestWorldDistanceSqr = flMaxWorldDistanceSqr;
+		float flBestScreenDistSqr = gstring_spacecraft_autoaim_maxscreendist.GetFloat() *
+			gstring_spacecraft_autoaim_maxscreendist.GetFloat() * ( vh / 640.0f );
+		for ( C_BaseEntity *pEnt = ClientEntityList().FirstBaseEntity(); pEnt; pEnt = ClientEntityList().NextBaseEntity( pEnt ) )
 		{
-			pAutoAimTarget = pSpacecraft;
-			break;
+			if ( !pEnt || !pEnt->IsVisible() ||
+				pEnt->IsPlayer() || pEnt->GetOwnerEntity() == pPlayer )
+				continue;
+
+			CSpacecraft *pSpacecraft = dynamic_cast< CSpacecraft* >( pEnt );
+			if ( pSpacecraft != NULL )
+			{
+				const Vector &vecCenter = pSpacecraft->WorldSpaceCenter();
+				const float flWorldDistanceSqr = ( vecCenter - vecViewOrigin ).LengthSqr();
+
+				if ( flWorldDistanceSqr > flMaxWorldDistanceSqr )
+				{
+					continue;
+				}
+
+				m_PotentialAutoAimTargets.AddToTail( pSpacecraft );
+
+				if ( flWorldDistanceSqr > flBestWorldDistanceSqr )
+				{
+					continue;
+				}
+
+				Vector vecScreen( vec3_origin );
+				if ( !ScreenTransform( vecCenter, vecScreen ) )
+				{
+					vecScreen = vecScreen * Vector( 0.5f, -0.5f, 0 ) + Vector( 0.5f, 0.5f, 0 );
+					vecScreen.x *= vw;
+					vecScreen.y *= vh;
+				}
+
+				const float flScreenDistSqr = ( Vector2D( vecScreen.x, vecScreen.y ) - m_MousePosition ).LengthSqr();
+				if ( flScreenDistSqr > flBestScreenDistSqr )
+				{
+					continue;
+				}
+
+				pAutoAimTarget = pSpacecraft;
+				flBestWorldDistanceSqr = flWorldDistanceSqr;
+				flBestScreenDistSqr = flScreenDistSqr;
+			}
 		}
+
+		m_AutoAimTarget.Set( pAutoAimTarget );
+	}
+	else
+	{
+		m_flAutoAimUpdateTick -= gpGlobals->frametime;
+	}
+
+	if ( pAutoAimTarget == NULL )
+	{
+		pAutoAimTarget = m_AutoAimTarget.Get();
 	}
 
 	if ( pAutoAimTarget != NULL )
 	{
-		//const Vector &vecTargetCenter = pAutoAimTarget->WorldSpaceCenter();
-		//UTIL_PredictProjectileTarget( vecTargetCenter, )
-		//tr.endpos = ;
+		cmd->autoAimTarget = pAutoAimTarget->entindex();
 	}
-
-	Vector vecSpacecraftOrigin = pSpacecraft->GetAbsOrigin();
-	QAngle angSpacecraft = pSpacecraft->GetRenderAngles();
-	Vector vecSpacecraftForward;
-	AngleVectors( angSpacecraft, &vecSpacecraftForward );
-
-	Vector vecShootDirection = tr.endpos - vecSpacecraftOrigin;
-	vecShootDirection.NormalizeInPlace();
-
-	const float flSpacecraftDot = DotProduct( vecShootDirection, vecSpacecraftForward );
-	const float flMinimumTraceDistance = 0.7071f;
-
-	if ( flSpacecraftDot < flMinimumTraceDistance )
+	else
 	{
-		vecShootDirection -= vecSpacecraftForward * flSpacecraftDot;
-		vecShootDirection.NormalizeInPlace();
-
-		Vector vecSign( Sign( vecShootDirection.x ), Sign( vecShootDirection.y ),
-			Sign( vecShootDirection.z ) );
-
-		vecShootDirection *= vecShootDirection;
-		vecShootDirection *= 1.0f - flMinimumTraceDistance * flMinimumTraceDistance;
-		vecShootDirection.x = FastSqrt( vecShootDirection.x );
-		vecShootDirection.y = FastSqrt( vecShootDirection.y );
-		vecShootDirection.z = FastSqrt( vecShootDirection.z );
-
-		vecShootDirection *= vecSign;
-		vecShootDirection += vecSpacecraftForward * flMinimumTraceDistance;
-
-		tr.endpos = vecSpacecraftOrigin + vecShootDirection * 128.0f;
+		cmd->autoAimTarget = 0;
 	}
 
-	cmd->worldShootPosition = tr.endpos;
+	bool bShouldLock = pAutoAimTarget != NULL && ( in_attack.state & 3 ) != 0;
+	const float flBorderRange = 10.0f * ( vh / 480.0f );
+	const float flDistanceToBorderX = ( vw * 0.5f ) - abs( m_MousePosition.x - vw * 0.5f );
+	const float flDistanceToBorderY = ( vh * 0.5f ) - abs( m_MousePosition.y - vh * 0.5f );
+	if ( MIN( flDistanceToBorderX, flDistanceToBorderY ) < flBorderRange )
+	{
+		bShouldLock = false;
+	}
+	//m_flLockFraction = Approach( bShouldLock ? 1.0f : 0.0f, m_flLockFraction, gpGlobals->frametime * 2.0f );
+
+	//if ( m_flLockFraction < 1.0f )
+	{
+		//if ( m_flLockFraction > 0.0f )
+		//{
+		//	Quaternion qViewangles, qOriginalViewangles, qTemp;
+		//	AngleQuaternion( originalViewangles, qOriginalViewangles );
+		//	AngleQuaternion( viewangles, qViewangles );
+		//	QuaternionSlerp( qViewangles, qOriginalViewangles, m_flLockFraction, qTemp );
+		//	QuaternionAngles( qTemp, viewangles );
+		//}
+
+		// Store out the new viewangles.
+		engine->SetViewAngles( viewangles );
+	}
 }

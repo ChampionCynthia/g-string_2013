@@ -129,7 +129,7 @@ static	kbutton_t	in_lookup;
 static	kbutton_t	in_lookdown;
 static	kbutton_t	in_use;
 static	kbutton_t	in_jump;
-static	kbutton_t	in_attack;
+kbutton_t	in_attack;
 static	kbutton_t	in_attack2;
 static	kbutton_t	in_up;
 static kbutton_t	in_down;

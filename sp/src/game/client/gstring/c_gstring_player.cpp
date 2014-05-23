@@ -895,31 +895,56 @@ CSpacecraft *C_GstringPlayer::GetSpacecraft()
 
 void C_GstringPlayer::GetSpacecraftCamera( Vector &origin, QAngle &angles, float &flFov )
 {
-	Assert( GetSpacecraft() );
 	CSpacecraft *pSpacecraft = GetSpacecraft();
+	Assert( pSpacecraft );
 
 	const float flDistance = 40.0f;
 
-	Vector vecFwd, vecRight, vecUp;
-	AngleVectors( angles, &vecFwd, &vecRight, &vecUp );
+	Vector vecFwd, vecUp;
+	AngleVectors( angles, &vecFwd, NULL, &vecUp );
 
-	Vector vecPivot = origin + vecFwd * 5000.0f;
-	origin = pSpacecraft->GetRenderOrigin() - vecFwd * flDistance;
-
-	origin += vecUp * 10.0f;
+	origin = pSpacecraft->GetRenderOrigin();
 
 	static Vector s_originSmooth( origin );
+	static float s_flFovSmooth = 0.0f;
 	Vector delta = origin - s_originSmooth;
 	if ( delta.LengthSqr() > 10000.0f )
 	{
 		s_originSmooth = origin;
+		s_flFovSmooth = 0.0f;
+	}
+	else if ( delta.LengthSqr() > 0.01f )
+	{
+		s_originSmooth += delta * MIN( 1.0f, gpGlobals->frametime * 40.0f );
+		origin = s_originSmooth;
 	}
 	else
 	{
-		s_originSmooth += delta * gpGlobals->frametime * 50.0f;
-		origin = s_originSmooth;
+		s_originSmooth = origin;
 	}
+
+	origin -= vecFwd * flDistance;
+	origin += vecUp * 10.0f;
 
 	vieweffects->CalcShake();
 	vieweffects->ApplyShake( origin, angles, 1.0f );
+
+	const CSpacecraft::EngineLevel_e engineLevel = pSpacecraft->GetEngineLevel();
+	const float flFovAdd = ( engineLevel == CSpacecraft::ENGINELEVEL_BOOST ) ? 20.0f :
+		( engineLevel == CSpacecraft::ENGINELEVEL_NORMAL ) ? 2.5f : 0.0f;
+
+	if ( abs( flFovAdd - s_flFovSmooth ) > 0.01f )
+	{
+		s_flFovSmooth += ( flFovAdd - s_flFovSmooth ) * MIN( 1.0f, gpGlobals->frametime * 1.2f );
+	}
+	else
+	{
+		s_flFovSmooth = flFovAdd;
+	}
+
+	flFov += s_flFovSmooth;
+
+	//Vector vecSpacecraftVelocity;
+	//pSpacecraft->EstimateAbsVelocity( vecSpacecraftVelocity );
+	//flFov += vecSpacecraftVelocity.Length() * 0.1f;
 }

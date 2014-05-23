@@ -19,6 +19,7 @@ public:
 #ifdef GAME_DLL
 	virtual int UpdateTransmitState() { return SetTransmitState( FL_EDICT_ALWAYS ); }
 
+	virtual void Precache();
 	void Fire( CBaseEntity *pPlayer, CBaseEntity *pVehicle,
 		const Vector &vecOrigin, const Vector &vecVelocity );
 #else
@@ -34,10 +35,10 @@ private:
 #else
 	CSmartPtr< CNewParticleEffect > m_hTrailParticle;
 
-	bool m_bHadImpactLast;
+	int m_iImpactTypeLast;
 #endif
 
-	CNetworkVar( bool, m_bHadImpact );
+	CNetworkVar( int, m_iImpactType );
 };
 
 #endif

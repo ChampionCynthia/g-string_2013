@@ -56,6 +56,7 @@ public:
 
 		// GSTRINGMIGRATION
 		worldShootPosition.Init();
+		autoAimTarget = 0;
 		// END GSTRINGMIGRATION
 
 		hasbeenpredicted = false;
@@ -85,6 +86,7 @@ public:
 
 		// GSTRINGMIGRATION
 		worldShootPosition	= src.worldShootPosition;
+		autoAimTarget		= src.autoAimTarget;
 		// END GSTRINGMIGRATION
 
 		hasbeenpredicted	= src.hasbeenpredicted;
@@ -121,6 +123,7 @@ public:
 		CRC32_ProcessBuffer( &crc, &mousedy, sizeof( mousedy ) );
 		// GSTRINGMIGRATION
 		CRC32_ProcessBuffer( &crc, &worldShootPosition, sizeof( worldShootPosition ) );
+		CRC32_ProcessBuffer( &crc, &autoAimTarget, sizeof( autoAimTarget ) );
 		// END GSTRINGMIGRATION
 		CRC32_Final( &crc );
 
@@ -171,6 +174,7 @@ public:
 
 	// GSTRINGMIGRATION
 	Vector worldShootPosition;
+	uint16 autoAimTarget;
 	// END GSTRINGMIGRATION
 
 	// Back channel to communicate IK state

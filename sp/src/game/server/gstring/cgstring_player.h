@@ -27,6 +27,7 @@ public:
 
 	virtual bool ShouldGib( const CTakeDamageInfo &info );
 	virtual bool CanBecomeRagdoll();
+	virtual bool ShouldCollide( int collisionGroup, int contentsMask ) const;
 
 	virtual void DoReloadAnim();
 

@@ -14,7 +14,7 @@ $Configuration
 {
 	$Compiler
 	{
-		$AdditionalIncludeDirectories	".\hl2;.\hl2\elements;$SRCDIR\game\shared\hl2;$SRCDIR\game\shared\episodic;..\..\public;$BASE"
+		$AdditionalIncludeDirectories	".\hl2;.\hl2\elements;$SRCDIR\game\shared\hl2;$SRCDIR\game\shared\episodic;..\..\public;$BASE;$SRCDIR\game\shared\gstring;$SRCDIR\game\client\gstring"
 		$PreprocessorDefinitions		"$BASE;HL2_CLIENT_DLL;HL2_EPISODIC;GSTRING;SOURCE_2013"
 	}
 }
@@ -69,6 +69,7 @@ $Project "Client (G-String)"
 				$File	"gstring\vgui\hud_lensflarefx.cpp"
 				$File	"gstring\vgui\hud_nightvision.cpp"
 				$File	"gstring\vgui\hud_waterfx.cpp"
+				$File	"gstring\vgui\hud_space_autoaim.cpp"
 				$File	"gstring\vgui\vgui_gstringmain.cpp"
 				$File	"gstring\vgui\vgui_gstringoptions.cpp"
 				$File	"gstring\vgui\vgui_menubutton.cpp"

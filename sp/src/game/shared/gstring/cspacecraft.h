@@ -35,6 +35,14 @@ class CSpacecraft : public CBaseAnimating
 #endif
 
 public:
+	enum EngineLevel_e
+	{
+		ENGINELEVEL_STALLED = 0,
+		ENGINELEVEL_IDLE,
+		ENGINELEVEL_NORMAL,
+		ENGINELEVEL_BOOST,
+	};
+
 	CSpacecraft();
 	virtual ~CSpacecraft();
 
@@ -47,10 +55,11 @@ public:
 	virtual void Spawn();
 	virtual void Activate();
 
-	//virtual bool IsNPC() const;
 	virtual void VPhysicsUpdate( IPhysicsObject *pPhysics );
 
 	void InputEnterVehicle( inputdata_t &inputdata );
+	virtual int OnTakeDamage( const CTakeDamageInfo &info );
+	virtual void Event_Killed( const CTakeDamageInfo &info );
 #else
 	//virtual bool IsTransparent() { return false; }
 	virtual bool IsTwoPass() { return true; }
@@ -67,6 +76,9 @@ public:
 
 	virtual CStudioHdr *OnNewModel();
 	virtual void SimulateMove( CMoveData &moveData, float flFrametime );
+
+	const Vector &GetPhysVelocity() const;
+	EngineLevel_e GetEngineLevel() const;
 
 private:
 #ifdef GAME_DLL

@@ -10,6 +10,6 @@ extern int BoneParentDepth( CStudioHdr *pHdr, const char *pszBone, const char *p
 extern bool BoneHasParent( CStudioHdr *pHdr, int iBone, int iPotentialParent );
 extern bool BoneHasParent( CStudioHdr *pHdr, const char *pszBone, const char *pszPotentialParent );
 
-
+extern bool SupportsCascadedShadows();
 
 #endif

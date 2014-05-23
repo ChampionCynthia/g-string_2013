@@ -665,7 +665,6 @@ void CBaseEntity::DecalTrace( trace_t *pTrace, char const *decalName )
 void CBaseEntity::ImpactTrace( trace_t *pTrace, int iDamageType, const char *pCustomImpactName )
 {
 	VPROF( "CBaseEntity::ImpactTrace" );
-	Assert( pTrace->m_pEnt );
 
 	CBaseEntity *pEntity = pTrace->m_pEnt;
  
@@ -676,11 +675,15 @@ void CBaseEntity::ImpactTrace( trace_t *pTrace, int iDamageType, const char *pCu
 	data.m_nSurfaceProp = pTrace->surface.surfaceProps;
 	data.m_nDamageType = iDamageType;
 	data.m_nHitBox = pTrace->hitbox;
+
+	if ( pEntity != NULL )
+	{
 #ifdef CLIENT_DLL
-	data.m_hEntity = ClientEntityList().EntIndexToHandle( pEntity->entindex() );
+		data.m_hEntity = ClientEntityList().EntIndexToHandle( pEntity->entindex() );
 #else
-	data.m_nEntIndex = pEntity->entindex();
+		data.m_nEntIndex = pEntity->entindex();
 #endif
+	}
 
 	// Send it on its way
 	if ( !pCustomImpactName )

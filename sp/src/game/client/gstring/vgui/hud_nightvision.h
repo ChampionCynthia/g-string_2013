@@ -1,5 +1,5 @@
-#ifndef HUD_LENSFLAREFX_H
-#define HUD_LENSFLAREFX_H
+#ifndef HUD_NIGHTVISION_H
+#define HUD_NIGHTVISION_H
 
 #include "cbase.h"
 #include "hud.h"

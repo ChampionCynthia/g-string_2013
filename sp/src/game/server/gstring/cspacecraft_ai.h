@@ -12,12 +12,23 @@ public:
 	virtual void Run( float flFrametime );
 
 private:
+	enum AIState_e
+	{
+		STATE_FOLLOW_AND_SHOOT = 0,
+	};
+
+	void StateFollowAndShoot( float flFrametime );
+
 	CBaseEntity *GetEnemy();
 
 	CSpacecraft *m_pShip;
 
 	CBaseEntity *m_pEnemy;
 
+	CMoveData moveData;
+	AIState_e m_aiState;
+	float m_flShootDelay;
+	float m_flShootCooldown;
 };
 
 #endif

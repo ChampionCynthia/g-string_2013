@@ -9,6 +9,10 @@
 //  DYNAMIC: "LIGHTING_PREVIEW"		"0..0" [XBOX]
 //  DYNAMIC: "MORPHING"				"0..1" [vs30]
 
+// GSTRINGMIGRATION
+// DYNAMIC: "CASCADED_SHADOW"		"0..1" [vs30]
+// END GSTRINGMIGRATION
+
 #include "common_vs_fxc.h"
 
 static const bool g_bSkinning		= SKINNING ? true : false;
@@ -25,6 +29,10 @@ const float4 cMorphSubrect					: register( SHADER_SPECIFIC_CONST_7 );
 
 sampler2D morphSampler : register( D3DVERTEXTEXTURESAMPLER0, s0 );
 #endif
+
+// GSTRINGMIGRATION
+const float4x4 closeCascadedShadowTransform		: register( c240 );
+// END GSTRINGMIGRATION
 
 
 //-----------------------------------------------------------------------------
@@ -67,10 +75,17 @@ struct VS_OUTPUT
 	// Stuff that is seen by the pixel shader
 	float4 baseTexCoord				: TEXCOORD0;			// includes detail tex coord
 	float3 lightAtten				: TEXCOORD1;
+#if CASCADED_SHADOW
+	float4 worldVertToEyeVector_ShadowPosX			: TEXCOORD2;
+	float4 tangentSpaceTranspose_Row0ShadowPosY		: TEXCOORD3;
+	float4 tangentSpaceTranspose_Row1ShadowPosZ		: TEXCOORD4;
+	float4 tangentSpaceTranspose_Row2ShadowPosW		: TEXCOORD5;
+#else
 	float3 worldVertToEyeVector		: TEXCOORD2;
 	float3x3 tangentSpaceTranspose	: TEXCOORD3;
 	//	     second row				: TEXCOORD4;
 	//	     third row				: TEXCOORD5;
+#endif
 	float4 worldPos_atten3			: TEXCOORD6;
 	float4 projPos_fWrinkleWeight	: TEXCOORD7;
 };
@@ -125,7 +140,11 @@ VS_OUTPUT main( const VS_INPUT v )
 	o.worldPos_atten3.xyz = worldPos;
 
 	// Needed for specular
+#if CASCADED_SHADOW
+	o.worldVertToEyeVector_ShadowPosX.xyz = VSHADER_VECT_SCALE * (cEyePos - worldPos);
+#else
 	o.worldVertToEyeVector = VSHADER_VECT_SCALE * (cEyePos - worldPos);
+#endif
 
 	// Compute bumped lighting
 	// FIXME: We shouldn't have to compute this for unlit materials
@@ -141,9 +160,23 @@ VS_OUTPUT main( const VS_INPUT v )
 	o.baseTexCoord.w = dot( v.vTexCoord0, cDetailTexCoordTransform[1] );
 
 	// Tangent space transform
+#if CASCADED_SHADOW
+	o.tangentSpaceTranspose_Row0ShadowPosY.xyz = float3( worldTangentS.x, worldTangentT.x, worldNormal.x );
+	o.tangentSpaceTranspose_Row1ShadowPosZ.xyz = float3( worldTangentS.y, worldTangentT.y, worldNormal.y );
+	o.tangentSpaceTranspose_Row2ShadowPosW.xyz = float3( worldTangentS.z, worldTangentT.z, worldNormal.z );
+#else
 	o.tangentSpaceTranspose[0] = float3( worldTangentS.x, worldTangentT.x, worldNormal.x );
 	o.tangentSpaceTranspose[1] = float3( worldTangentS.y, worldTangentT.y, worldNormal.y );
 	o.tangentSpaceTranspose[2] = float3( worldTangentS.z, worldTangentT.z, worldNormal.z );
+#endif
+
+#if CASCADED_SHADOW
+	float4 vCascadedShadowPos = mul( float4( worldPos, 1 ), closeCascadedShadowTransform );
+	o.worldVertToEyeVector_ShadowPosX.w = vCascadedShadowPos.x;
+	o.tangentSpaceTranspose_Row0ShadowPosY.w = vCascadedShadowPos.y;
+	o.tangentSpaceTranspose_Row1ShadowPosZ.w = vCascadedShadowPos.z;
+	o.tangentSpaceTranspose_Row2ShadowPosW.w = vCascadedShadowPos.w;
+#endif
 
 	return o;
 }

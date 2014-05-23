@@ -20,6 +20,10 @@
 #include "KeyValues.h"
 #include "time.h"
 
+// GSTRINGMIGRATION
+#include "gstring/gstring_player_shared.h"
+// END GSTRINGMIGRATION
+
 #ifdef USES_ECON_ITEMS
 	#include "econ_item_constants.h"
 	#include "econ_holidays.h"
@@ -219,14 +223,26 @@ bool PassServerEntityFilter( const IHandleEntity *pTouch, const IHandleEntity *p
 	if ( !pEntTouch || !pEntPass )
 		return true;
 
+	const CBaseEntity *pEntTouchOwner = pEntTouch->GetOwnerEntity();
+	const CBaseEntity *pEntPassOwner = pEntPass->GetOwnerEntity();
+
 	// don't clip against own missiles
-	if ( pEntTouch->GetOwnerEntity() == pEntPass )
+	if ( pEntTouchOwner == pEntPass )
 		return false;
 	
 	// don't clip against owner
-	if ( pEntPass->GetOwnerEntity() == pEntTouch )
-		return false;	
+	if ( pEntPassOwner == pEntTouch )
+		return false;
 
+	if ( pEntTouchOwner && pEntTouchOwner->IsPlayer() &&
+		pEntTouchOwner == pEntPassOwner )
+	{
+		const CSharedPlayer *pPlayer = assert_cast< const CSharedPlayer* >( pEntTouchOwner );
+		if ( pPlayer->IsInSpacecraft() )
+		{
+			return false;
+		}
+	}
 
 	return true;
 }

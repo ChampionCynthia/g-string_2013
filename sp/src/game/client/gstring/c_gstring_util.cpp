@@ -85,3 +85,18 @@ bool BoneHasParent( CStudioHdr *pHdr, const char *pszBone, const char *pszPotent
 {
 	return BoneParentDepth( pHdr, pszBone, pszPotentialParent ) > 0;
 }
+
+extern bool SupportsCascadedShadows()
+{
+	static bool bInit = true;
+	static bool bValue = false;
+
+	if ( bInit )
+	{
+		bInit = false;
+		bValue = g_pMaterialSystemHardwareConfig->SupportsShaderModel_3_0() &&
+			g_pMaterialSystemHardwareConfig->NumVertexShaderConstants() >= 243;
+	}
+
+	return bValue;
+}

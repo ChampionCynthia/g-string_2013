@@ -14,7 +14,7 @@ $Configuration
 {
 	$Compiler
 	{
-		$AdditionalIncludeDirectories	"$BASE;$SRCDIR\game\shared\hl2;$SRCDIR\game\shared\episodic;.\hl2;.\episodic"
+		$AdditionalIncludeDirectories	"$BASE;$SRCDIR\game\shared\hl2;$SRCDIR\game\shared\episodic;.\hl2;.\episodic;$SRCDIR\game\shared\gstring;$SRCDIR\game\server\gstring"
 		$PreprocessorDefinitions		"$BASE;HL2_DLL;HL2_EPISODIC;USES_SAVERESTORE;GSTRING"
 	}
 }
@@ -25,8 +25,6 @@ $Project "Server (G-String)"
 	{
 		$Folder "G-String"
 		{
-			$File	"gstring\cgstring_globals.cpp"
-			$File	"gstring\cgstring_globals.h"
 			$File	"gstring\cgstring_player.cpp"
 			$File	"gstring\cgstring_player.h"
 			$File	"gstring\cspacecraft_ai.h"

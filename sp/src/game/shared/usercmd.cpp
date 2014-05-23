@@ -198,6 +198,16 @@ void WriteUsercmd( bf_write *buf, const CUserCmd *to, const CUserCmd *from )
 	{
 		buf->WriteOneBit( 0 );
 	}
+
+	if ( to->autoAimTarget != from->autoAimTarget )
+	{
+		buf->WriteOneBit( 1 );
+		buf->WriteShort( to->autoAimTarget );
+	}
+	else
+	{
+		buf->WriteOneBit( 0 );
+	}
 	// END GSTRINGMIGRATION
 }
 
@@ -320,6 +330,11 @@ void ReadUsercmd( bf_read *buf, CUserCmd *move, CUserCmd *from )
 	if ( buf->ReadOneBit() )
 	{
 		buf->ReadBitVec3Coord( move->worldShootPosition );
+	}
+
+	if ( buf->ReadOneBit() )
+	{
+		move->autoAimTarget = buf->ReadShort();
 	}
 	// END GSTRINGMIGRATION
 }

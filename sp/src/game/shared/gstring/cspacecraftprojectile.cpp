@@ -1,7 +1,13 @@
 #include "cbase.h"
+
+#ifdef CLIENT_DLL
+#include "dlight.h"
+#include "iefx.h"
+#endif
+
 #include "cspacecraftprojectile.h"
-#include "particle_parse.h"
 #include "decals.h"
+#include "particle_parse.h"
 
 static ConVar gstring_spacecraft_damage_player( "gstring_spacecraft_damage_player", "5.0", FCVAR_CHEAT );
 
@@ -17,13 +23,13 @@ END_DATADESC()
 IMPLEMENT_NETWORKCLASS_DT( CSpacecraftProjectile, CSpacecraftProjectile_DT )
 
 #ifdef GAME_DLL
-	SendPropBool( SENDINFO( m_bHadImpact ) ),
-	//SendPropInt( SENDINFO( m_iEngineLevel ) ),
+	//SendPropBool( SENDINFO( m_bHadImpact ) ),
+	SendPropInt( SENDINFO( m_iImpactType ), 2, SPROP_UNSIGNED ),
 	//SendPropVector( SENDINFO( m_AngularImpulse ) ),
 	//SendPropVector( SENDINFO( m_PhysVelocity ) ),
 #else
-	RecvPropBool( RECVINFO( m_bHadImpact ) ),
-	//RecvPropInt( RECVINFO( m_iEngineLevel ) ),
+	//RecvPropBool( RECVINFO( m_bHadImpact ) ),
+	RecvPropInt( RECVINFO( m_iImpactType ) ),
 	//RecvPropVector( RECVINFO( m_AngularImpulse ) ),
 	//RecvPropVector( RECVINFO( m_PhysVelocity ) ),
 #endif
@@ -35,7 +41,7 @@ PRECACHE_REGISTER( prop_spacecraft_projectile );
 
 CSpacecraftProjectile::CSpacecraftProjectile()
 #ifdef CLIENT_DLL
-	: m_bHadImpactLast( false )
+	: m_iImpactTypeLast( 0 )
 #endif
 {
 }
@@ -45,6 +51,14 @@ CSpacecraftProjectile::~CSpacecraftProjectile()
 }
 
 #ifdef GAME_DLL
+void CSpacecraftProjectile::Precache()
+{
+	BaseClass::Precache();
+
+	PrecacheScriptSound( "Spacecraft.Projectile.Fire" );
+	PrecacheScriptSound( "Spacecraft.Projectile.Fire.Player" );
+}
+
 void CSpacecraftProjectile::Fire( CBaseEntity *pPlayer, CBaseEntity *pVehicle,
 	const Vector &vecOrigin, const Vector &vecVelocity )
 {
@@ -53,14 +67,13 @@ void CSpacecraftProjectile::Fire( CBaseEntity *pPlayer, CBaseEntity *pVehicle,
 
 	Vector vecFinalVelocity = vecVelocity;
 	const float flSpeed = vecFinalVelocity.NormalizeInPlace();
-	vecFinalVelocity += RandomVector( -0.01f, 0.01f );
+	vecFinalVelocity += RandomVector( -0.008f, 0.008f );
 	vecFinalVelocity.NormalizeInPlace();
 	vecFinalVelocity *= flSpeed;
 
 	QAngle angles;
 	VectorAngles( vecFinalVelocity, angles );
 
-	//DebugDrawLine( vecOrigin, vecOrigin + vecVelocity, 0, 255, 0, true, 1.0f );
 	SetMoveType( MOVETYPE_FLY, MOVECOLLIDE_FLY_CUSTOM );
 	SetCollisionGroup( COLLISION_GROUP_PROJECTILE );
 	SetSolid( SOLID_BBOX );
@@ -69,10 +82,20 @@ void CSpacecraftProjectile::Fire( CBaseEntity *pPlayer, CBaseEntity *pVehicle,
 		Vector( flProjectileSize, flProjectileSize, flProjectileSize ) );
 	SetTouch( &CSpacecraftProjectile::OnTouch );
 	SetThink( &CSpacecraftProjectile::OnTimeout );
-	SetNextThink( gpGlobals->curtime + 5.0f );
+	SetNextThink( gpGlobals->curtime + 3.0f );
 
-	Vector vecSafePosition = vecOrigin + vecFinalVelocity.Normalized() * 20.0f;
-	Teleport( &vecSafePosition, &angles, &vecFinalVelocity );
+	SetAbsOrigin( vecOrigin );
+	SetAbsVelocity( vecFinalVelocity );
+	SetAbsAngles( angles );
+
+	if ( pPlayer )
+	{
+		pPlayer->EmitSound( "Spacecraft.Projectile.Fire.Player" );
+	}
+	else
+	{
+		EmitSound( "Spacecraft.Projectile.Fire" );
+	}
 }
 
 void CSpacecraftProjectile::OnTouch( CBaseEntity *pOther )
@@ -104,24 +127,25 @@ void CSpacecraftProjectile::OnTouch( CBaseEntity *pOther )
 
 		if ( ( tr.surface.flags & SURF_SKY ) == 0 )
 		{
-			m_bHadImpact = true;
+			m_iImpactType = 1;
 		}
 
 		SetNextThink( gpGlobals->curtime + gpGlobals->frametime );
 	}
 	else
 	{
-		m_bHadImpact = true;
 		SetNextThink( gpGlobals->curtime + gpGlobals->frametime );
 
 		if ( pOther->IsSolidFlagSet( FSOLID_VOLUME_CONTENTS | FSOLID_TRIGGER ) &&
 			( ( pOther->m_takedamage == DAMAGE_NO ) || ( pOther->m_takedamage == DAMAGE_EVENTS_ONLY ) ) )
 		{
+			m_iImpactType = 1;
 			return;
 		}
 
 		if ( pOther->m_takedamage != DAMAGE_NO )
 		{
+			m_iImpactType = 2;
 			Vector vecVelocity = GetAbsVelocity();
 			vecVelocity.NormalizeInPlace();
 
@@ -133,7 +157,18 @@ void CSpacecraftProjectile::OnTouch( CBaseEntity *pOther )
 			CalculateMeleeDamageForce( &dmgInfo, vecVelocity, tr.endpos, 0.7f );
 			dmgInfo.SetDamagePosition( tr.endpos );
 			pOther->DispatchTraceAttack( dmgInfo, vecVelocity, &tr );
+			ApplyMultiDamage();
 		}
+		else
+		{
+			m_iImpactType = 1;
+		}
+	}
+
+	if ( m_iImpactType != 0 )
+	{
+		tr.m_pEnt = NULL;
+		ImpactTrace( &tr, DMG_BLAST );
 	}
 }
 
@@ -149,10 +184,24 @@ void CSpacecraftProjectile::OnDataChanged( DataUpdateType_t t )
 	if ( t == DATA_UPDATE_CREATED )
 	{
 		m_hTrailParticle = ParticleProp()->Create( "projectile_red", PATTACH_ABSORIGIN_FOLLOW );
+
+		dlight_t *el = effects->CL_AllocElight( entindex() );
+		el->origin = GetAbsOrigin();
+
+		el->color.r = 255;
+		el->color.g = 96;
+		el->color.b = 32;
+		el->color.exponent = 9.0f;
+
+		el->radius = random->RandomFloat( 30.0f, 100.0f );
+		el->decay = el->radius / 0.05f;
+		el->die = gpGlobals->curtime + 0.1f;
+
+		// FX_TracerSound(  )
 	}
 	else
 	{
-		if ( m_bHadImpactLast != m_bHadImpact )
+		if ( m_iImpactTypeLast != m_iImpactType )
 		{
 			if ( m_hTrailParticle.GetObject() != NULL )
 			{
@@ -160,12 +209,24 @@ void CSpacecraftProjectile::OnDataChanged( DataUpdateType_t t )
 				m_hTrailParticle = NULL;
 			}
 
-			if ( m_bHadImpact )
+			if ( m_iImpactType > 0 )
 			{
-				DispatchParticleEffect( "projectile_red_hit", GetAbsOrigin(), GetAbsAngles() );
-			}
+				const char *pszParticleName = ( m_iImpactType == 2 ) ? "projectile_red_hit_enemy" : "projectile_red_hit";
+				DispatchParticleEffect( pszParticleName, GetAbsOrigin(), GetAbsAngles() );
 
-			m_bHadImpactLast = m_bHadImpact;
+				dlight_t *el = effects->CL_AllocElight( entindex() );
+				el->origin = GetAbsOrigin();
+
+				el->color.r = 255;
+				el->color.g = 96;
+				el->color.b = 32;
+				el->color.exponent = 9.0f;
+
+				el->radius = random->RandomFloat( 30.0f, 130.0f );
+				el->decay = el->radius / 0.05f;
+				el->die = gpGlobals->curtime + 0.1f;
+			}
+			m_iImpactTypeLast = m_iImpactType;
 		}
 	}
 }

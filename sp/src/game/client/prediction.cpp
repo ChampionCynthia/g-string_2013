@@ -672,6 +672,11 @@ void CPrediction::SetupMove( C_BasePlayer *player, CUserCmd *ucmd, IMoveHelper *
 
 	pHLMove->m_bIsSprinting = pHLPlayer->IsSprinting();
 #endif
+
+	// GSTRINGMIGRATION
+	move->m_iAutoAimEntityIndex = ucmd->autoAimTarget;
+	move->m_vecWorldShootPosition = ucmd->worldShootPosition;
+	// END GSTRINGMIGRATION
 #endif
 }
 
