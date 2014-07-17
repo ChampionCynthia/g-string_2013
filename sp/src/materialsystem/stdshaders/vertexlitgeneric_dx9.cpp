@@ -117,6 +117,12 @@ BEGIN_VS_SHADER( SDK_VertexLitGeneric, "Help for SDK_VertexLitGeneric" )
 		SHADER_PARAM( LINEARWRITE, SHADER_PARAM_TYPE_INTEGER, "0", "Disables SRGB conversion of shader results." )
 		SHADER_PARAM( DEPTHBLEND, SHADER_PARAM_TYPE_INTEGER, "0", "fade at intersection boundaries. Only supported without bumpmaps" )
 		SHADER_PARAM( DEPTHBLENDSCALE, SHADER_PARAM_TYPE_FLOAT, "50.0", "Amplify or reduce DEPTHBLEND fading. Lower values make harder edges." )
+
+		// GSTRINGMIGRATION
+		SHADER_PARAM( SELFILLUMTWOTEXTUREBLEND, SHADER_PARAM_TYPE_BOOL, "0", "" )
+		SHADER_PARAM( SELFILLUMTWOTEXTUREBLEND_AMOUNT, SHADER_PARAM_TYPE_FLOAT, "0", "" )
+		SHADER_PARAM( SELFILLUMTWOTEXTUREBLEND_TEXTURE, SHADER_PARAM_TYPE_TEXTURE, "0", "" )
+		// END GSTRINGMIGRATION
 	END_SHADER_PARAMS
 
 	void SetupVars( VertexLitGeneric_DX9_Vars_t& info )
@@ -190,6 +196,12 @@ BEGIN_VS_SHADER( SDK_VertexLitGeneric, "Help for SDK_VertexLitGeneric" )
 		info.m_nDepthBlendScale = DEPTHBLENDSCALE;
 
 		info.m_nSelfIllumMask = SELFILLUMMASK;
+
+		// GSTRINGMIGRATION
+		info.m_nSelfIllumTwoTexture = SELFILLUMTWOTEXTUREBLEND;
+		info.m_nSelfIllumTwoTexture_Amount = SELFILLUMTWOTEXTUREBLEND_AMOUNT;
+		info.m_nSelfIllumTwoTexture_Texture = SELFILLUMTWOTEXTUREBLEND_TEXTURE;
+		// END GSTRINGMIGRATION
 	}
 
 	// Cloak Pass

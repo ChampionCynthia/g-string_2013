@@ -42,15 +42,23 @@ CON_COMMAND( gstring_spaceshipai_debug_spawn, "" )
 
 CSpacecraftAIBase::CSpacecraftAIBase( CSpacecraft *pShip )
 	: m_pShip( pShip )
-	, m_pEnemy( NULL )
-	, m_aiState( STATE_FOLLOW_AND_SHOOT )
-	, m_flShootDelay( 0.0f )
-	, m_flShootCooldown( -1.0f )
+	, m_ThinkFunc( NULL )
+	, m_MoveFunc( NULL )
+	, m_flNextThink( 0.0f )
+	, m_vecMoveTarget( vec3_origin )
+	, m_flRotationSuppressTimer( -1.0f )
+	, m_flRotationSpeedBlend( 1.0f )
+	, m_flSideTimer( 0.0f )
+	, m_flSideScale( 1.0f )
 {
 	moveData.m_nButtons = 0;
 	moveData.m_iAutoAimEntityIndex = 0;
 	moveData.m_vecWorldShootPosition.Init();
 	moveData.m_vecViewAngles.Init();
+
+	SetNextThink( 0.0f, &CSpacecraftAIBase::Think_ShootSalvoes );
+	//SetMove( &CSpacecraftAIBase::Move_Follow );
+	SetMove( &CSpacecraftAIBase::Move_Pursuit );
 }
 
 CSpacecraftAIBase::~CSpacecraftAIBase()
@@ -59,75 +67,189 @@ CSpacecraftAIBase::~CSpacecraftAIBase()
 
 void CSpacecraftAIBase::Run( float flFrametime )
 {
-	switch ( m_aiState )
+	if ( m_flNextThink >= 0.0f )
 	{
-	case STATE_FOLLOW_AND_SHOOT:
-		StateFollowAndShoot( flFrametime );
-		break;
+		m_flNextThink -= flFrametime;
+		if ( m_flNextThink <= 0.0f )
+		{
+			m_flNextThink = -1.0f;
+			if ( m_ThinkFunc != NULL )
+			{
+				(this->*m_ThinkFunc)();
+			}
+		}
 	}
 
-	/*
-	Vector vecEnemy = pEnemy->GetAbsOrigin() - m_pShip->GetAbsOrigin();
-	moveData.m_nButtons |= IN_FORWARD;
-
-	moveData.m_nButtons |= IN_ATTACK;
-
-	if ( m_flShootTime > 0.0f )
+	if ( m_MoveFunc != NULL )
 	{
-		m_flShootTime -= flFrametime;
-
-		moveData.m_vecWorldShootPosition = pEnemy->GetAbsOrigin() + RandomVector( -50, 50 );
+		(this->*m_MoveFunc)( flFrametime );
 	}
-
-	if ( m_flEngineCutOffTime > 0.0f )
-	{
-		moveData.m_nButtons |= IN_JUMP;
-		m_flEngineCutOffTime -= flFrametime;
-	}
-
-	VectorAngles( vecEnemy, moveData.m_vecViewAngles );
-	*/
 
 	m_pShip->SimulateMove( moveData, flFrametime );
 }
 
 CBaseEntity *CSpacecraftAIBase::GetEnemy()
 {
-	if ( m_pEnemy == NULL )
+	CBaseEntity *pEnemy = m_pShip->GetEnemy();
+	if ( pEnemy == NULL )
 	{
 		CGstringPlayer *pPlayer = LocalGstringPlayer();
 		if ( pPlayer && pPlayer->IsInSpacecraft() )
 		{
-			m_pEnemy = pPlayer->GetSpacecraft();
+			pEnemy = pPlayer->GetSpacecraft();
+			m_pShip->SetEnemy( pEnemy );
 		}
 	}
 
-	return m_pEnemy;
+	return pEnemy;
 }
 
-void CSpacecraftAIBase::StateFollowAndShoot( float flFrametime )
+void CSpacecraftAIBase::SetNextThink( float flDelay, AIThink thinkFunc )
+{
+	m_flNextThink = MAX( 0.0f, flDelay );
+	if ( thinkFunc != NULL )
+	{
+		m_ThinkFunc = thinkFunc;
+	}
+}
+
+void CSpacecraftAIBase::ClearThink()
+{
+	m_flNextThink = -1.0f;
+	m_ThinkFunc = NULL;
+}
+
+void CSpacecraftAIBase::SetMove( AIMove moveFunc )
+{
+	m_MoveFunc = moveFunc;
+}
+
+void CSpacecraftAIBase::Think_ShootSalvoes()
+{
+	moveData.m_nButtons ^= IN_ATTACK;
+
+	SetNextThink( RandomFloat( 1.0f, 4.0f ) );
+}
+
+void CSpacecraftAIBase::Move_Follow( float flFrametime )
 {
 	CBaseEntity *pEnemy( GetEnemy() );
+	if ( pEnemy == NULL )
+	{
+		return;
+	}
 
 	Vector vecEnemy = pEnemy->GetAbsOrigin() - m_pShip->GetAbsOrigin();
-	moveData.m_nButtons |= IN_FORWARD;
+	VectorAngles( vecEnemy, Vector( 0.0f, 0.0f, 1.0f ), moveData.m_vecViewAngles );
 
-	moveData.m_nButtons &= ~IN_ATTACK;
+	const float flDistance = vecEnemy.Length();
 
-	m_flShootDelay -= flFrametime;
-	if ( m_flShootDelay > 0.0f )
+	moveData.m_flSideMove = 0.0f;
+	moveData.m_flUpMove = 0.0f;
+
+	if ( flDistance > 300.0f )
 	{
-		moveData.m_nButtons |= IN_ATTACK;
+		moveData.m_flForwardMove = 200.0f;
 	}
-	else if ( m_flShootDelay < m_flShootCooldown )
+	else if ( flDistance < 50.0f )
 	{
-		m_flShootDelay = RandomFloat( 1.0f, 4.0f );
-		m_flShootCooldown = RandomFloat( -3.0f, -0.5f );
+		moveData.m_flForwardMove = -200.0f;
+		moveData.m_flSideMove = 50.0f;
+	}
+
+	if ( flDistance > 400.0f )
+	{
+		moveData.m_nButtons |= IN_SPEED;
+	}
+	else
+	{
+		moveData.m_nButtons &= ~IN_SPEED;
 	}
 
 	const float flEnemyDistance = vecEnemy.Length();
-	const float flSpread = RemapValClamped( flEnemyDistance, 5.0f, 1000.0f, 0.0f, 50.0f );
+	const float flSpread = RemapValClamped( flEnemyDistance, 5.0f, 800.0f, 0.0f, 50.0f );
 	moveData.m_vecWorldShootPosition = pEnemy->GetAbsOrigin() + RandomVector( -flSpread, flSpread );
+}
 
-	VectorAngles( vecEnemy, moveData.m_vecViewAngles );
+void CSpacecraftAIBase::Move_Pursuit( float flFrametime )
+{
+	CBaseEntity *pEnemy( GetEnemy() );
+	if ( pEnemy == NULL )
+	{
+		return;
+	}
+
+	Vector vecOrigin = m_pShip->GetAbsOrigin();
+	Vector vecEnemy = pEnemy->GetAbsOrigin() - vecOrigin;
+
+	if ( vecEnemy.LengthSqr() > Sqr( 200.0f ) )
+	{
+		Vector vecEnemyToTarget = m_vecMoveTarget - pEnemy->GetAbsOrigin();
+		Vector vecSelfToEnemyDirection = vecEnemy.Normalized();
+		m_vecMoveTarget -= DotProduct( vecSelfToEnemyDirection, vecEnemyToTarget ) * vecSelfToEnemyDirection;
+
+		DebugDrawLine( pEnemy->GetAbsOrigin(), vecOrigin, 255, 0, 0, true, -1.0f );
+		DebugDrawLine( m_vecMoveTarget, vecOrigin, 0, 255, 0, true, -1.0f );
+	}
+
+	const float flDistanceTargetToEnemy = ( m_vecMoveTarget - pEnemy->GetAbsOrigin() ).Length();
+	if ( flDistanceTargetToEnemy < 30.0f || flDistanceTargetToEnemy > 120.0f )
+	{
+		QAngle angEnemyOrientation;
+		Vector vecEnemyUp;
+		VectorAngles( vecEnemy, angEnemyOrientation );
+		angEnemyOrientation.z += RandomFloat( 0.0f, 360.0f );
+		AngleVectors( angEnemyOrientation, NULL, NULL, &vecEnemyUp );
+		m_vecMoveTarget = pEnemy->GetAbsOrigin() + vecEnemyUp * RandomFloat( 40.0f, 80.0f );
+	}
+
+	vecEnemy = m_vecMoveTarget - m_pShip->GetAbsOrigin();
+	QAngle angMove;
+	VectorAngles( vecEnemy, angMove );
+
+	if ( ( m_vecMoveTarget - m_pShip->GetAbsOrigin() ).LengthSqr() < Sqr( 50.0f ) )
+	{
+		m_flRotationSuppressTimer = gpGlobals->curtime + RandomFloatExp( 2.0f, 6.0f, 2.0f );
+		m_flRotationSpeedBlend = 0.0f;
+
+		if ( RandomInt( 0, 3 ) == 0 )
+		{
+			m_flSideTimer = gpGlobals->curtime + RandomFloat( 2.0f, 4.0f );
+			m_flSideScale = RandomFloat( 0.0f, 1.0f ) > 0.5f ? 1.0f : -1.0f;
+		}
+	}
+
+	const float flRotationSpeedBlendDesried = ( m_flRotationSuppressTimer < gpGlobals->curtime ) ? 1.0f : 0.0f;
+	m_flRotationSpeedBlend = Approach( flRotationSpeedBlendDesried, m_flRotationSpeedBlend, gpGlobals->frametime * 0.5f );
+
+	if ( m_flRotationSpeedBlend > 0.0f )
+	{
+		Quaternion qMoveDesired, qMoveCurrent;
+		AngleQuaternion( angMove, qMoveDesired );
+		AngleQuaternion( moveData.m_vecViewAngles, qMoveCurrent );
+		QuaternionSlerp( qMoveCurrent, qMoveDesired, gpGlobals->frametime * m_flRotationSpeedBlend * 5.0f, qMoveCurrent );
+		QuaternionAngles( qMoveCurrent, moveData.m_vecViewAngles );
+	}
+
+	moveData.m_flForwardMove = 200.0f;
+	moveData.m_flUpMove = 0.0f;
+	moveData.m_nButtons |= IN_SPEED;
+
+	Vector vecOpponent = pEnemy->GetAbsOrigin() - m_pShip->GetAbsOrigin();
+	Vector vecFwd;
+	AngleVectors( moveData.m_vecViewAngles, &vecFwd );
+
+	const float flShootDistance = RemapValClamped( vecOpponent.Length(), 30.0f, 500.0f, 1.0f, 5.0f );
+	moveData.m_vecWorldShootPosition = pEnemy->GetAbsOrigin() + RandomVector( -flShootDistance, flShootDistance );
+
+	if ( DotProduct( vecOpponent, vecFwd ) < 0.0f )
+	{
+		moveData.m_nButtons &= ~IN_ATTACK;
+		m_flSideTimer = 0.0f;
+	}
+	else if ( m_flSideTimer > gpGlobals->curtime )
+	{
+		moveData.m_flForwardMove = 0.0f;
+		moveData.m_flSideMove = 200.0f * m_flSideScale;
+	}
 }

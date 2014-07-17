@@ -46,6 +46,15 @@ CGstringInput::~CGstringInput()
 {
 }
 
+void CGstringInput::GetNormalizedMousePosition( Vector2D &vecMousePosition )
+{
+	int vx, vy, vw, vh;
+	vgui::surface()->GetFullscreenViewport( vx, vy, vw, vh );
+	const float halfVw = vw * 0.5f;
+	const float halfVh = vh * 0.5f;
+	vecMousePosition.Init( ( m_MousePosition.x - halfVw ) / halfVw, ( m_MousePosition.y - halfVh ) / -halfVh );
+}
+
 void CGstringInput::GetCrosshairPosition( int &x, int &y, float &angle )
 {
 	int vx, vy, vw, vh;

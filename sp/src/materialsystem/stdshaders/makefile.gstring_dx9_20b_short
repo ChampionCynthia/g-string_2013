@@ -1,11 +1,2 @@
-default:  fxctmp9_tmp\gstring_light_volumetrics_ps20b.inc shaders\fxc\gstring_light_volumetrics_ps20b.vcs
-
-fxctmp9_tmp\gstring_light_volumetrics_ps20b.inc shaders\fxc\gstring_light_volumetrics_ps20b.vcs: gstring_light_volumetrics_ps20b.fxc common_fxc.h common_hlsl_cpp_consts.h common_pragmas.h common_flashlight_fxc.h common_ps_fxc.h
-	perl ..\..\devtools\bin\fxc_prep.pl   -source "..\.." gstring_light_volumetrics_ps20b.fxc-----gstring_light_volumetrics_ps20b
-	echo gstring_light_volumetrics_ps20b.fxc>> filestocopy.txt
-	echo common_fxc.h>> filestocopy.txt
-	echo common_hlsl_cpp_consts.h>> filestocopy.txt
-	echo common_pragmas.h>> filestocopy.txt
-	echo common_flashlight_fxc.h>> filestocopy.txt
-	echo common_ps_fxc.h>> filestocopy.txt
+default: 
 

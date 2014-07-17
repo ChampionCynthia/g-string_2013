@@ -26,6 +26,7 @@ public:
 	virtual const Vector &GetViewOffset() const;
 
 	virtual bool ShouldGib( const CTakeDamageInfo &info );
+	virtual void DeathSound( const CTakeDamageInfo &info );
 	virtual bool CanBecomeRagdoll();
 	virtual bool ShouldCollide( int collisionGroup, int contentsMask ) const;
 
@@ -51,6 +52,7 @@ private:
 	CNetworkVar( unsigned char, m_nReloadParity );
 
 	CNetworkHandle( CSpacecraft, m_hSpacecraft );
+	CNetworkVar( bool, m_bSpacecraftDeath );
 };
 
 inline CGstringPlayer *ToGstringPlayer( CBaseEntity *pPlayer )

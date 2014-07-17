@@ -60,6 +60,11 @@ public:
 	void InputEnterVehicle( inputdata_t &inputdata );
 	virtual int OnTakeDamage( const CTakeDamageInfo &info );
 	virtual void Event_Killed( const CTakeDamageInfo &info );
+
+	CBaseEntity *GetEnemy() const;
+	void SetEnemy( CBaseEntity *pEnemy );
+	void InputSetEnemy( inputdata_t &inputdata );
+	void InputClearEnemy( inputdata_t &inputdata );
 #else
 	//virtual bool IsTransparent() { return false; }
 	virtual bool IsTwoPass() { return true; }
@@ -72,6 +77,8 @@ public:
 	virtual void ClientThink();
 
 	void UpdateCrosshair( CHudCrosshair *pCrosshair );
+
+	float GetEngineAlpha() const { return m_flEngineAlpha; }
 #endif
 
 	virtual CStudioHdr *OnNewModel();
@@ -89,6 +96,15 @@ private:
 
 	ISpacecraftAI *m_pAI;
 	float m_flLastAIThinkTime;
+
+	string_t m_strInitialEnemy;
+	EHANDLE m_hEnemy;
+
+	int m_iAIControlled;
+	int m_iAIAttackState;
+	int m_iAITeam;
+	string_t m_strPathStartName;
+	EHANDLE m_hPathEntity;
 #else
 	CUtlVector< int > m_ThrusterAttachments;
 	CUtlVector< int > m_ThrusterSounds;
@@ -104,6 +120,7 @@ private:
 	int m_iGUID_Engine;
 	int m_iGUID_Boost;
 
+	float m_flEngineAlpha;
 	float m_flEngineVolume;
 	float m_flShakeTimer;
 #endif

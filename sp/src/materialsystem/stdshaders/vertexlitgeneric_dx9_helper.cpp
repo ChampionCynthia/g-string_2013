@@ -249,21 +249,23 @@ void InitVertexLitGeneric_DX9( CBaseVSShader *pShader, IMaterialVar** params, bo
 		pShader->LoadTexture( info.m_nFlashlightTexture );
 	}
 	
-	bool bIsBaseTextureTranslucent = false;
+	bool bIsBaseTextureTranslucent = true;
 	if ( info.m_nBaseTexture != -1 && params[info.m_nBaseTexture]->IsDefined() )
 	{
 		pShader->LoadTexture( info.m_nBaseTexture );
 		
 		if ( params[info.m_nBaseTexture]->GetTextureValue()->IsTranslucent() )
 		{
-			bIsBaseTextureTranslucent = true;
+			bIsBaseTextureTranslucent = false;
 		}
 	}
 
+	// GSTRINGMIGRATION
 	bool bHasSelfIllumMask = IS_FLAG_SET( MATERIAL_VAR_SELFILLUM ) && (info.m_nSelfIllumMask != -1) && params[info.m_nSelfIllumMask]->IsDefined();
+	const bool bHasSelfIllumBlend = info.m_nSelfIllumTwoTexture != -1 && params[info.m_nSelfIllumTwoTexture]->GetIntValue() != 0;
 
 	// No alpha channel in any of the textures? No self illum or envmapmask
-	if ( !bIsBaseTextureTranslucent )
+	if ( !bIsBaseTextureTranslucent && !bHasSelfIllumBlend )
 	{
 		bool bHasSelfIllumFresnel = IS_FLAG_SET( MATERIAL_VAR_SELFILLUM ) && ( info.m_nSelfIllumFresnel != -1 ) && ( params[info.m_nSelfIllumFresnel]->GetIntValue() != 0 );
 
@@ -275,6 +277,7 @@ void InitVertexLitGeneric_DX9( CBaseVSShader *pShader, IMaterialVar** params, bo
 
 		CLEAR_FLAGS( MATERIAL_VAR_BASEALPHAENVMAPMASK );
 	}
+	// END GSTRINGMIGRATION
 
 	if ( info.m_nDetail != -1 && params[info.m_nDetail]->IsDefined() )
 	{
@@ -334,6 +337,13 @@ void InitVertexLitGeneric_DX9( CBaseVSShader *pShader, IMaterialVar** params, bo
 	{
 		pShader->LoadTexture( info.m_nSelfIllumMask );
 	}
+
+	// GSTRINGMIGRATION
+	if ( info.m_nSelfIllumTwoTexture_Texture != -1 && params[info.m_nSelfIllumTwoTexture_Texture]->IsDefined() )
+	{
+		pShader->LoadTexture( info.m_nSelfIllumTwoTexture_Texture );
+	}
+	// END GSTRINGMIGRATION
 }
 
 // FIXME: 
@@ -421,14 +431,20 @@ static void DrawVertexLitGeneric_DX9_Internal( CBaseVSShader *pShader, IMaterial
 
 	bool bHasVertexColor = bVertexLitGeneric ? false : IS_FLAG_SET( MATERIAL_VAR_VERTEXCOLOR );
 	bool bHasVertexAlpha = bVertexLitGeneric ? false : IS_FLAG_SET( MATERIAL_VAR_VERTEXALPHA );
+
+	// GSTRINGMIGRATION
+	const bool bHasSelfIllum = (!bHasFlashlight || IsX360() ) && IS_FLAG_SET( MATERIAL_VAR_SELFILLUM );
+	const bool bHasSelfIllumTwoTexture = info.m_nSelfIllumTwoTexture != -1 &&
+		params[info.m_nSelfIllumTwoTexture]->GetIntValue() != 0;
+	const bool bHasSelfIllumMask = bHasSelfIllum && IsTextureSet( info.m_nSelfIllumMask, params );
+	// END GSTRINGMIGRATION
+
 	if ( pShader->IsSnapshotting() || (! pContextData ) || ( pContextData->m_bMaterialVarsChanged ) )
 	{
 		bool bSeamlessBase = IsBoolSet( info.m_nSeamlessBase, params );
 		bool bSeamlessDetail = IsBoolSet( info.m_nSeamlessDetail, params );
 		bool bDistanceAlpha = IsBoolSet( info.m_nDistanceAlpha, params );
-		bool bHasSelfIllum = (!bHasFlashlight || IsX360() ) && IS_FLAG_SET( MATERIAL_VAR_SELFILLUM );
 
-		bool bHasSelfIllumMask = bHasSelfIllum && IsTextureSet( info.m_nSelfIllumMask, params );
 		bool hasSelfIllumInEnvMapMask =
 			( info.m_nSelfIllumEnvMapMask_Alpha != -1 ) &&
 			( params[info.m_nSelfIllumEnvMapMask_Alpha]->GetFloatValue() != 0.0 ) ;
@@ -588,6 +604,13 @@ static void DrawVertexLitGeneric_DX9_Internal( CBaseVSShader *pShader, IMaterial
 			if( bHasSelfIllum )
 			{
 				pShaderShadow->EnableTexture( SHADER_SAMPLER11, true );	// self illum mask
+
+				// GSTRINGMIGRATION
+				if ( bHasSelfIllumTwoTexture )
+				{
+					pShaderShadow->EnableTexture( SHADER_SAMPLER12, true );
+				}
+				// END GSTRINGMIGRATION
 			}
 
 			bool bSRGBWrite = true;
@@ -753,6 +776,9 @@ static void DrawVertexLitGeneric_DX9_Internal( CBaseVSShader *pShader, IMaterial
 						SET_STATIC_PIXEL_SHADER_COMBO( OUTER_GLOW, bGlow );
 						SET_STATIC_PIXEL_SHADER_COMBO( FLASHLIGHTDEPTHFILTERMODE, nShadowFilterMode );
 						SET_STATIC_PIXEL_SHADER_COMBO( DEPTHBLEND, IsBoolSet( info.m_nDepthBlend, params ) );
+						// GSTRINGMIGRATION
+						SET_STATIC_PIXEL_SHADER_COMBO( SELFILLUM_TWOTEXTURE_BLEND, bHasSelfIllumTwoTexture );
+						// END GSTRINGMIGRATION
 						SET_STATIC_PIXEL_SHADER( sdk_vertexlit_and_unlit_generic_ps20b );
 					}
 					//else // ps_2_0
@@ -807,7 +833,7 @@ static void DrawVertexLitGeneric_DX9_Internal( CBaseVSShader *pShader, IMaterial
 					SET_STATIC_PIXEL_SHADER_COMBO( ENVMAPMASK,  bHasEnvmapMask );
 					SET_STATIC_PIXEL_SHADER_COMBO( BASEALPHAENVMAPMASK,  hasBaseAlphaEnvmapMask );
 					SET_STATIC_PIXEL_SHADER_COMBO( SELFILLUM,  bHasSelfIllum );
-					SET_STATIC_PIXEL_SHADER_COMBO( VERTEXCOLOR,  bHasVertexColor );
+					SET_STATIC_PIXEL_SHADER_COMBO( VERTEXCOLOR, bHasVertexColor );
 					SET_STATIC_PIXEL_SHADER_COMBO( FLASHLIGHT,  bHasFlashlight );
 					SET_STATIC_PIXEL_SHADER_COMBO( DETAIL_BLEND_MODE, nDetailBlendMode );
 					SET_STATIC_PIXEL_SHADER_COMBO( SEAMLESS_BASE, bSeamlessBase );
@@ -819,6 +845,9 @@ static void DrawVertexLitGeneric_DX9_Internal( CBaseVSShader *pShader, IMaterial
 					SET_STATIC_PIXEL_SHADER_COMBO( OUTER_GLOW, bGlow );
 					SET_STATIC_PIXEL_SHADER_COMBO( FLASHLIGHTDEPTHFILTERMODE, nShadowFilterMode );
 					SET_STATIC_PIXEL_SHADER_COMBO( DEPTHBLEND, IsBoolSet( info.m_nDepthBlend, params ) );
+					// GSTRINGMIGRATION
+					SET_STATIC_PIXEL_SHADER_COMBO( SELFILLUM_TWOTEXTURE_BLEND, bHasSelfIllum && bHasSelfIllumTwoTexture );
+					// END GSTRINGMIGRATION
 					SET_STATIC_PIXEL_SHADER( sdk_vertexlit_and_unlit_generic_ps30 );
 				}
 #endif
@@ -878,6 +907,13 @@ static void DrawVertexLitGeneric_DX9_Internal( CBaseVSShader *pShader, IMaterial
 				{
 					pContextData->m_SemiStaticCmdsOut.BindStandardTexture( SHADER_SAMPLER11, TEXTURE_BLACK );	// Bind dummy
 				}
+
+				// GSTRINGMIGRATION
+				if ( bHasSelfIllumTwoTexture )
+				{
+					pContextData->m_SemiStaticCmdsOut.BindTexture( pShader, SHADER_SAMPLER12, info.m_nSelfIllumTwoTexture_Texture, -1 );
+				}
+				// END GSTRINGMIGRATION
 			}
 
 			if ( (info.m_nDepthBlend != -1) && (params[info.m_nDepthBlend]->GetIntValue()) )
@@ -1003,13 +1039,7 @@ static void DrawVertexLitGeneric_DX9_Internal( CBaseVSShader *pShader, IMaterial
 					pContextData->m_SemiStaticCmdsOut.BindStandardTexture( SHADER_SAMPLER3, TEXTURE_NORMALMAP_FLAT );
 				}
 			}
-			// Setting w to 1 means use separate selfillummask
-			float vEnvMapSaturation_SelfIllumMask[4] = {1.0f, 1.0f, 1.0f, 0.0f};
-			if ( info.m_nEnvmapSaturation != -1 )
-				params[info.m_nEnvmapSaturation]->GetVecValue( vEnvMapSaturation_SelfIllumMask, 3 );
-			
-			vEnvMapSaturation_SelfIllumMask[3] = bHasSelfIllumMask ? 1.0f : 0.0f;
-			pContextData->m_SemiStaticCmdsOut.SetPixelShaderConstant( 3, vEnvMapSaturation_SelfIllumMask, 1 );
+
 			if ( bHasEnvmap )
 			{
 				pContextData->m_SemiStaticCmdsOut.SetEnvMapTintPixelShaderDynamicStateGammaToLinear( 0, info.m_nEnvmapTint );
@@ -1328,6 +1358,25 @@ static void DrawVertexLitGeneric_DX9_Internal( CBaseVSShader *pShader, IMaterial
 		// Controls for lerp-style paths through shader code (bump and non-bump have use different register)
 		float vShaderControls[4] = { fPixelFogType, fWriteDepthToAlpha, fWriteWaterFogToDestAlpha, fVertexAlpha	 };
 		DynamicCmdsOut.SetPixelShaderConstant( 12, vShaderControls, 1 );
+
+		// GSTRINGMIGRATION
+		// Setting w to 1 means use separate selfillummask
+		float vEnvMapSaturation_SelfIllumMask[4] = {1.0f, 1.0f, 1.0f, 0.0f};
+		if ( info.m_nEnvmapSaturation != -1 )
+		{
+			params[info.m_nEnvmapSaturation]->GetVecValue( vEnvMapSaturation_SelfIllumMask, 3 );
+		}
+
+		if ( bHasSelfIllumTwoTexture )
+		{
+			vEnvMapSaturation_SelfIllumMask[3] = params[info.m_nSelfIllumTwoTexture_Amount]->GetFloatValue();
+		}
+		else
+		{
+			vEnvMapSaturation_SelfIllumMask[3] = bHasSelfIllumMask ? 1.0f : 0.0f;
+		}
+		DynamicCmdsOut.SetPixelShaderConstant( 3, vEnvMapSaturation_SelfIllumMask, 1 );
+		// END GSTRINGMIGRATION
 
 		// flashlightfixme: put this in common code.
 		if ( bHasFlashlight )

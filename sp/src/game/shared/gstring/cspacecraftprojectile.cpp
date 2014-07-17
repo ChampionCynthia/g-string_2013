@@ -121,6 +121,9 @@ void CSpacecraftProjectile::OnTouch( CBaseEntity *pOther )
 				QAngle facing;
 				VectorAngles( vReflection, facing );
 				SetAbsAngles( facing );
+
+				tr.m_pEnt = NULL;
+				ImpactTrace( &tr, DMG_BLAST );
 				return;
 			}
 		}

@@ -83,6 +83,11 @@ $Project "Client (G-String)"
 				$File	"gstring\vgui\vparticleoperatorslensflare.cpp"
 				$File	"gstring\vgui\vparticlerenderers.cpp"
 			}
+			
+			$Folder "material proxies"
+			{
+				$File	"gstring\proxies\gstring_spaceship_proxies.cpp"
+			}
 		}
 	
 		$File	"hud_chat.cpp"

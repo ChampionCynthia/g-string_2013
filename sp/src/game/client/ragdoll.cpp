@@ -292,6 +292,18 @@ void CRagdoll::CheckSettleStationaryRagdoll()
 	if ( dt < ragdoll_sleepaftertime.GetFloat() )
 		return;
 
+	Vector vecGravity;
+	if ( physenv )
+	{
+		physenv->GetGravity( &vecGravity );
+
+		if ( vecGravity.IsZero() )
+		{
+			m_flLastOriginChangeTime = gpGlobals->curtime;
+			return;
+		}
+	}
+
 	// Msg( "%d [%p] FORCE SLEEP\n",gpGlobals->tickcount, this );
 
 	// Force it to go to sleep

@@ -11,6 +11,7 @@ public:
 	CGstringInput();
 	virtual ~CGstringInput();
 
+	void GetNormalizedMousePosition( Vector2D &vecMousePosition );
 	void GetCrosshairPosition( int &x, int &y, float &angle );
 
 	const CUtlVector< EHANDLE > &GetPotentialAutoAimTargets() const;

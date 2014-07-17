@@ -57,6 +57,15 @@
 // SKIP: ($DISTANCEALPHA) && ($SEAMLESS_BASE || $SEAMLESS_DETAIL || $CUBEMAP || $LIGHTING_PREVIEW )
 // SKIP: ($DISTANCEALPHA) && ($WRITEWATERFOGTODESTALPHA || $PIXELFOGTYPE || $FLASHLIGHT || $FLASHLIGHTSHADOWS )
 
+// GSTRINGMIGRATION
+// STATIC: "SELFILLUM_TWOTEXTURE_BLEND" "0..1"
+// SKIP: $SELFILLUM_TWOTEXTURE_BLEND && ( $SELFILLUM == 0 )
+// SKIP: $SELFILLUM_TWOTEXTURE_BLEND && $SEAMLESS_BASE
+// SKIP: $SELFILLUM_TWOTEXTURE_BLEND && $DISTANCEALPHA
+// SKIP: $SELFILLUM_TWOTEXTURE_BLEND && $LIGHTING_PREVIEW
+// SKIP: $SELFILLUM_TWOTEXTURE_BLEND && $FLASHLIGHT
+// END GSTRINGMIGRATION
+
 #include "common_flashlight_fxc.h"
 #include "common_vertexlitgeneric_dx9.h"
  
@@ -72,6 +81,9 @@ const float4 g_DepthFeatheringConstants			: register( c13 );
 const float4 g_EyePos_MinLight							: register( c20 );
 #define g_EyePos g_EyePos_MinLight.xyz
 #define g_fMinLighting g_EyePos_MinLight.w
+#define g_SelfIllumTwoTextureBlend  g_EnvmapSaturation_SelfIllumMask.w
+
+sampler BaseTexture2Sampler     : register( s12 );
 // END GSTRINGMIGRATION
 
 const float4 g_FogParams						: register( c21 );
@@ -82,9 +94,8 @@ const float4 g_FogParams						: register( c21 );
 #define g_SelfIllumMaskControl		g_EnvmapSaturation_SelfIllumMask.w
 
 const float4 g_FlashlightAttenuationFactors	    : register( c22 );
-const HALF3 g_FlashlightPos						: register( c23 );
+const float3 g_FlashlightPos					: register( c23 );
 const float4x4 g_FlashlightWorldToTexture		: register( c24 ); // through c27
-
 
 sampler BaseTextureSampler		: register( s0 );
 sampler EnvmapSampler			: register( s1 );
@@ -219,7 +230,12 @@ float4 main( PS_INPUT i ) : COLOR
 		i.SeamlessWeights.y * tex2D( BaseTextureSampler, i.baseTexCoord.zx )+
 		i.SeamlessWeights.z * tex2D( BaseTextureSampler, i.baseTexCoord.xy );
 #else
-	baseColor = tex2D( BaseTextureSampler, i.baseTexCoord.xy );
+		baseColor = tex2D( BaseTextureSampler, i.baseTexCoord.xy );
+// GSTRINGMIGRATION
+	#if SELFILLUM_TWOTEXTURE_BLEND
+		baseColor = lerp( baseColor, tex2D( BaseTexture2Sampler, i.baseTexCoord.xy ), g_SelfIllumTwoTextureBlend );
+	#endif
+// END GSTRINGMIGRATION
 #endif
 
 #if DISTANCEALPHA && (DISTANCEALPHAFROMDETAIL == 0)
@@ -387,8 +403,15 @@ float4 main( PS_INPUT i ) : COLOR
 	#else
 		if ( bSelfIllum )
 		{
+// GSTRINGMIGRATION
+		#if SELFILLUM_TWOTEXTURE_BLEND
+			float3 vSelfIllumMask = baseColor.aaa;
+			vSelfIllumMask *= g_SelfIllumTwoTextureBlend;
+		#else
 			float3 vSelfIllumMask = tex2D( SelfIllumMaskSampler, i.baseTexCoord.xy );
 			vSelfIllumMask = lerp( baseColor.aaa, vSelfIllumMask, g_SelfIllumMaskControl );
+		#endif
+// END GSTRINGMIGRATION
 			diffuseComponent = lerp( diffuseComponent, g_SelfIllumTint * albedo, vSelfIllumMask );
 		}
 	#endif

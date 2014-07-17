@@ -4,6 +4,7 @@
 #include "view_shared.h"
 #include "view.h"
 #include "ivieweffects.h"
+#include "gstring_in_main.h"
 #include "flashlighteffect.h"
 #include "c_muzzleflash_effect.h"
 #include "c_bobmodel.h"
@@ -27,6 +28,7 @@ IMPLEMENT_CLIENTCLASS_DT( C_GstringPlayer, DT_CGstringPlayer, CGstringPlayer )
 	RecvPropBool( RECVINFO( m_bHasUseEntity ) ),
 	RecvPropInt( RECVINFO( m_nReloadParity ) ),
 	RecvPropEHandle( RECVINFO( m_hSpacecraft ) ),
+	RecvPropBool( RECVINFO( m_bSpacecraftDeath ) ),
 
 END_RECV_TABLE()
 
@@ -53,6 +55,10 @@ C_GstringPlayer::C_GstringPlayer()
 	, m_iBodyNextAttackLayer( 0 )
 	, m_flBodyStepSoundHack( 0.0f )
 	, m_flLastFallVelocity( 0.0f )
+	, m_bSpacecraftDeath( false )
+	, m_angSpacecraftDeathAngle( vec3_angle )
+	, m_vecSpacecraftDeathOrigin( vec3_origin )
+	, m_vecSpacecraftDeathVelocity( vec3_origin )
 {
 	m_nReloadParity = 0;
 	m_bHasUseEntity = false;
@@ -174,9 +180,28 @@ void C_GstringPlayer::OverrideView( CViewSetup *pSetup )
 		return;
 	}
 
+	if ( m_bSpacecraftDeath )
+	{
+		m_vecSpacecraftDeathOrigin += m_vecSpacecraftDeathVelocity * gpGlobals->frametime;
+		if ( m_vecSpacecraftDeathVelocity.LengthSqr() < 1.0f )
+		{
+			m_vecSpacecraftDeathVelocity.Zero();
+		}
+		else
+		{
+			m_vecSpacecraftDeathVelocity -= m_vecSpacecraftDeathVelocity * MIN( 1.0f, gpGlobals->frametime * 3.0f );
+		}
+		pSetup->angles = m_angSpacecraftDeathAngle;
+		pSetup->origin = m_vecSpacecraftDeathOrigin;
+		return;
+	}
+
 	if ( IsInSpacecraft() )
 	{
 		GetSpacecraftCamera( pSetup->origin, pSetup->angles, pSetup->fov );
+		m_angSpacecraftDeathAngle = pSetup->angles;
+		m_vecSpacecraftDeathOrigin = pSetup->origin;
+		m_vecSpacecraftDeathVelocity = GetSpacecraft()->GetPhysVelocity();
 		return;
 	}
 
@@ -186,7 +211,7 @@ void C_GstringPlayer::OverrideView( CViewSetup *pSetup )
 
 	static float amt = 0.0f;
 	static float amtSide = 0.0f;
-	float amtGoal = RemapValClamped( speed, 200, 300, 0, 1.5f );
+	float amtGoal = RemapValClamped( speed, 200.0f, 300.0f, 0, 1.5f );
 
 	if ( (GetFlags() & FL_ONGROUND) == 0 ||
 		GetMoveType() != MOVETYPE_WALK )
@@ -900,15 +925,15 @@ void C_GstringPlayer::GetSpacecraftCamera( Vector &origin, QAngle &angles, float
 
 	const float flDistance = 40.0f;
 
-	Vector vecFwd, vecUp;
-	AngleVectors( angles, &vecFwd, NULL, &vecUp );
+	Vector vecFwd, vecRight, vecUp;
+	AngleVectors( angles, &vecFwd, &vecRight, &vecUp );
 
 	origin = pSpacecraft->GetRenderOrigin();
 
 	static Vector s_originSmooth( origin );
 	static float s_flFovSmooth = 0.0f;
 	Vector delta = origin - s_originSmooth;
-	if ( delta.LengthSqr() > 10000.0f )
+	if ( true ) //delta.LengthSqr() > 10000.0f )
 	{
 		s_originSmooth = origin;
 		s_flFovSmooth = 0.0f;
@@ -926,11 +951,16 @@ void C_GstringPlayer::GetSpacecraftCamera( Vector &origin, QAngle &angles, float
 	origin -= vecFwd * flDistance;
 	origin += vecUp * 10.0f;
 
+	Vector2D vecMousePosition;
+	GetGstringInput()->GetNormalizedMousePosition( vecMousePosition );
+	origin += vecRight * vecMousePosition.x * 5.0f;
+	origin += vecUp * vecMousePosition.y * 3.5f;
+
 	vieweffects->CalcShake();
 	vieweffects->ApplyShake( origin, angles, 1.0f );
 
 	const CSpacecraft::EngineLevel_e engineLevel = pSpacecraft->GetEngineLevel();
-	const float flFovAdd = ( engineLevel == CSpacecraft::ENGINELEVEL_BOOST ) ? 20.0f :
+	const float flFovAdd = ( engineLevel == CSpacecraft::ENGINELEVEL_BOOST ) ? 20.0f:
 		( engineLevel == CSpacecraft::ENGINELEVEL_NORMAL ) ? 2.5f : 0.0f;
 
 	if ( abs( flFovAdd - s_flFovSmooth ) > 0.01f )
@@ -944,7 +974,18 @@ void C_GstringPlayer::GetSpacecraftCamera( Vector &origin, QAngle &angles, float
 
 	flFov += s_flFovSmooth;
 
-	//Vector vecSpacecraftVelocity;
-	//pSpacecraft->EstimateAbsVelocity( vecSpacecraftVelocity );
-	//flFov += vecSpacecraftVelocity.Length() * 0.1f;
+	Vector vecSpacecraftVelocity;
+	pSpacecraft->EstimateAbsVelocity( vecSpacecraftVelocity );
+	float flSpeed = vecSpacecraftVelocity.NormalizeInPlace() * 0.03f;
+	flSpeed = MIN( 8.0f, flSpeed );
+	origin -= vecSpacecraftVelocity * flSpeed;
+
+	matrix3x4_t matRot, matTmp, matCurrent;
+	AngleMatrix( angles, origin, matCurrent );
+	MatrixBuildRotationAboutAxis( Vector( 0, 1.0f, 0 ), vecMousePosition.y * -2.8f, matRot );
+	ConcatTransforms( matCurrent, matRot, matTmp );
+	MatrixBuildRotationAboutAxis( Vector( 0, 0, 1.0f ), vecMousePosition.x * 4.0f, matRot );
+	ConcatTransforms( matTmp, matRot, matCurrent );
+
+	MatrixAngles( matCurrent, angles );
 }

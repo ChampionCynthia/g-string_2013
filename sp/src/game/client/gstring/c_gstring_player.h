@@ -99,6 +99,10 @@ private:
 	float m_flBodyStepSoundHack;
 
 	CNetworkHandle( CSpacecraft, m_hSpacecraft );
+	bool m_bSpacecraftDeath;
+	QAngle m_angSpacecraftDeathAngle;
+	Vector m_vecSpacecraftDeathOrigin;
+	Vector m_vecSpacecraftDeathVelocity;
 };
 
 inline C_GstringPlayer *ToGstringPlayer( C_BaseEntity *pPlayer )

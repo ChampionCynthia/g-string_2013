@@ -76,6 +76,11 @@ void CGstringGlobals::Spawn()
 	SetUserLightSourceEnabled( HasSpawnFlags( GSTRINGGLOBALSFLAGS_USERLIGHTSOURCE_ENABLED ) );
 	SetNightvisionEnabled( HasSpawnFlags( GSTRINGGLOBALSFLAGS_NIGHTVISION_ENABLED ) );
 	m_bCascadedShadowMappingEnabled = HasSpawnFlags( GSTRINGGLOBALSFLAGS_CASCADEDSHADOWS_ENABLED );
+
+	if ( m_bCascadedShadowMappingEnabled && physenv )
+	{
+		physenv->SetGravity( vec3_origin );
+	}
 }
 
 int CGstringGlobals::UpdateTransmitState()
@@ -157,6 +162,21 @@ void CGstringGlobals::InputUserLightSourceDisable( inputdata_t &inputdata )
 void CGstringGlobals::InputUserLightSourceToggle( inputdata_t &inputdata )
 {
 	SetUserLightSourceEnabled( !IsUserLightSourceEnabled() );
+}
+
+#else
+
+void CGstringGlobals::OnDataChanged( DataUpdateType_t type )
+{
+	BaseClass::OnDataChanged( type );
+
+	//if ( type == DATA_UPDATE_DATATABLE_CHANGED )
+	{
+		if ( m_bCascadedShadowMappingEnabled && physenv )
+		{
+			physenv->SetGravity( vec3_origin );
+		}
+	}
 }
 
 #endif

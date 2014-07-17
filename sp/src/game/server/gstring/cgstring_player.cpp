@@ -19,6 +19,7 @@ IMPLEMENT_SERVERCLASS_ST( CGstringPlayer, DT_CGstringPlayer )
 	SendPropBool( SENDINFO( m_bHasUseEntity ) ),
 	SendPropInt( SENDINFO( m_nReloadParity ), EF_MUZZLEFLASH_BITS, SPROP_UNSIGNED ),
 	SendPropEHandle( SENDINFO( m_hSpacecraft ) ),
+	SendPropBool( SENDINFO( m_bSpacecraftDeath ) ),
 
 END_SEND_TABLE()
 
@@ -28,6 +29,7 @@ CGstringPlayer::CGstringPlayer()
 {
 	m_bHasUseEntity = false;
 	m_bNightvisionActive = false;
+	m_bSpacecraftDeath = false;
 }
 
 void CGstringPlayer::Precache()
@@ -200,6 +202,18 @@ void CGstringPlayer::UpdateStepSound( surfacedata_t *psurface, const Vector &vec
 bool CGstringPlayer::ShouldGib( const CTakeDamageInfo &info )
 {
 	return false;
+}
+
+void CGstringPlayer::DeathSound( const CTakeDamageInfo &info )
+{
+	if ( IsInSpacecraft() )
+	{
+		m_bSpacecraftDeath = true;
+	}
+	else
+	{
+		BaseClass::DeathSound( info );
+	}
 }
 
 bool CGstringPlayer::CanBecomeRagdoll()

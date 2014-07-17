@@ -400,6 +400,27 @@ public:
 		m_bDEPTHBLEND = true;
 #endif
 	}
+private:
+	int m_nSELFILLUM_TWOTEXTURE_BLEND;
+#ifdef _DEBUG
+	bool m_bSELFILLUM_TWOTEXTURE_BLEND;
+#endif
+public:
+	void SetSELFILLUM_TWOTEXTURE_BLEND( int i )
+	{
+		Assert( i >= 0 && i <= 1 );
+		m_nSELFILLUM_TWOTEXTURE_BLEND = i;
+#ifdef _DEBUG
+		m_bSELFILLUM_TWOTEXTURE_BLEND = true;
+#endif
+	}
+	void SetSELFILLUM_TWOTEXTURE_BLEND( bool i )
+	{
+		m_nSELFILLUM_TWOTEXTURE_BLEND = i ? 1 : 0;
+#ifdef _DEBUG
+		m_bSELFILLUM_TWOTEXTURE_BLEND = true;
+#endif
+	}
 public:
 	sdk_vertexlit_and_unlit_generic_ps30_Static_Index( )
 	{
@@ -479,19 +500,23 @@ public:
 		m_bDEPTHBLEND = false;
 #endif // _DEBUG
 		m_nDEPTHBLEND = 0;
+#ifdef _DEBUG
+		m_bSELFILLUM_TWOTEXTURE_BLEND = false;
+#endif // _DEBUG
+		m_nSELFILLUM_TWOTEXTURE_BLEND = 0;
 	}
 	int GetIndex()
 	{
 		// Asserts to make sure that we aren't using any skipped combinations.
 		// Asserts to make sure that we are setting all of the combination vars.
 #ifdef _DEBUG
-		bool bAllStaticVarsDefined = m_bDETAILTEXTURE && m_bCUBEMAP && m_bDIFFUSELIGHTING && m_bENVMAPMASK && m_bBASEALPHAENVMAPMASK && m_bSELFILLUM && m_bVERTEXCOLOR && m_bFLASHLIGHT && m_bSELFILLUM_ENVMAPMASK_ALPHA && m_bDETAIL_BLEND_MODE && m_bSEAMLESS_BASE && m_bSEAMLESS_DETAIL && m_bDISTANCEALPHA && m_bDISTANCEALPHAFROMDETAIL && m_bSOFT_MASK && m_bOUTLINE && m_bOUTER_GLOW && m_bFLASHLIGHTDEPTHFILTERMODE && m_bDEPTHBLEND;
+		bool bAllStaticVarsDefined = m_bDETAILTEXTURE && m_bCUBEMAP && m_bDIFFUSELIGHTING && m_bENVMAPMASK && m_bBASEALPHAENVMAPMASK && m_bSELFILLUM && m_bVERTEXCOLOR && m_bFLASHLIGHT && m_bSELFILLUM_ENVMAPMASK_ALPHA && m_bDETAIL_BLEND_MODE && m_bSEAMLESS_BASE && m_bSEAMLESS_DETAIL && m_bDISTANCEALPHA && m_bDISTANCEALPHAFROMDETAIL && m_bSOFT_MASK && m_bOUTLINE && m_bOUTER_GLOW && m_bFLASHLIGHTDEPTHFILTERMODE && m_bDEPTHBLEND && m_bSELFILLUM_TWOTEXTURE_BLEND;
 		Assert( bAllStaticVarsDefined );
 #endif // _DEBUG
-		return ( 6 * m_nDETAILTEXTURE ) + ( 12 * m_nCUBEMAP ) + ( 24 * m_nDIFFUSELIGHTING ) + ( 48 * m_nENVMAPMASK ) + ( 96 * m_nBASEALPHAENVMAPMASK ) + ( 192 * m_nSELFILLUM ) + ( 384 * m_nVERTEXCOLOR ) + ( 768 * m_nFLASHLIGHT ) + ( 1536 * m_nSELFILLUM_ENVMAPMASK_ALPHA ) + ( 3072 * m_nDETAIL_BLEND_MODE ) + ( 30720 * m_nSEAMLESS_BASE ) + ( 61440 * m_nSEAMLESS_DETAIL ) + ( 122880 * m_nDISTANCEALPHA ) + ( 245760 * m_nDISTANCEALPHAFROMDETAIL ) + ( 491520 * m_nSOFT_MASK ) + ( 983040 * m_nOUTLINE ) + ( 1966080 * m_nOUTER_GLOW ) + ( 3932160 * m_nFLASHLIGHTDEPTHFILTERMODE ) + ( 11796480 * m_nDEPTHBLEND ) + 0;
+		return ( 6 * m_nDETAILTEXTURE ) + ( 12 * m_nCUBEMAP ) + ( 24 * m_nDIFFUSELIGHTING ) + ( 48 * m_nENVMAPMASK ) + ( 96 * m_nBASEALPHAENVMAPMASK ) + ( 192 * m_nSELFILLUM ) + ( 384 * m_nVERTEXCOLOR ) + ( 768 * m_nFLASHLIGHT ) + ( 1536 * m_nSELFILLUM_ENVMAPMASK_ALPHA ) + ( 3072 * m_nDETAIL_BLEND_MODE ) + ( 30720 * m_nSEAMLESS_BASE ) + ( 61440 * m_nSEAMLESS_DETAIL ) + ( 122880 * m_nDISTANCEALPHA ) + ( 245760 * m_nDISTANCEALPHAFROMDETAIL ) + ( 491520 * m_nSOFT_MASK ) + ( 983040 * m_nOUTLINE ) + ( 1966080 * m_nOUTER_GLOW ) + ( 3932160 * m_nFLASHLIGHTDEPTHFILTERMODE ) + ( 11796480 * m_nDEPTHBLEND ) + ( 23592960 * m_nSELFILLUM_TWOTEXTURE_BLEND ) + 0;
 	}
 };
-#define shaderStaticTest_sdk_vertexlit_and_unlit_generic_ps30 psh_forgot_to_set_static_DETAILTEXTURE + psh_forgot_to_set_static_CUBEMAP + psh_forgot_to_set_static_DIFFUSELIGHTING + psh_forgot_to_set_static_ENVMAPMASK + psh_forgot_to_set_static_BASEALPHAENVMAPMASK + psh_forgot_to_set_static_SELFILLUM + psh_forgot_to_set_static_VERTEXCOLOR + psh_forgot_to_set_static_FLASHLIGHT + psh_forgot_to_set_static_SELFILLUM_ENVMAPMASK_ALPHA + psh_forgot_to_set_static_DETAIL_BLEND_MODE + psh_forgot_to_set_static_SEAMLESS_BASE + psh_forgot_to_set_static_SEAMLESS_DETAIL + psh_forgot_to_set_static_DISTANCEALPHA + psh_forgot_to_set_static_DISTANCEALPHAFROMDETAIL + psh_forgot_to_set_static_SOFT_MASK + psh_forgot_to_set_static_OUTLINE + psh_forgot_to_set_static_OUTER_GLOW + psh_forgot_to_set_static_FLASHLIGHTDEPTHFILTERMODE + psh_forgot_to_set_static_DEPTHBLEND + 0
+#define shaderStaticTest_sdk_vertexlit_and_unlit_generic_ps30 psh_forgot_to_set_static_DETAILTEXTURE + psh_forgot_to_set_static_CUBEMAP + psh_forgot_to_set_static_DIFFUSELIGHTING + psh_forgot_to_set_static_ENVMAPMASK + psh_forgot_to_set_static_BASEALPHAENVMAPMASK + psh_forgot_to_set_static_SELFILLUM + psh_forgot_to_set_static_VERTEXCOLOR + psh_forgot_to_set_static_FLASHLIGHT + psh_forgot_to_set_static_SELFILLUM_ENVMAPMASK_ALPHA + psh_forgot_to_set_static_DETAIL_BLEND_MODE + psh_forgot_to_set_static_SEAMLESS_BASE + psh_forgot_to_set_static_SEAMLESS_DETAIL + psh_forgot_to_set_static_DISTANCEALPHA + psh_forgot_to_set_static_DISTANCEALPHAFROMDETAIL + psh_forgot_to_set_static_SOFT_MASK + psh_forgot_to_set_static_OUTLINE + psh_forgot_to_set_static_OUTER_GLOW + psh_forgot_to_set_static_FLASHLIGHTDEPTHFILTERMODE + psh_forgot_to_set_static_DEPTHBLEND + psh_forgot_to_set_static_SELFILLUM_TWOTEXTURE_BLEND + 0
 class sdk_vertexlit_and_unlit_generic_ps30_Dynamic_Index
 {
 private:

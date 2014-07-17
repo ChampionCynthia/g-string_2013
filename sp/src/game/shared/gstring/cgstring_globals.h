@@ -39,6 +39,8 @@ public:
 
 	void SetUserLightSourceEnabled( bool bEnabled );
 	bool IsUserLightSourceEnabled() const;
+#else
+	virtual void OnDataChanged( DataUpdateType_t type );
 #endif
 
 	bool IsCascadedShadowMappingEnabled() const;

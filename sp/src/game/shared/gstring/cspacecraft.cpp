@@ -53,17 +53,20 @@ static ConVar gstring_spacecraft_move_drag_up( "gstring_spacecraft_move_drag_up"
 #ifdef GAME_DLL
 BEGIN_DATADESC( CSpacecraft )
 
-	//DEFINE_KEYFIELD( m_strOverlayMaterial, FIELD_STRING, "overlayname" ),
-	//DEFINE_KEYFIELD( m_iRenderMode, FIELD_INTEGER, "rendermode" ),
-	//DEFINE_KEYFIELD( m_iRenderIndex, FIELD_INTEGER, "renderindex" ),
+	// AI
+	DEFINE_KEYFIELD( m_iAIControlled, FIELD_INTEGER, "aicontrolled" ),
+	DEFINE_KEYFIELD( m_iAIAttackState, FIELD_INTEGER, "aiattackstate" ),
+	DEFINE_KEYFIELD( m_iAITeam, FIELD_INTEGER, "aiteam" ),
 
-	//DEFINE_FIELD( m_iMaterialIndex, FIELD_INTEGER ),
+	DEFINE_KEYFIELD( m_strInitialEnemy, FIELD_STRING, "initialenemy" ),
+	DEFINE_INPUTFUNC( FIELD_VOID, "setenemy", InputSetEnemy ),
+	DEFINE_INPUTFUNC( FIELD_VOID, "clearenemy", InputClearEnemy ),
 
-	//DEFINE_FIELD( m_bEnabled, FIELD_BOOLEAN ),
+	DEFINE_FIELD( m_hPathEntity, FIELD_EHANDLE ),
+	DEFINE_KEYFIELD( m_strPathStartName, FIELD_STRING, "pathstartname" ),
 
+	// Player
 	DEFINE_INPUTFUNC( FIELD_VOID, "EnterVehicle", InputEnterVehicle ),
-	//DEFINE_INPUTFUNC( FIELD_VOID, "disable", InputDisable ),
-	//DEFINE_INPUTFUNC( FIELD_VOID, "toggle", InputToggle ),
 
 END_DATADESC()
 #endif
@@ -103,11 +106,15 @@ CSpacecraft::CSpacecraft()
 	, m_bAlternatingWeapons( false )
 	, m_pAI( NULL )
 	, m_flLastAIThinkTime( 0.0f )
+	, m_iAIControlled( 0 )
+	, m_iAIAttackState( 0 )
+	, m_iAITeam( 0 )
 #else
 	: m_iEngineLevelLast( 0 )
 	, m_iProjectileParityLast( 0 )
 	, m_iGUID_Engine( -1 )
 	, m_iGUID_Boost( -1 )
+	, m_flEngineAlpha( 0.0f )
 	, m_flEngineVolume( ENGINE_VOLUME_LOW )
 	, m_flShakeTimer( 0.0f )
 #endif
@@ -172,6 +179,9 @@ void CSpacecraft::Spawn()
 
 void CSpacecraft::Activate()
 {
+	m_hPathEntity = gEntList.FindEntityByName( NULL, m_strPathStartName, this );
+	m_hEnemy = gEntList.FindEntityByName( NULL, m_strInitialEnemy, this );
+
 	const float flCollisionScale = 1.0f / 16.0f;
 	SetModelScale( flCollisionScale );
 
@@ -233,6 +243,29 @@ void CSpacecraft::Event_Killed( const CTakeDamageInfo &info )
 	}
 
 	BaseClass::Event_Killed( info );
+}
+
+CBaseEntity *CSpacecraft::GetEnemy() const
+{
+	return m_hEnemy;
+}
+
+void CSpacecraft::SetEnemy( CBaseEntity *pEnemy )
+{
+	m_hEnemy.Set( pEnemy );
+}
+
+void CSpacecraft::InputSetEnemy( inputdata_t &inputdata )
+{
+	if ( inputdata.value.Convert( FIELD_EHANDLE ) )
+	{
+		SetEnemy( inputdata.value.Entity() );
+	}
+}
+
+void CSpacecraft::InputClearEnemy( inputdata_t &inputdata )
+{
+	SetEnemy( NULL );
 }
 
 void CSpacecraft::SimulateFire( CMoveData &moveData, float flFrametime )
@@ -529,6 +562,26 @@ void CSpacecraft::ClientThink()
 		m_flEngineVolume = flEngineVolumeTarget;
 	}
 
+	float flEngineAlphaTarget = 1.0f;
+	switch ( m_iEngineLevel )
+	{
+	case ENGINELEVEL_STALLED:
+		flEngineAlphaTarget = 0.0f;
+		break;
+
+	case ENGINELEVEL_IDLE:
+		flEngineAlphaTarget = 0.4f;
+		break;
+	}
+	if ( abs( m_flEngineAlpha - flEngineAlphaTarget ) > 0.01f )
+	{
+		m_flEngineAlpha = Approach( flEngineAlphaTarget, m_flEngineAlpha, gpGlobals->frametime * 0.8f );
+	}
+	else
+	{
+		m_flEngineAlpha = flEngineAlphaTarget;
+	}
+
 	if ( m_iGUID_Engine >= 0 && enginesound->IsSoundStillPlaying( m_iGUID_Engine ) )
 	{
 		enginesound->SetVolumeByGuid( m_iGUID_Engine, m_flEngineVolume );
@@ -697,32 +750,41 @@ void CSpacecraft::SimulateMove( CMoveData &moveData, float flFrametime )
 		const float flAcceleration = gstring_spacecraft_acceleration.GetFloat();
 		const float flAccelerationBoost = gstring_spacecraft_acceleration_boost.GetFloat();
 		const float flAccelerationSide = gstring_spacecraft_acceleration_side.GetFloat();
+		const float flMaxMove = 200.0f;
+		Vector vecMove( vec3_origin );
+		vecMove.x = clamp( moveData.m_flForwardMove / flMaxMove, -1.0f, 1.0f );
+		vecMove.y = clamp( moveData.m_flSideMove / flMaxMove, -1.0f, 1.0f );
 
-		if ( ( moveData.m_nButtons & IN_FORWARD ) != 0 )
+		if ( vecMove.LengthSqr() > 1.0f )
 		{
-			vecImpulse += vecFwd * ( bBoosting ? flAccelerationBoost : flAcceleration );
+			vecMove.NormalizeInPlace();
+		}
+
+		if ( vecMove.x > 0.0f )
+		{
+			vecImpulse += vecMove.x * vecFwd * ( bBoosting ? flAccelerationBoost : flAcceleration );
 			bAccelerationEffects = true;
 			bBoostEffects = bBoosting;
 		}
 
 		if ( ( moveData.m_nButtons & IN_DUCK ) == 0 )
 		{
-			if ( ( moveData.m_nButtons & IN_MOVELEFT ) != 0 )
+			if ( vecMove.y < 0.0f )
 			{
-				vecImpulse -= vecRight * flAccelerationSide;
+				vecImpulse += vecMove.y * vecRight * flAccelerationSide;
 				bAccelerationEffects = true;
 			}
 
-			if ( ( moveData.m_nButtons & IN_MOVERIGHT ) != 0 )
+			if ( vecMove.y > 0.0f )
 			{
-				vecImpulse += vecRight * flAccelerationSide;
+				vecImpulse += vecMove.y * vecRight * flAccelerationSide;
 				bAccelerationEffects = true;
 			}
 		}
 
-		if ( ( moveData.m_nButtons & IN_BACK ) != 0 )
+		if ( vecMove.x < 0.0f )
 		{
-			vecImpulse -= vecFwd * flAcceleration;
+			vecImpulse += vecMove.x * vecFwd * flAcceleration;
 			bAccelerationEffects = false;
 			bBoostEffects = false;
 		}
