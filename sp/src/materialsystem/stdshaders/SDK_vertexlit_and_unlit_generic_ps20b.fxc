@@ -59,11 +59,17 @@
 
 // GSTRINGMIGRATION
 // STATIC: "SELFILLUM_TWOTEXTURE_BLEND" "0..1"
+// DYNAMIC: "CASCADED_SHADOW"			"0..1"  [vs30]
+
 // SKIP: $SELFILLUM_TWOTEXTURE_BLEND && ( $SELFILLUM == 0 )
 // SKIP: $SELFILLUM_TWOTEXTURE_BLEND && $SEAMLESS_BASE
 // SKIP: $SELFILLUM_TWOTEXTURE_BLEND && $DISTANCEALPHA
 // SKIP: $SELFILLUM_TWOTEXTURE_BLEND && $LIGHTING_PREVIEW
 // SKIP: $SELFILLUM_TWOTEXTURE_BLEND && $FLASHLIGHT
+
+// SKIP: ($CASCADED_SHADOW) && ($FLASHLIGHT)
+// SKIP: ($CASCADED_SHADOW) && ($SEAMLESS_BASE)
+// SKIP: ($CASCADED_SHADOW) && ($SEAMLESS_DETAIL)
 // END GSTRINGMIGRATION
 
 #include "common_flashlight_fxc.h"
@@ -97,6 +103,10 @@ const float4 g_FlashlightAttenuationFactors	    : register( c22 );
 const float3 g_FlashlightPos					: register( c23 );
 const float4x4 g_FlashlightWorldToTexture		: register( c24 ); // through c27
 
+// GSTRINGMIGRATION
+#define g_CascadedForward				g_FlashlightPos
+// END GSTRINGMIGRATION
+
 sampler BaseTextureSampler		: register( s0 );
 sampler EnvmapSampler			: register( s1 );
 sampler DetailSampler			: register( s2 );
@@ -117,16 +127,24 @@ struct PS_INPUT
 #if SEAMLESS_DETAIL
 	HALF3 detailTexCoord			: TEXCOORD1;	// Seamless texture coordinate
 #else
-	HALF2 detailTexCoord			: TEXCOORD1;	// Detail texture coordinate
+	#if CASCADED_SHADOW
+		float4 detailTexCoord		: TEXCOORD1;
+	#else
+		HALF2 detailTexCoord		: TEXCOORD1;		// Detail texture coordinate
+	#endif
 #endif
 	float4 color					: TEXCOORD2;	// Vertex color (from lighting or unlit)
-	float3 worldVertToEyeVector		: TEXCOORD3;	// Necessary for reflection
+
+	#if CASCADED_SHADOW
+		float4 worldVertToEyeVector		: TEXCOORD3;
+	#else
+		float3 worldVertToEyeVector		: TEXCOORD3;		// Necessary for cubemaps
+	#endif
+
 	float3 worldSpaceNormal			: TEXCOORD4;	// Necessary for cubemaps and flashlight
 
-#if defined ( _X360 )
-#if FLASHLIGHT
+#if FLASHLIGHT || CASCADED_SHADOW
 	float4 flashlightSpacePos		: TEXCOORD5;
-#endif
 #endif
 
 	float4 projPos					: TEXCOORD6;
@@ -323,9 +341,19 @@ float4 main( PS_INPUT i ) : COLOR
 	}
 
 	float3 diffuseLighting = float3( 1.0f, 1.0f, 1.0f );
-	if( bDiffuseLighting || bVertexColor && !( bVertexColor && bDiffuseLighting ) )
+	if ( bDiffuseLighting != bVertexColor )
 	{
 		diffuseLighting = i.color.rgb;
+
+#if CASCADED_SHADOW
+		float3 directionalLighting = float3( i.detailTexCoord.zw, i.worldVertToEyeVector.w );
+
+		float flShadow = DoCascadedShadow( ShadowDepthSampler, RandRotSampler, i.worldSpaceNormal,
+			g_CascadedForward, i.flashlightSpacePos, i.worldPos_projPosZ.xyz, g_FlashlightWorldToTexture, FLASHLIGHTDEPTHFILTERMODE,
+			i.projPos.xy / i.projPos.z, float4( 0.0005, 0.0, 0.0, 0.0 ) );
+
+		diffuseLighting += directionalLighting * flShadow;
+#endif
 	}
 
 	float3 albedo = baseColor.rgb;

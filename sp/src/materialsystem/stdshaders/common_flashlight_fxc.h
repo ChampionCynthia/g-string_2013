@@ -855,10 +855,10 @@ float DoCascadedShadow( sampler depthSampler, sampler randomSampler, float3 worl
 	float2 vScreenPos, float4 vShadowTweaks )
 {
 	float shadow = 0.0;
-	float cascadedDot = dot( -lightDirection, worldNormal ) * 12.0;
+	float cascadedDot = dot( -lightDirection, worldNormal );
 	if ( cascadedDot >= 0.0f )
 	{
-		cascadedDot = saturate( cascadedDot );
+		cascadedDot = saturate( cascadedDot * 12.0 );
 
 		float4 farPosition = mul( float4( worldPosition, 1.0f ), farWorldToShadowUV );
 		farPosition.xyz /= farPosition.w;

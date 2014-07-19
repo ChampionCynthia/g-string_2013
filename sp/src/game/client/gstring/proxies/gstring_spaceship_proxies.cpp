@@ -18,7 +18,6 @@ void CGstringProxySpacecraftEngine::OnBind( void *pC_BaseEntity )
 		return;
 
 	CSpacecraft *pSpacecraft = assert_cast< CSpacecraft* >( BindArgToEntity( pC_BaseEntity ) );
-
 	SetFloatResult( pSpacecraft->GetEngineAlpha() );
 }
 

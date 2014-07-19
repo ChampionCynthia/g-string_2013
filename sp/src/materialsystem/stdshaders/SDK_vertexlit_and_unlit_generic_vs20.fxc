@@ -21,6 +21,17 @@
 
 // SKIP: ($SEPARATE_DETAIL_UVS) && ($SEAMLESS_DETAIL)
 
+// GSTRINGMIGRATION
+//  DYNAMIC: "CASCADED_SHADOW"		"0..1"  [vs30]
+
+// SKIP: ($CASCADED_SHADOW) && ($FLASHLIGHT)
+// SKIP: ($CASCADED_SHADOW) && ($SEAMLESS_BASE)
+// SKIP: ($CASCADED_SHADOW) && ($SEAMLESS_DETAIL)
+
+#if CASCADED_SHADOW
+#define USE_SEPARATE_DIRECTIONAL_LIGHT
+#endif
+// END GSTRINGMIGRATION
 
 #include "common_vs_fxc.h"
  
@@ -28,7 +39,6 @@ static const bool g_bSkinning		= SKINNING ? true : false;
 static const int  g_FogType			= DOWATERFOG;
 static const bool g_bVertexColor	= VERTEXCOLOR ? true : false;
 static const bool g_bCubemap		= CUBEMAP ? true : false;
-static const bool g_bFlashlight		= FLASHLIGHT ? true : false;
 static const bool g_bHalfLambert	= HALFLAMBERT ? true : false;
 #if (defined( SHADER_MODEL_VS_3_0 ) && MORPHING && DECAL && SM30_VERTEXID)
 static const bool g_bDecalOffset	= true;
@@ -44,7 +54,7 @@ const float cSeamlessScale					: register( SHADER_SPECIFIC_CONST_2);
 
 const float4 cDetailTexCoordTransform[2]	:  register( SHADER_SPECIFIC_CONST_4 );
 
-#if defined ( _X360 )
+#if defined ( _X360 ) || CASCADED_SHADOW
 const float4x4 g_FlashlightWorldToTexture :  register( SHADER_SPECIFIC_CONST_6 ); // 6, 7, 8, 9
 #endif
 
@@ -93,19 +103,27 @@ struct VS_OUTPUT
 	HALF2 baseTexCoord				: TEXCOORD0;		// Base texture coordinate
 #endif
 #if SEAMLESS_DETAIL
-	HALF3 SeamlessDetailTexCoord			: TEXCOORD1;		// Detail texture coordinate
+	HALF3 SeamlessDetailTexCoord				: TEXCOORD1;		// Detail texture coordinate
 #else
-	HALF2 detailTexCoord			: TEXCOORD1;		// Detail texture coordinate
+	#if CASCADED_SHADOW
+		float4 detailTexCoord		: TEXCOORD1;
+	#else
+		HALF2 detailTexCoord		: TEXCOORD1;		// Detail texture coordinate
+	#endif
 #endif
 	float4 color					: TEXCOORD2;		// Vertex color (from lighting or unlit)
 
-#if 1 //CUBEMAP || _X360 // GSTRINGMIGRATION
-	float3 worldVertToEyeVector		: TEXCOORD3;		// Necessary for cubemaps
+#if 1 // GSTRINGMIGRATION
+	#if CASCADED_SHADOW
+		float4 worldVertToEyeVector		: TEXCOORD3;
+	#else
+		float3 worldVertToEyeVector		: TEXCOORD3;		// Necessary for cubemaps
+	#endif
 #endif
 
 	float3 worldSpaceNormal			: TEXCOORD4;		// Necessary for cubemaps and flashlight
 
-#if defined ( _X360 ) && FLASHLIGHT
+#if defined ( _X360 ) && FLASHLIGHT || CASCADED_SHADOW
 	float4 flashlightSpacePos		: TEXCOORD5;
 #endif
 
@@ -183,7 +201,12 @@ VS_OUTPUT main( const VS_INPUT v )
 	o.worldVertToEyeVector.xyz = VSHADER_VECT_SCALE * (cEyePos - worldPos);
 #endif
 
-#if !defined (_X360) && FLASHLIGHT
+#if CASCADED_SHADOW
+	float3 directionalLight;
+	o.color.xyz = DoLighting( worldPos, worldNormal, v.vSpecular, bStaticLight, bDynamicLight, g_bHalfLambert, directionalLight );
+	o.detailTexCoord.zw = directionalLight.xy;
+	o.worldVertToEyeVector.w = directionalLight.z;
+#elif !defined (_X360) && FLASHLIGHT
 	o.color = float4( 0.0f, 0.0f, 0.0f, 0.0f );
 	
 	if ( g_bVertexColor )
@@ -235,7 +258,7 @@ VS_OUTPUT main( const VS_INPUT v )
 	o.color.xyz=float3(dot,dot,dot);
 #endif
 
-#if defined ( _X360 ) && FLASHLIGHT
+#if defined ( _X360 ) && FLASHLIGHT || CASCADED_SHADOW
 	o.flashlightSpacePos = mul( float4( worldPos, 1.0f ), g_FlashlightWorldToTexture );
 #endif
 

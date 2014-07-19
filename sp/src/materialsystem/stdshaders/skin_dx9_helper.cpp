@@ -387,7 +387,6 @@ void DrawSkin_DX9_Internal( CBaseVSShader *pShader, IMaterialVar** params, IShad
 			pShaderShadow->EnableTexture( SHADER_SAMPLER4, true );	// Shadow depth map
 			pShaderShadow->SetShadowDepthFiltering( SHADER_SAMPLER4 );
 			pShaderShadow->EnableSRGBRead( SHADER_SAMPLER4, false );
-			pShaderShadow->EnableTexture( SHADER_SAMPLER5, true );	// Noise map
 			pShaderShadow->EnableTexture( SHADER_SAMPLER6, true );	// Flashlight cookie
 			userDataSize = 4; // tangent S
 		}

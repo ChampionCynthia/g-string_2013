@@ -437,12 +437,13 @@ static void DrawVertexLitGeneric_DX9_Internal( CBaseVSShader *pShader, IMaterial
 	const bool bHasSelfIllumTwoTexture = info.m_nSelfIllumTwoTexture != -1 &&
 		params[info.m_nSelfIllumTwoTexture]->GetIntValue() != 0;
 	const bool bHasSelfIllumMask = bHasSelfIllum && IsTextureSet( info.m_nSelfIllumMask, params );
+
+	const bool bSeamlessBase = IsBoolSet( info.m_nSeamlessBase, params );
+	const bool bSeamlessDetail = IsBoolSet( info.m_nSeamlessDetail, params );
 	// END GSTRINGMIGRATION
 
 	if ( pShader->IsSnapshotting() || (! pContextData ) || ( pContextData->m_bMaterialVarsChanged ) )
 	{
-		bool bSeamlessBase = IsBoolSet( info.m_nSeamlessBase, params );
-		bool bSeamlessDetail = IsBoolSet( info.m_nSeamlessDetail, params );
 		bool bDistanceAlpha = IsBoolSet( info.m_nDistanceAlpha, params );
 
 		bool hasSelfIllumInEnvMapMask =
@@ -564,6 +565,13 @@ static void DrawVertexLitGeneric_DX9_Internal( CBaseVSShader *pShader, IMaterial
 				pShaderShadow->EnableTexture( SHADER_SAMPLER7, true );	// Flashlight cookie
 				pShaderShadow->EnableSRGBRead( SHADER_SAMPLER7, true );
 				userDataSize = 4; // tangent S
+			}
+			else if ( bVertexLitGeneric )
+			{
+				pShaderShadow->EnableTexture( SHADER_SAMPLER8, true );	// Shadow depth map
+				pShaderShadow->SetShadowDepthFiltering( SHADER_SAMPLER8 );
+				pShaderShadow->EnableSRGBRead( SHADER_SAMPLER8, false );
+				pShaderShadow->EnableTexture( SHADER_SAMPLER6, true );	// Noise map
 			}
 			if ( bHasDetailTexture )
 			{
@@ -1144,7 +1152,9 @@ static void DrawVertexLitGeneric_DX9_Internal( CBaseVSShader *pShader, IMaterial
 			DynamicCmdsOut.BindTexture( pShader, SHADER_SAMPLER1, info.m_nEnvmap, info.m_nEnvmapFrame );
 		}
 
+		ITexture *pCascadedDepthTexture = NULL;
 		bool bFlashlightShadows = false;
+
 		if ( bHasFlashlight )
 		{
 			VMatrix worldToTexture;
@@ -1162,6 +1172,10 @@ static void DrawVertexLitGeneric_DX9_Internal( CBaseVSShader *pShader, IMaterial
 
 			Assert( info.m_nFlashlightTexture >= 0 && info.m_nFlashlightTextureFrame >= 0 );
 			pShader->BindTexture( SHADER_SAMPLER7, state.m_pSpotlightTexture, state.m_nSpotlightTextureFrame );
+		}
+		else if ( !bSeamlessBase && !bSeamlessDetail && bVertexLitGeneric )
+		{
+			pCascadedDepthTexture = (ITexture*)pShaderAPI->GetIntRenderingParameter( INT_CASCADED_DEPTHTEXTURE );
 		}
 
 
@@ -1300,6 +1314,7 @@ static void DrawVertexLitGeneric_DX9_Internal( CBaseVSShader *pShader, IMaterial
 			else
 			{
 				const bool bFastVertexTextures = g_pHardwareConfig->HasFastVertexTextures();
+				const int iCascadedShadowCombo = ( pCascadedDepthTexture != NULL ) ? 1 : 0;
 
 				if ( bFastVertexTextures )
 					pShader->SetHWMorphVertexShaderState( VERTEX_SHADER_SHADER_SPECIFIC_CONST_10, VERTEX_SHADER_SHADER_SPECIFIC_CONST_11, SHADER_VERTEXTEXTURE_SAMPLER0 );
@@ -1313,12 +1328,14 @@ static void DrawVertexLitGeneric_DX9_Internal( CBaseVSShader *pShader, IMaterial
 					pShaderAPI->GetIntRenderingParameter(INT_RENDERPARM_ENABLE_FIXED_LIGHTING)!=0);
 				SET_DYNAMIC_VERTEX_SHADER_COMBO( MORPHING, pShaderAPI->IsHWMorphingEnabled() && bFastVertexTextures );
 				SET_DYNAMIC_VERTEX_SHADER_COMBO( COMPRESSED_VERTS, (int)vertexCompression );
+				SET_DYNAMIC_VERTEX_SHADER_COMBO( CASCADED_SHADOW, iCascadedShadowCombo );
 				SET_DYNAMIC_VERTEX_SHADER_CMD( DynamicCmdsOut, sdk_vertexlit_and_unlit_generic_vs30 );
 
 				DECLARE_DYNAMIC_PIXEL_SHADER( sdk_vertexlit_and_unlit_generic_ps30 );
 				SET_DYNAMIC_PIXEL_SHADER_COMBO( FLASHLIGHTSHADOWS, bFlashlightShadows );
 				SET_DYNAMIC_PIXEL_SHADER_COMBO(	LIGHTING_PREVIEW,
 					pShaderAPI->GetIntRenderingParameter(INT_RENDERPARM_ENABLE_FIXED_LIGHTING) );
+				SET_DYNAMIC_PIXEL_SHADER_COMBO( CASCADED_SHADOW, iCascadedShadowCombo );
 				SET_DYNAMIC_PIXEL_SHADER_CMD( DynamicCmdsOut, sdk_vertexlit_and_unlit_generic_ps30 );
 
 				if ( bFastVertexTextures )
@@ -1402,6 +1419,41 @@ static void DrawVertexLitGeneric_DX9_Internal( CBaseVSShader *pShader, IMaterial
 
 			DynamicCmdsOut.SetPixelShaderConstant( 24, worldToTexture.Base(), 4 );
 		}
+
+		if ( pCascadedDepthTexture != NULL )
+		{
+			pShader->BindTexture( SHADER_SAMPLER8, pCascadedDepthTexture, 0 );
+			DynamicCmdsOut.BindStandardTexture( SHADER_SAMPLER6, TEXTURE_SHADOW_NOISE_2D );
+
+			const int iCascadedCount = 2;
+			Vector vecMatrixParts[iCascadedCount][6];
+			VMatrix worldToTexture[iCascadedCount];
+			for ( int i = 0; i < 6; i++ )
+			{
+				vecMatrixParts[0][i] = pShaderAPI->GetVectorRenderingParameter( VECTOR_RENDERPARM_GSTRING_CASCADED_MATRIX_0 + i );
+				vecMatrixParts[1][i] = pShaderAPI->GetVectorRenderingParameter( VECTOR_RENDERPARM_GSTRING_CASCADED_2_MATRIX_0 + i );
+			}
+
+			for ( int i = 0; i < iCascadedCount; i++ )
+			{
+				Q_memcpy( worldToTexture[i].Base(), vecMatrixParts[i][0].Base(), sizeof( float ) * 16 );
+			}
+
+			pShaderAPI->SetPixelShaderConstant( 24, worldToTexture[1].Base(), 4 );
+			pShaderAPI->SetVertexShaderConstant( VERTEX_SHADER_SHADER_SPECIFIC_CONST_6, worldToTexture[0].Base(), 4 );
+
+			Vector vecCascadedFwd = pShaderAPI->GetVectorRenderingParameter( VECTOR_RENDERPARM_GSTRING_CASCADED_FORWARD );
+			float flCascadedFwd[4] = { XYZ( vecCascadedFwd ) };
+			pShaderAPI->SetPixelShaderConstant( 23, flCascadedFwd, 1 );
+
+			float vScreenScale[4] = { 1280.0f / 32.0f, 720.0f / 32.0f };
+			int nWidth, nHeight;
+			pShaderAPI->GetBackBufferDimensions( nWidth, nHeight );
+			vScreenScale[0] = (float) nWidth  / 32.0f;
+			vScreenScale[1] = (float) nHeight / 32.0f;
+			pShaderAPI->SetPixelShaderConstant( 31, vScreenScale, 1 );
+		}
+
 		DynamicCmdsOut.End();
 		pShaderAPI->ExecuteCommandBuffer( DynamicCmdsOut.Base() );
 	}
