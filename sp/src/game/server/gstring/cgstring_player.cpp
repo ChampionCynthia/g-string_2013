@@ -3,6 +3,7 @@
 #include "cgstring_player.h"
 #include "gstring/cgstring_globals.h"
 #include "obstacle_pushaway.h"
+#include "shareddefs.h"
 
 static ConVar gstring_nightvision_override( "gstring_nightvision_override", "0", FCVAR_CHEAT );
 
@@ -20,6 +21,7 @@ IMPLEMENT_SERVERCLASS_ST( CGstringPlayer, DT_CGstringPlayer )
 	SendPropInt( SENDINFO( m_nReloadParity ), EF_MUZZLEFLASH_BITS, SPROP_UNSIGNED ),
 	SendPropEHandle( SENDINFO( m_hSpacecraft ) ),
 	SendPropBool( SENDINFO( m_bSpacecraftDeath ) ),
+	SendPropEHandle( SENDINFO( m_hInteractionBody ) ),
 
 END_SEND_TABLE()
 
@@ -286,3 +288,27 @@ void CGstringPlayer::StartAdmireGlovesAnimation()
 	BaseClass::StartAdmireGlovesAnimation();
 }
 
+void CGstringPlayer::BeginInteraction( CBaseAnimating *pInteractionBody )
+{
+	LockPlayerInPlace();
+	CBaseCombatWeapon *pActiveWeapon = GetActiveWeapon();
+	if ( pActiveWeapon != NULL )
+	{
+		pActiveWeapon->Holster();
+	}
+	m_hInteractionBody.Set( pInteractionBody );
+}
+
+void CGstringPlayer::EndInteraction()
+{
+	m_hInteractionBody = NULL;
+	CBaseCombatWeapon *pActiveWeapon = GetActiveWeapon();
+	if ( pActiveWeapon != NULL )
+	{
+		pActiveWeapon->Deploy();
+	}
+	UnlockPlayer();
+
+	// HACK: Fix broken view offset if interaction started while ducking (client version not in sync!)
+	SetViewOffset( VEC_VIEW_SCALED( this ) - Vector( 0, 0, 0.2f ) );
+}

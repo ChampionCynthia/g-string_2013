@@ -213,9 +213,11 @@ END_RECV_TABLE()
 
 		RecvPropDataTable	( RECVINFO_DT(m_Local),0, &REFERENCE_RECV_TABLE(DT_Local) ),
 
+#ifndef HL2_CLIENT_DLL
 		RecvPropFloat		( RECVINFO(m_vecViewOffset[0]) ),
 		RecvPropFloat		( RECVINFO(m_vecViewOffset[1]) ),
 		RecvPropFloat		( RECVINFO(m_vecViewOffset[2]) ),
+#endif
 		RecvPropFloat		( RECVINFO(m_flFriction) ),
 
 		RecvPropArray3		( RECVINFO_ARRAY(m_iAmmo), RecvPropInt( RECVINFO(m_iAmmo[0])) ),

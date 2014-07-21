@@ -17,8 +17,15 @@ void CGstringProxySpacecraftEngine::OnBind( void *pC_BaseEntity )
 	if ( !pC_BaseEntity )
 		return;
 
-	CSpacecraft *pSpacecraft = assert_cast< CSpacecraft* >( BindArgToEntity( pC_BaseEntity ) );
-	SetFloatResult( pSpacecraft->GetEngineAlpha() );
+	CSpacecraft *pSpacecraft = dynamic_cast< CSpacecraft* >( BindArgToEntity( pC_BaseEntity ) );
+	if ( pSpacecraft != NULL )
+	{
+		SetFloatResult( pSpacecraft->GetEngineAlpha() );
+	}
+	else
+	{
+		SetFloatResult( 0.0f );
+	}
 }
 
 EXPOSE_INTERFACE( CGstringProxySpacecraftEngine, IMaterialProxy, "GStringSpacecraftEngine" IMATERIAL_PROXY_INTERFACE_VERSION );

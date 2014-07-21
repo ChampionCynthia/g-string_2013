@@ -9,6 +9,7 @@
 #include "c_muzzleflash_effect.h"
 #include "c_bobmodel.h"
 #include "c_gstring_player_ragdoll.h"
+#include "cgstring_interaction_body.h"
 
 #define FLASHLIGHT_DISTANCE		1000
 
@@ -29,6 +30,7 @@ IMPLEMENT_CLIENTCLASS_DT( C_GstringPlayer, DT_CGstringPlayer, CGstringPlayer )
 	RecvPropInt( RECVINFO( m_nReloadParity ) ),
 	RecvPropEHandle( RECVINFO( m_hSpacecraft ) ),
 	RecvPropBool( RECVINFO( m_bSpacecraftDeath ) ),
+	RecvPropEHandle( RECVINFO( m_hInteractionBody ) ),
 
 END_RECV_TABLE()
 
@@ -59,6 +61,9 @@ C_GstringPlayer::C_GstringPlayer()
 	, m_angSpacecraftDeathAngle( vec3_angle )
 	, m_vecSpacecraftDeathOrigin( vec3_origin )
 	, m_vecSpacecraftDeathVelocity( vec3_origin )
+	, m_flInteractionBodyTransitionBlend( 0.0f )
+	, m_vecInteractionViewOrigin( vec3_origin )
+	, m_angInteractionViewAngles( vec3_angle )
 {
 	m_nReloadParity = 0;
 	m_bHasUseEntity = false;
@@ -104,6 +109,11 @@ void C_GstringPlayer::OnDataChanged( DataUpdateType_t updateType )
 		ConVarRef scissor( "r_flashlightscissor" );
 		scissor.SetValue( "0" );
 	}
+}
+
+bool C_GstringPlayer::IsOverridingViewmodel()
+{
+	return IsInInteraction();
 }
 
 void C_GstringPlayer::ClientThink()
@@ -169,6 +179,7 @@ void C_GstringPlayer::ClientThink()
 	}
 
 	UpdateBodyModel();
+	UpdateInteraction();
 }
 
 void C_GstringPlayer::OverrideView( CViewSetup *pSetup )
@@ -195,13 +206,17 @@ void C_GstringPlayer::OverrideView( CViewSetup *pSetup )
 		pSetup->origin = m_vecSpacecraftDeathOrigin;
 		return;
 	}
-
-	if ( IsInSpacecraft() )
+	else if ( IsInSpacecraft() )
 	{
 		GetSpacecraftCamera( pSetup->origin, pSetup->angles, pSetup->fov );
 		m_angSpacecraftDeathAngle = pSetup->angles;
 		m_vecSpacecraftDeathOrigin = pSetup->origin;
 		m_vecSpacecraftDeathVelocity = GetSpacecraft()->GetPhysVelocity();
+		return;
+	}
+	else if ( m_flInteractionBodyTransitionBlend > 0.0f )
+	{
+		GetInteractionCamera( pSetup->origin, pSetup->angles );
 		return;
 	}
 
@@ -591,7 +606,8 @@ void C_GstringPlayer::UpdateBodyModel()
 
 	if ( !bFirstpersonBodyEnabled
 		|| !IsAlive()
-		|| IsInSpacecraft() )
+		|| IsInSpacecraft()
+		|| m_flInteractionBodyTransitionBlend > 0.0f )
 	{
 		if ( m_pBodyModel != NULL )
 		{
@@ -853,6 +869,36 @@ void C_GstringPlayer::UpdateBodyModel()
 	{
 		m_flBodyStepSoundHack = 0.0f;
 	}
+}
+
+void C_GstringPlayer::UpdateInteraction()
+{
+	const bool bInInteraction = IsInInteraction();
+	const float flTransitionGoal = bInInteraction ? 1.0f : 0.0f;
+
+	if ( flTransitionGoal != m_flInteractionBodyTransitionBlend )
+	{
+		m_flInteractionBodyTransitionBlend = Approach( flTransitionGoal,
+			m_flInteractionBodyTransitionBlend, gpGlobals->frametime * 4.0f );
+
+		if ( bInInteraction )
+		{
+			CGstringInteractionBody *pInteractionBody = assert_cast< CGstringInteractionBody* >( m_hInteractionBody.Get() );
+			pInteractionBody->SetTransitionBlend( m_flInteractionBodyTransitionBlend );
+		}
+	}
+}
+
+void C_GstringPlayer::GetInteractionCamera( Vector &origin, QAngle &angles )
+{
+	if ( IsInInteraction() )
+	{
+		CGstringInteractionBody *pInteractionBody = assert_cast< CGstringInteractionBody* >( m_hInteractionBody.Get() );
+		pInteractionBody->GetCamera( m_vecInteractionViewOrigin, m_angInteractionViewAngles );
+	}
+
+	origin = Lerp( m_flInteractionBodyTransitionBlend, origin, m_vecInteractionViewOrigin );
+	angles = Lerp( m_flInteractionBodyTransitionBlend, angles, m_angInteractionViewAngles );
 }
 
 void C_GstringPlayer::UpdateCustomStepSound()

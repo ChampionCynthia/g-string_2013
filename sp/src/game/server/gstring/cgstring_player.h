@@ -42,6 +42,10 @@ public:
 	virtual bool Weapon_CanSwitchTo( CBaseCombatWeapon *pWeapon );
 	virtual void StartAdmireGlovesAnimation();
 
+	void BeginInteraction( CBaseAnimating *pInteractionBody );
+	void EndInteraction();
+	bool IsInInteraction() const;
+
 protected:
 
 private:
@@ -53,6 +57,8 @@ private:
 
 	CNetworkHandle( CSpacecraft, m_hSpacecraft );
 	CNetworkVar( bool, m_bSpacecraftDeath );
+
+	CNetworkHandle( CBaseAnimating, m_hInteractionBody );
 };
 
 inline CGstringPlayer *ToGstringPlayer( CBaseEntity *pPlayer )

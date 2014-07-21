@@ -35,6 +35,11 @@ $Project
 			
 			$File	"$SRCDIR\game\shared\gstring\gstring_gamemovement.cpp"
 			$File	"$SRCDIR\game\shared\gstring\gstring_gamemovement.h"
+			
+			$File	"$SRCDIR\game\shared\gstring\cgstring_interaction.cpp"
+			$File	"$SRCDIR\game\shared\gstring\cgstring_interaction.h"
+			$File	"$SRCDIR\game\shared\gstring\cgstring_interaction_body.cpp"
+			$File	"$SRCDIR\game\shared\gstring\cgstring_interaction_body.h"
 		}
 	}
 }

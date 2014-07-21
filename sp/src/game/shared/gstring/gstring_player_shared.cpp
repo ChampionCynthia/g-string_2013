@@ -13,10 +13,16 @@ const Vector &CSharedPlayer::GetViewOffset() const
 
 bool CSharedPlayer::Weapon_CanSwitchTo( CBaseCombatWeapon *pWeapon )
 {
-	if ( IsInSpacecraft() )
+	if ( IsInSpacecraft()
+		|| IsInInteraction() )
 	{
 		return false;
 	}
 
 	return BaseClass::Weapon_CanSwitchTo( pWeapon );
+}
+
+bool CSharedPlayer::IsInInteraction() const
+{
+	return m_hInteractionBody != NULL;
 }

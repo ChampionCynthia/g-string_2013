@@ -573,6 +573,7 @@ void CSpacecraft::ClientThink()
 		flEngineAlphaTarget = 0.4f;
 		break;
 	}
+
 	if ( abs( m_flEngineAlpha - flEngineAlphaTarget ) > 0.01f )
 	{
 		m_flEngineAlpha = Approach( flEngineAlphaTarget, m_flEngineAlpha, gpGlobals->frametime * 0.8f );

@@ -29,6 +29,11 @@ void CGstringGameMovement::ProcessMoveType()
 {
 	CSharedPlayer *pPlayer = (CSharedPlayer*)player;
 
+	if ( pPlayer->IsInInteraction() )
+	{
+		return;
+	}
+
 	if ( pPlayer->IsInSpacecraft() )
 	{
 		SpacecraftMove();

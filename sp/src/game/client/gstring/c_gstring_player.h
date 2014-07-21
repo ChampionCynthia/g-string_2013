@@ -52,7 +52,11 @@ public:
 	bool IsInSpacecraft() const;
 	CSpacecraft *GetSpacecraft();
 
-	virtual	bool Weapon_CanSwitchTo( C_BaseCombatWeapon *pWeapon );
+	bool IsInInteraction() const;
+
+	virtual bool Weapon_CanSwitchTo( C_BaseCombatWeapon *pWeapon );
+	virtual bool IsOverridingViewmodel();
+	virtual int DrawOverriddenViewmodel( C_BaseViewModel *pViewmodel, int flags ) { return 0; };
 
 protected:
 
@@ -60,7 +64,10 @@ private:
 	void UpdateBodyModel();
 	void UpdateCustomStepSound();
 	void GetSpacecraftCamera( Vector &origin, QAngle &angles, float &flFov );
+	void UpdateInteraction();
+	void GetInteractionCamera( Vector &origin, QAngle &angles );
 
+private:
 	CNetworkVar( unsigned char, m_nReloadParity );
 	unsigned char m_nOldReloadParity;
 
@@ -103,6 +110,11 @@ private:
 	QAngle m_angSpacecraftDeathAngle;
 	Vector m_vecSpacecraftDeathOrigin;
 	Vector m_vecSpacecraftDeathVelocity;
+
+	CNetworkHandle( C_BaseAnimating, m_hInteractionBody );
+	float m_flInteractionBodyTransitionBlend;
+	Vector m_vecInteractionViewOrigin;
+	QAngle m_angInteractionViewAngles;
 };
 
 inline C_GstringPlayer *ToGstringPlayer( C_BaseEntity *pPlayer )
