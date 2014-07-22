@@ -44,6 +44,8 @@ private:
 
 	CHandle< CBaseEntity > m_hFinalPosition;
 	CHandle< CGstringPlayer > m_hPlayer;
+
+	bool m_bInteractionActive;
 #endif
 
 	CNetworkHandle( CBaseAnimating, m_hInteractiveObject );

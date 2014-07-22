@@ -1042,13 +1042,14 @@ private:
 	// from edict_t
 	// CBasePlayer doesn't send this but CCSPlayer does.
 	CNetworkVarForDerived( int, m_ArmorValue );
-	float					m_AirFinished;
 	float					m_PainFinished;
 
 	// player locking
 	int						m_iPlayerLocked;
 		
 protected:
+	float					m_AirFinished; // GSTRINGMIGRATION
+
 	// the player's personal view model
 	typedef CHandle<CBaseViewModel> CBaseViewModelHandle;
 	CNetworkArray( CBaseViewModelHandle, m_hViewModel, MAX_VIEWMODELS );

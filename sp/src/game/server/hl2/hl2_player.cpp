@@ -684,7 +684,12 @@ void CHL2_Player::PreThink(void)
 	VPROF_SCOPE_END();
 
 	if ( g_fGameOver || IsPlayerLockedInPlace() )
+	{
+// GSTRINGMIGRATION
+		m_AirFinished = gpGlobals->curtime + 7.0f;
+// END GSTRINGMIGRATION
 		return;         // finale
+	}
 
 	VPROF_SCOPE_BEGIN( "CHL2_Player::PreThink-ItemPreFrame" );
 	ItemPreFrame( );

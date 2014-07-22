@@ -194,7 +194,7 @@ void CSpacecraftProjectile::OnDataChanged( DataUpdateType_t t )
 		el->color.r = 255;
 		el->color.g = 96;
 		el->color.b = 32;
-		el->color.exponent = 9.0f;
+		el->color.exponent = 5.0f;
 
 		el->radius = random->RandomFloat( 30.0f, 100.0f );
 		el->decay = el->radius / 0.05f;

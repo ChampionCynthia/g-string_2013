@@ -880,12 +880,12 @@ void C_GstringPlayer::UpdateInteraction()
 	{
 		m_flInteractionBodyTransitionBlend = Approach( flTransitionGoal,
 			m_flInteractionBodyTransitionBlend, gpGlobals->frametime * 4.0f );
+	}
 
-		if ( bInInteraction )
-		{
-			CGstringInteractionBody *pInteractionBody = assert_cast< CGstringInteractionBody* >( m_hInteractionBody.Get() );
-			pInteractionBody->SetTransitionBlend( m_flInteractionBodyTransitionBlend );
-		}
+	if ( bInInteraction )
+	{
+		CGstringInteractionBody *pInteractionBody = assert_cast< CGstringInteractionBody* >( m_hInteractionBody.Get() );
+		pInteractionBody->SetTransitionBlend( m_flInteractionBodyTransitionBlend );
 	}
 }
 

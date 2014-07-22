@@ -44,6 +44,9 @@ LINK_ENTITY_TO_CLASS( gstring_interaction, CGstringInteraction );
 PRECACHE_REGISTER( gstring_interaction );
 
 CGstringInteraction::CGstringInteraction()
+#ifdef GAME_DLL
+	: m_bInteractionActive( false )
+#endif
 {
 }
 
@@ -80,6 +83,12 @@ int CGstringInteraction::UpdateTransmitState()
 
 void CGstringInteraction::InputStartInteraction( inputdata_t &inputdata )
 {
+	if ( m_bInteractionActive )
+	{
+		Warning( "Can't start interaction while there is one active!\n" );
+		return;
+	}
+
 	if ( m_hInteractiveObject.Get() == NULL )
 	{
 		Warning( "Interaction entity has no interactive object assigned!\n" );
@@ -127,6 +136,7 @@ void CGstringInteraction::InputStartInteraction( inputdata_t &inputdata )
 	m_hPlayer.Set( pPlayer );
 
 	pFirstpersonBody->SetInteractionEntity( this );
+	m_bInteractionActive = true;
 }
 
 void CGstringInteraction::OnBodyAnimationFinished()
@@ -143,6 +153,7 @@ void CGstringInteraction::OnBodyAnimationFinished()
 				&pFinalPosition->GetAbsAngles(), NULL );
 		}
 	}
+	m_bInteractionActive = false;
 }
 
 #else
