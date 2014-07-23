@@ -78,9 +78,16 @@ const float4 g_ShaderControls				: register( c12 );
 PixelShaderLightInfo cLightInfo[3]			: register( c13 );  // through c18
 
 // GSTRINGMIGRATION
+// STATIC: "SELFILLUMMASK"					"0..1"
+
+// SKIP: ( $SELFILLUM == 0 ) && ( $SELFILLUMMASK == 1 )
+// SKIP: ( $SELFILLUMFRESNEL == 1 ) && ( $SELFILLUMMASK == 1 )
+
 const float4 g_EyePos_MinLight				: register( c20 );
 #define g_EyePos g_EyePos_MinLight.xyz
 #define g_fMinLighting g_EyePos_MinLight.w
+
+sampler SelfIllumMaskSampler				: register( s11 );
 // END GSTRINGMIGRATION
 
 const float4 g_FogParams					: register( c21 );
@@ -287,8 +294,17 @@ float4 main( PS_INPUT i ) : COLOR
 				diffuseComponent = lerp( diffuseComponent, selfIllumComponent, baseColor.a * saturate( flSelfIllumFresnel ) );
 			#endif
 		#else
+			// GSTRINGMIGRATION
+			float selfIllumMask;
+			#if SELFILLUMMASK
+				selfIllumMask = tex2D( SelfIllumMaskSampler, i.baseTexCoord2_tangentSpaceVertToEyeVectorXY.xy ).r;
+			#else
+				selfIllumMask = baseColor.a;
+			#endif
+			
 			float3 selfIllumComponent = g_SelfIllumTint * albedo;
-			diffuseComponent = lerp( diffuseComponent, selfIllumComponent, baseColor.a );
+			diffuseComponent = lerp( diffuseComponent, selfIllumComponent, selfIllumMask );
+			// END GSTRINGMIGRATION
 		#endif
 	}
 #endif

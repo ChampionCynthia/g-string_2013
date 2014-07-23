@@ -125,6 +125,7 @@ struct VertexLitGeneric_DX9_Vars_t
 	int m_nDepthBlendScale;
 
 	int m_nSelfIllumMask;
+	int m_nSelfIllumMaskFrame;
 	int m_nReceiveFlashlight;
 
 	int m_nSelfIllumTwoTexture;

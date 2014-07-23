@@ -226,6 +226,7 @@ private:
 	void AnimationWrapped( void* pArg );
 
 	IMaterial	*m_pMaterial;
+	IMaterialVar *m_pSecondaryMaterialVar;
 	
 	// texture animation stuff
 	int			m_iFrameStart;
@@ -246,6 +247,7 @@ private:
 // Purpose:
 //-----------------------------------------------------------------------------
 CMaterialModifyProxy::CMaterialModifyProxy()
+	: m_pSecondaryMaterialVar( NULL )
 {
 }
 
@@ -264,6 +266,13 @@ bool CMaterialModifyProxy::Init( IMaterial *pMaterial, KeyValues *pKeyValues )
 	// float lerp stuff
 	m_flStartValue = MATERIAL_MODIFY_ANIMATION_UNSET;
 	m_flEndValue = MATERIAL_MODIFY_ANIMATION_UNSET;
+
+	const char *pszSecondaryVar = pKeyValues->GetString( "secondaryFrameVar" );
+	if ( *pszSecondaryVar )
+	{
+		bool bFound;
+		m_pSecondaryMaterialVar = m_pMaterial->FindVar( pszSecondaryVar, &bFound );
+	}
 
 	// animated stuff
 //	m_pMaterial = pMaterial;
@@ -387,6 +396,23 @@ void CMaterialModifyProxy::OnBindSetVar( C_MaterialModifyControl *pControl )
 //-----------------------------------------------------------------------------
 void CMaterialModifyProxy::OnBindAnimatedTexture( C_MaterialModifyControl *pControl )
 {
+	if ( m_AnimatedTextureVar == NULL )
+	{
+		m_pMaterial = pControl->GetMaterial();
+		if ( m_pMaterial != NULL )
+		{
+			bool bFound;
+			m_AnimatedTextureVar = m_pMaterial->FindVar( "$basetexture", &bFound );
+
+			if ( m_AnimatedTextureFrameNumVar == NULL )
+			{
+				m_AnimatedTextureFrameNumVar = m_pMaterial->FindVar( pControl->GetMaterialVariableName(),
+					&bFound );
+				Assert( m_AnimatedTextureFrameNumVar );
+			}
+		}
+	}
+
 	assert ( m_AnimatedTextureVar );
 	if( m_AnimatedTextureVar->GetType() != MATERIAL_VAR_TYPE_TEXTURE )
 		return;
@@ -446,6 +472,10 @@ void CMaterialModifyProxy::OnBindAnimatedTexture( C_MaterialModifyControl *pCont
 	if ( m_bReachedEnd && !bWrapAnimation )
 	{
 		m_AnimatedTextureFrameNumVar->SetIntValue( iLastFrame );
+		if ( m_pSecondaryMaterialVar )
+		{
+			m_pSecondaryMaterialVar->SetIntValue( iLastFrame );
+		}
 		return;
 	}
 
@@ -489,19 +519,33 @@ void CMaterialModifyProxy::OnBindAnimatedTexture( C_MaterialModifyControl *pCont
 
 		if (bWrapAnimation)
 		{
-			AnimationWrapped( pControl );
+			//AnimationWrapped( pControl );
 		}
 		else
 		{
 			// Only sent the wrapped message once.
 			// when we're in non-wrapping mode
-			if (prevFrame < numFrames)
-				AnimationWrapped( pControl );
+			//if (prevFrame < numFrames)
+			//	AnimationWrapped( pControl );
 			intFrame = numFrames - 1;
 		}
 	}
+	//else if (!bWrapAnimation && intFrame == m_iFrameEnd)
+	//{
+	//	m_bReachedEnd = true;
+	//}
 
+	Assert( intFrame >= 0 );
+
+	//bool bFound;
+	//m_AnimatedTextureFrameNumVar = m_pMaterial->FindVar( pControl->GetMaterialVariableName(),
+	//	&bFound );
 	m_AnimatedTextureFrameNumVar->SetIntValue( intFrame );
+
+	if ( m_pSecondaryMaterialVar )
+	{
+		m_pSecondaryMaterialVar->SetIntValue( intFrame );
+	}
 }
 
 //-----------------------------------------------------------------------------

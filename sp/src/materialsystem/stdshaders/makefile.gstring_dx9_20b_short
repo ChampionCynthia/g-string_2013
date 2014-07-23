@@ -1,2 +1,12 @@
-default: 
+default:  fxctmp9_tmp\SDK_vertexlit_and_unlit_generic_bump_ps20b.inc shaders\fxc\SDK_vertexlit_and_unlit_generic_bump_ps20b.vcs
+
+fxctmp9_tmp\SDK_vertexlit_and_unlit_generic_bump_ps20b.inc shaders\fxc\SDK_vertexlit_and_unlit_generic_bump_ps20b.vcs: SDK_vertexlit_and_unlit_generic_bump_ps20b.fxc common_fxc.h common_hlsl_cpp_consts.h common_pragmas.h common_flashlight_fxc.h common_vertexlitgeneric_dx9.h common_ps_fxc.h
+	perl ..\..\devtools\bin\fxc_prep.pl   -source "..\.." SDK_vertexlit_and_unlit_generic_bump_ps20b.fxc-----SDK_vertexlit_and_unlit_generic_bump_ps20b
+	echo SDK_vertexlit_and_unlit_generic_bump_ps20b.fxc>> filestocopy.txt
+	echo common_fxc.h>> filestocopy.txt
+	echo common_hlsl_cpp_consts.h>> filestocopy.txt
+	echo common_pragmas.h>> filestocopy.txt
+	echo common_flashlight_fxc.h>> filestocopy.txt
+	echo common_vertexlitgeneric_dx9.h>> filestocopy.txt
+	echo common_ps_fxc.h>> filestocopy.txt
 

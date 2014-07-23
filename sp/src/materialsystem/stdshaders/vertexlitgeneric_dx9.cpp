@@ -57,6 +57,7 @@ BEGIN_VS_SHADER( SDK_VertexLitGeneric, "Help for SDK_VertexLitGeneric" )
 		SHADER_PARAM( INVERTPHONGMASK, SHADER_PARAM_TYPE_INTEGER, "0", "invert the phong mask (0=full phong, 1=no phong)" )
 		SHADER_PARAM( ENVMAPFRESNEL, SHADER_PARAM_TYPE_FLOAT, "0", "Degree to which Fresnel should be applied to env map" )
 		SHADER_PARAM( SELFILLUMMASK, SHADER_PARAM_TYPE_TEXTURE, "shadertest/BaseTexture", "If we bind a texture here, it overrides base alpha (if any) for self illum" )
+		SHADER_PARAM( SELFILLUMMASKFRAME, SHADER_PARAM_TYPE_INTEGER, "0", "" )
 
 	    // detail (multi-) texturing
 	    SHADER_PARAM( DETAILBLENDMODE, SHADER_PARAM_TYPE_INTEGER, "0", "mode for combining detail texture with base. 0=normal, 1= additive, 2=alpha blend detail over base, 3=crossfade" )
@@ -196,6 +197,7 @@ BEGIN_VS_SHADER( SDK_VertexLitGeneric, "Help for SDK_VertexLitGeneric" )
 		info.m_nDepthBlendScale = DEPTHBLENDSCALE;
 
 		info.m_nSelfIllumMask = SELFILLUMMASK;
+		info.m_nSelfIllumMaskFrame = SELFILLUMMASKFRAME;
 
 		// GSTRINGMIGRATION
 		info.m_nSelfIllumTwoTexture = SELFILLUMTWOTEXTUREBLEND;
