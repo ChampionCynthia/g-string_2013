@@ -369,6 +369,12 @@ void C_GstringPlayer::OverrideView( CViewSetup *pSetup )
 
 int C_GstringPlayer::DrawModel( int flags )
 {
+	//CMatRenderContextPtr renderContext( materials );
+	//IMatRenderContext *pRenderContext = renderContext;
+	//int *lightmapPageID = (int *)( pRenderContext + 5 );
+	//renderContext->SetIntRenderingParameter( 18, (int)lightmapPageID );
+
+
 	if ( IsInSpacecraft() )
 	{
 		return 0;

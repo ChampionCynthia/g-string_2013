@@ -25,7 +25,7 @@
 //  NOSKIP: $FANCY_BLENDING && (!$FASTPATH)
 
 // 360 compiler craps out on some combo in this family.  Content doesn't use blendmode 10 anyway
-//  SKIP: $FASTPATH && $PIXELFOGTYPE && $BASETEXTURE2 && $DETAILTEXTURE && $CUBEMAP && ($DETAIL_BLEND_MODE == 10 ) [XBOX]
+//  SKIP: $FASTPATH && $PIXELFOGTYPE && $BASETEXTURE2 && $DETAILTEXTURE && $CUBEMAP && ($DETAIL_BLEND_MODE == 10 )
 
 // debug crap:
 // NOSKIP: $DETAILTEXTURE
@@ -33,6 +33,9 @@
 // NOSKIP: $ENVMAPMASK
 // NOSKIP: $BASEALPHAENVMAPMASK
 // NOSKIP: $SELFILLUM
+// NOSKIP: $BUMPMAP
+// NOSKIP: $FASTPATH
+// NOSKIP: !$CASCADED_SHADOW
 
 #define USE_32BIT_LIGHTMAPS_ON_360 //uncomment to use 32bit lightmaps, be sure to keep this in sync with the same #define in materialsystem/cmatlightmaps.cpp
 
@@ -157,6 +160,19 @@ sampler ShadowDepthSampler		: register( s14 );
 sampler RandRotSampler			: register( s15 );
 #endif
 
+#if CASCADED_SHADOW
+#define g_CascadedForward         g_FlashlightPos
+
+#define g_AmbientLightIdentifier  g_FlashlightAttenuationFactors.rgb
+#define g_AmbientLightMin         g_ShadowTweaks.rgb
+#define g_AmbientLightScale       g_ShadowTweaks.a
+
+const float4x4 g_CascadedCloseShadow	: register( c20 ); // through c23
+
+sampler ShadowDepthSampler		: register( s14 );
+sampler RandRotSampler			: register( s15 );
+#endif
+
 struct PS_INPUT
 {
 #if SEAMLESS
@@ -174,9 +190,17 @@ struct PS_INPUT
 // CENTROID: TEXCOORD3
 	HALF4 lightmapTexCoord3			: TEXCOORD3;
 	HALF4 worldPos_projPosZ			: TEXCOORD4;
+
+#if CASCADED_SHADOW
+	float4 tangentSpaceTranspose_Row0	: TEXCOORD5;
+	float4 tangentSpaceTranspose_Row1	: TEXCOORD6;
+	float4 tangentSpaceTranspose_Row2	: TEXCOORD7;
+#else
 	HALF3x3 tangentSpaceTranspose	: TEXCOORD5;
 	// tangentSpaceTranspose		: TEXCOORD6
 	// tangentSpaceTranspose		: TEXCOORD7
+#endif
+
 	HALF4 vertexColor				: COLOR;
 	float4 vertexBlendX_fogFactorW	: COLOR1;
 
@@ -471,7 +495,16 @@ HALF4 main( PS_INPUT i ) : COLOR
 #endif
 
 #if 1 //CUBEMAP || LIGHTING_PREVIEW || ( defined( _X360 ) && FLASHLIGHT ) // GSTRINGMIGRATION
-	float3 worldSpaceNormal = mul( vNormal, i.tangentSpaceTranspose );
+
+#if CASCADED_SHADOW
+	float3x3 tangentSpaceTranspose = float3x3( i.tangentSpaceTranspose_Row0.xyz,
+		i.tangentSpaceTranspose_Row1.xyz,
+		i.tangentSpaceTranspose_Row2.xyz );
+#else
+	float3x3 tangentSpaceTranspose = i.tangentSpaceTranspose;
+#endif
+
+	float3 worldSpaceNormal = mul( vNormal, tangentSpaceTranspose );
 #endif
 
 	float3 worldVertToEyeVector = g_EyePos - i.worldPos_projPosZ.xyz;
@@ -482,6 +515,23 @@ HALF4 main( PS_INPUT i ) : COLOR
 #else
 	float3 vEyeDir = normalize( worldVertToEyeVector );
 	float flFresnelMinlight = saturate( dot( worldSpaceNormal, vEyeDir ) );
+
+#if CASCADED_SHADOW
+	float4 closePosition = mul( float4( i.worldPos_projPosZ.xyz, 1.0f ), g_CascadedCloseShadow );
+	closePosition.xyz /= closePosition.w;
+	float4 vProjPos = float4( i.tangentSpaceTranspose_Row0.w, i.tangentSpaceTranspose_Row1.w,
+		i.worldPos_projPosZ.w, i.tangentSpaceTranspose_Row2.w );
+	
+	float flShadow = 1.0 - DoCascadedShadow( ShadowDepthSampler, RandRotSampler, worldSpaceNormal,
+		g_CascadedForward, closePosition, i.worldPos_projPosZ.xyz, g_FlashlightWorldToTexture, FLASHLIGHTDEPTHFILTERMODE,
+		vProjPos.xy / vProjPos.z, float4( 0.0005, 0.0, 0.0, 0.0 ) );
+
+	float flShadowMask = 1.0f - saturate( length( cross( g_AmbientLightIdentifier, diffuseLighting - g_AmbientLightMin ) )
+		* g_AmbientLightScale );
+	diffuseLighting = lerp( diffuseLighting, g_AmbientLightMin, flShadow * flShadowMask );
+	
+	//diffuseLighting *= flShadow;
+#endif
 
 	float3 diffuseComponent = albedo.xyz * lerp( diffuseLighting, 1, g_fMinLighting * flFresnelMinlight );
 #endif
@@ -497,9 +547,9 @@ HALF4 main( PS_INPUT i ) : COLOR
 	float3 worldPosToLightVector = g_FlashlightPos - i.worldPos_projPosZ.xyz;
 
 	float3 tangentPosToLightVector;
-	tangentPosToLightVector.x = dot( worldPosToLightVector, i.tangentSpaceTranspose[0] );
-	tangentPosToLightVector.y = dot( worldPosToLightVector, i.tangentSpaceTranspose[1] );
-	tangentPosToLightVector.z = dot( worldPosToLightVector, i.tangentSpaceTranspose[2] );
+	tangentPosToLightVector.x = dot( worldPosToLightVector, tangentSpaceTranspose[0] );
+	tangentPosToLightVector.y = dot( worldPosToLightVector, tangentSpaceTranspose[1] );
+	tangentPosToLightVector.z = dot( worldPosToLightVector, tangentSpaceTranspose[2] );
 
 	tangentPosToLightVector = normalize( tangentPosToLightVector );
 
@@ -555,7 +605,7 @@ HALF4 main( PS_INPUT i ) : COLOR
 	HALF3 result = diffuseComponent + specularLighting;
 	
 #if LIGHTING_PREVIEW
-	worldSpaceNormal = mul( vNormal, i.tangentSpaceTranspose );
+	worldSpaceNormal = mul( vNormal, tangentSpaceTranspose );
 #	if LIGHTING_PREVIEW == 1
 	float dotprod = 0.7+0.25 * dot( worldSpaceNormal, normalize( float3( 1, 2, -.5 ) ) );
 	return FinalOutput( HALF4( dotprod*albedo.xyz, alpha ), 0, PIXEL_FOG_TYPE_NONE, TONEMAP_SCALE_NONE );

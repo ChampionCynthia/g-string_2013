@@ -647,22 +647,10 @@ void DrawSkin_DX9_Internal( CBaseVSShader *pShader, IMaterialVar** params, IShad
 			{
 				pShader->BindTexture( SHADER_SAMPLER4, pCascadedDepthTexture, 0 );
 
-				const int iCascadedCount = 2;
-				Vector vecMatrixParts[iCascadedCount][6];
-				VMatrix worldToTexture[iCascadedCount];
-				for ( int i = 0; i < 6; i++ )
-				{
-					vecMatrixParts[0][i] = pShaderAPI->GetVectorRenderingParameter( VECTOR_RENDERPARM_GSTRING_CASCADED_MATRIX_0 + i );
-					vecMatrixParts[1][i] = pShaderAPI->GetVectorRenderingParameter( VECTOR_RENDERPARM_GSTRING_CASCADED_2_MATRIX_0 + i );
-				}
-
-				for ( int i = 0; i < iCascadedCount; i++ )
-				{
-					Q_memcpy( worldToTexture[i].Base(), vecMatrixParts[i][0].Base(), sizeof( float ) * 16 );
-				}
-
-				pShaderAPI->SetPixelShaderConstant( PSREG_FLASHLIGHT_TO_WORLD_TEXTURE, worldToTexture[1].Base(), 4 );
-				pShaderAPI->SetVertexShaderConstant( 240, worldToTexture[0].Base(), 4 );
+				VMatrix *worldToTexture0 = (VMatrix*)pShaderAPI->GetIntRenderingParameter( INT_CASCADED_MATRIX_ADDRESS_0 );
+				VMatrix *worldToTexture1 = (VMatrix*)pShaderAPI->GetIntRenderingParameter( INT_CASCADED_MATRIX_ADDRESS_1 );
+				pShaderAPI->SetVertexShaderConstant( 240, worldToTexture0->Base(), 4 );
+				pShaderAPI->SetPixelShaderConstant( PSREG_FLASHLIGHT_TO_WORLD_TEXTURE, worldToTexture1->Base(), 4 );
 
 				Vector vecCascadedFwd = pShaderAPI->GetVectorRenderingParameter( VECTOR_RENDERPARM_GSTRING_CASCADED_FORWARD );
 				vRimBoost[0] = vecCascadedFwd.x;

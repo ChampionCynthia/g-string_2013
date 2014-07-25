@@ -5,7 +5,8 @@
 
 #define GSTRINGGLOBALSFLAGS_USERLIGHTSOURCE_ENABLED		0x01
 #define GSTRINGGLOBALSFLAGS_NIGHTVISION_ENABLED			0x02
-#define GSTRINGGLOBALSFLAGS_CASCADEDSHADOWS_ENABLED		0x04
+//#define GSTRINGGLOBALSFLAGS_CASCADEDSHADOWS_ENABLED		0x04
+#define GSTRINGGLOBALSFLAGS_SPACE_MAP					0x04
 
 CGstringGlobals *g_pGstringGlobals;
 
@@ -15,7 +16,7 @@ BEGIN_DATADESC( CGstringGlobals )
 
 	DEFINE_FIELD( m_bNightvisionEnabled, FIELD_BOOLEAN ),
 	DEFINE_FIELD( m_bUserLightSourceEnabled, FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_bCascadedShadowMappingEnabled, FIELD_BOOLEAN ),
+	DEFINE_FIELD( m_bIsSpaceMap, FIELD_BOOLEAN ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "nightvision_enable", InputNightvisionEnable ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "nightvision_disable", InputNightvisionDisable ),
@@ -32,9 +33,9 @@ END_DATADESC()
 IMPLEMENT_NETWORKCLASS_DT( CGstringGlobals, CGstringGlobals_DT )
 
 #ifdef GAME_DLL
-	SendPropBool( SENDINFO( m_bCascadedShadowMappingEnabled ) ),
+	SendPropBool( SENDINFO( m_bIsSpaceMap ) ),
 #else
-	RecvPropBool( RECVINFO( m_bCascadedShadowMappingEnabled ) ),
+	RecvPropBool( RECVINFO( m_bIsSpaceMap ) ),
 #endif
 
 END_NETWORK_TABLE();
@@ -46,7 +47,6 @@ CGstringGlobals::CGstringGlobals()
 #ifdef GAME_DLL
 	m_bNightvisionEnabled = true;
 	m_bUserLightSourceEnabled = true;
-	m_bCascadedShadowMappingEnabled = false;
 #endif
 
 	Assert( g_pGstringGlobals == NULL );
@@ -75,9 +75,10 @@ void CGstringGlobals::Spawn()
 
 	SetUserLightSourceEnabled( HasSpawnFlags( GSTRINGGLOBALSFLAGS_USERLIGHTSOURCE_ENABLED ) );
 	SetNightvisionEnabled( HasSpawnFlags( GSTRINGGLOBALSFLAGS_NIGHTVISION_ENABLED ) );
-	m_bCascadedShadowMappingEnabled = HasSpawnFlags( GSTRINGGLOBALSFLAGS_CASCADEDSHADOWS_ENABLED );
+	//m_bCascadedShadowMappingEnabled = HasSpawnFlags( GSTRINGGLOBALSFLAGS_CASCADEDSHADOWS_ENABLED );
+	m_bIsSpaceMap = HasSpawnFlags( GSTRINGGLOBALSFLAGS_SPACE_MAP );
 
-	if ( m_bCascadedShadowMappingEnabled && physenv )
+	if ( m_bIsSpaceMap && physenv )
 	{
 		physenv->SetGravity( vec3_origin );
 	}
@@ -172,7 +173,7 @@ void CGstringGlobals::OnDataChanged( DataUpdateType_t type )
 
 	//if ( type == DATA_UPDATE_DATATABLE_CHANGED )
 	{
-		if ( m_bCascadedShadowMappingEnabled && physenv )
+		if ( m_bIsSpaceMap && physenv )
 		{
 			physenv->SetGravity( vec3_origin );
 		}
@@ -181,7 +182,7 @@ void CGstringGlobals::OnDataChanged( DataUpdateType_t type )
 
 #endif
 
-bool CGstringGlobals::IsCascadedShadowMappingEnabled() const
+bool CGstringGlobals::IsSpaceMap() const
 {
-	return m_bCascadedShadowMappingEnabled;
+	return m_bIsSpaceMap;
 }

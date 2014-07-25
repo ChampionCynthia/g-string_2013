@@ -150,7 +150,7 @@ void CGstringInteraction::OnBodyAnimationFinished()
 		if ( pFinalPosition != NULL )
 		{
 			pPlayer->Teleport( &pFinalPosition->GetAbsOrigin(),
-				&pFinalPosition->GetAbsAngles(), NULL );
+				&pFinalPosition->GetAbsAngles(), &vec3_origin );
 		}
 	}
 	m_bInteractionActive = false;

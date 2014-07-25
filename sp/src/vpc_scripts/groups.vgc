@@ -18,6 +18,7 @@ $Group "gstring"
 	"mathlib"
 	"raytrace"
 	//"vbsp"
+	//"vrad_dll"
 }
 
 $Group "gamedlls"

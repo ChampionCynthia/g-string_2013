@@ -43,7 +43,7 @@ public:
 	virtual void OnDataChanged( DataUpdateType_t type );
 #endif
 
-	bool IsCascadedShadowMappingEnabled() const;
+	bool IsSpaceMap() const;
 
 private:
 #ifdef GAME_DLL
@@ -51,7 +51,7 @@ private:
 	bool m_bUserLightSourceEnabled;
 #endif
 
-	CNetworkVar( bool, m_bCascadedShadowMappingEnabled );
+	CNetworkVar( bool, m_bIsSpaceMap );
 };
 
 extern CGstringGlobals *g_pGstringGlobals;

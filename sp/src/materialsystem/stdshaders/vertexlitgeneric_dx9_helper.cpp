@@ -257,14 +257,14 @@ void InitVertexLitGeneric_DX9( CBaseVSShader *pShader, IMaterialVar** params, bo
 		pShader->LoadTexture( info.m_nFlashlightTexture );
 	}
 	
-	bool bIsBaseTextureTranslucent = true;
+	bool bIsBaseTextureTranslucent = false;
 	if ( info.m_nBaseTexture != -1 && params[info.m_nBaseTexture]->IsDefined() )
 	{
 		pShader->LoadTexture( info.m_nBaseTexture );
 		
 		if ( params[info.m_nBaseTexture]->GetTextureValue()->IsTranslucent() )
 		{
-			bIsBaseTextureTranslucent = false;
+			bIsBaseTextureTranslucent = true;
 		}
 	}
 
@@ -795,7 +795,7 @@ static void DrawVertexLitGeneric_DX9_Internal( CBaseVSShader *pShader, IMaterial
 						SET_STATIC_PIXEL_SHADER_COMBO( FLASHLIGHTDEPTHFILTERMODE, nShadowFilterMode );
 						SET_STATIC_PIXEL_SHADER_COMBO( DEPTHBLEND, IsBoolSet( info.m_nDepthBlend, params ) );
 						// GSTRINGMIGRATION
-						SET_STATIC_PIXEL_SHADER_COMBO( SELFILLUM_TWOTEXTURE_BLEND, bHasSelfIllumTwoTexture );
+						SET_STATIC_PIXEL_SHADER_COMBO( SELFILLUM_TWOTEXTURE_BLEND, bHasSelfIllum && bHasSelfIllumTwoTexture );
 						// END GSTRINGMIGRATION
 						SET_STATIC_PIXEL_SHADER( sdk_vertexlit_and_unlit_generic_ps20b );
 					}
@@ -1435,22 +1435,10 @@ static void DrawVertexLitGeneric_DX9_Internal( CBaseVSShader *pShader, IMaterial
 			pShader->BindTexture( SHADER_SAMPLER8, pCascadedDepthTexture, 0 );
 			DynamicCmdsOut.BindStandardTexture( SHADER_SAMPLER6, TEXTURE_SHADOW_NOISE_2D );
 
-			const int iCascadedCount = 2;
-			Vector vecMatrixParts[iCascadedCount][6];
-			VMatrix worldToTexture[iCascadedCount];
-			for ( int i = 0; i < 6; i++ )
-			{
-				vecMatrixParts[0][i] = pShaderAPI->GetVectorRenderingParameter( VECTOR_RENDERPARM_GSTRING_CASCADED_MATRIX_0 + i );
-				vecMatrixParts[1][i] = pShaderAPI->GetVectorRenderingParameter( VECTOR_RENDERPARM_GSTRING_CASCADED_2_MATRIX_0 + i );
-			}
-
-			for ( int i = 0; i < iCascadedCount; i++ )
-			{
-				Q_memcpy( worldToTexture[i].Base(), vecMatrixParts[i][0].Base(), sizeof( float ) * 16 );
-			}
-
-			pShaderAPI->SetPixelShaderConstant( 24, worldToTexture[1].Base(), 4 );
-			pShaderAPI->SetVertexShaderConstant( VERTEX_SHADER_SHADER_SPECIFIC_CONST_6, worldToTexture[0].Base(), 4 );
+			VMatrix *worldToTexture0 = (VMatrix*)pShaderAPI->GetIntRenderingParameter( INT_CASCADED_MATRIX_ADDRESS_0 );
+			VMatrix *worldToTexture1 = (VMatrix*)pShaderAPI->GetIntRenderingParameter( INT_CASCADED_MATRIX_ADDRESS_1 );
+			pShaderAPI->SetVertexShaderConstant( VERTEX_SHADER_SHADER_SPECIFIC_CONST_6, worldToTexture0->Base(), 4 );
+			pShaderAPI->SetPixelShaderConstant( 24, worldToTexture1->Base(), 4 );
 
 			Vector vecCascadedFwd = pShaderAPI->GetVectorRenderingParameter( VECTOR_RENDERPARM_GSTRING_CASCADED_FORWARD );
 			float flCascadedFwd[4] = { XYZ( vecCascadedFwd ) };

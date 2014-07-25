@@ -63,6 +63,8 @@ $Project "Client (G-String)"
 			$File	"gstring\c_gstring_util.h"
 			$File	"gstring\gstring_in_main.cpp"
 			$File	"gstring\gstring_in_main.h"
+			$File	"gstring\c_lights.cpp"
+			$File	"gstring\c_lights.h"
 			
 			$Folder "vgui"
 			{

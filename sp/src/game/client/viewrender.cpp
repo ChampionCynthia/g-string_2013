@@ -79,9 +79,10 @@
 
 // GSTRINGMIGRATION
 #include "gstring_postprocess.h"
-#include "cgstring_globals.h"
+#include "c_lights.h"
 #include "cscreenoverlay_multi.h"
 #include "c_gstring_util.h"
+#include "cgstring_globals.h"
 #include "gstring_cvars.h"
 #include "shadereditor/shadereditorsystem.h"
 #include "shadereditor/grass/cgrasscluster.h"
@@ -1350,7 +1351,7 @@ void CViewRender::ViewDrawScene( bool bDrew3dSkybox, SkyboxVisibility_t nSkyboxV
 		CMatRenderContextPtr pRenderContext( materials );
 
 		// GSTRINGMIGRATION
-		if ( g_pGstringGlobals != NULL && g_pGstringGlobals->IsCascadedShadowMappingEnabled() &&
+		if ( g_pCSMEnvLight != NULL && g_pCSMEnvLight->IsCascadedShadowMappingEnabled() &&
 			SupportsCascadedShadows() )
 		{
 			UpdateCascadedShadow( view );
@@ -1916,7 +1917,15 @@ void CViewRender::UpdateCascadedShadow( const CViewSetup &view )
 
 	C_BasePlayer *pPlayer = C_BasePlayer::GetLocalPlayer();
 
-	const QAngle angCascadedAngles( 10.0f, -90.0f, 0.0f );
+	QAngle angCascadedAngles;
+	Vector vecLight, vecAmbient;
+	g_pCSMEnvLight->GetShadowMappingConstants( angCascadedAngles, vecLight, vecAmbient );
+
+	Vector vecAmbientDelta = vecLight - vecAmbient;
+	vecAmbientDelta.NormalizeInPlace();
+	pRenderContext->SetVectorRenderingParameter( VECTOR_RENDERPARM_GSTRING_CASCADED_AMBIENT_MIN, vecAmbient );
+	pRenderContext->SetVectorRenderingParameter( VECTOR_RENDERPARM_GSTRING_CASCADED_AMBIENT_DELTA, vecAmbientDelta );
+
 	Vector vecFwd, vecRight, vecUp;
 	AngleVectors( angCascadedAngles, &vecFwd, &vecRight, &vecUp );
 
@@ -1938,17 +1947,32 @@ void CViewRender::UpdateCascadedShadow( const CViewSetup &view )
 	cascadedShadowView.zNear = cascadedShadowView.zNearViewmodel = 7.0f;
 	cascadedShadowView.fov = cascadedShadowView.fovViewmodel = 90.0f;
 
-	const struct ShadowConfig_t
+	struct ShadowConfig_t
 	{
 		float flOrthoSize;
 		float flForwardOffset;
 		float flUVOffsetX;
-		int iParamIndex;
 	} shadowConfigs[] = {
-		{ 64.0f, 0.0f, 0.25f, VECTOR_RENDERPARM_GSTRING_CASCADED_MATRIX_0 },
-		{ 384.0f, 256.0f, 0.75f, VECTOR_RENDERPARM_GSTRING_CASCADED_2_MATRIX_0 }
+		{ 64.0f, 0.0f, 0.25f },
+		{ 384.0f, 256.0f, 0.75f }
 	};
 	const int iCascadedShadowCount = ARRAYSIZE( shadowConfigs );
+	const bool bSpaceMap =  g_pGstringGlobals != NULL && g_pGstringGlobals->IsSpaceMap();
+
+	if ( !bSpaceMap )
+	{
+		ShadowConfig_t &closeShadow = shadowConfigs[ 0 ];
+		ShadowConfig_t &farShadow = shadowConfigs[ 1 ];
+		closeShadow.flForwardOffset = 32.0f;
+		closeShadow.flOrthoSize = 128.0f;
+		farShadow.flOrthoSize = 448.0f;
+
+		vecMainViewFwd.z = 0.0f;
+		vecMainViewFwd.NormalizeInPlace();
+	}
+
+	static VMatrix s_CSMSwapMatrix[2][2];
+	static int s_iCSMSwapIndex = 0;
 
 	for ( int i = 0; i < iCascadedShadowCount; i++ )
 	{
@@ -1985,20 +2009,17 @@ void CViewRender::UpdateCascadedShadow( const CViewSetup &view )
 		MatrixBuildScale( tmp, 0.25f, -0.5f, 1.0f );
 		tmp[0][3] = shadowConfig.flUVOffsetX;
 		tmp[1][3] = 0.5f;
-		MatrixMultiply( tmp, worldToProjection, shadowToUnit );
 
-		Vector vecMatrixPart[6];
-		vecMatrixPart[5].Init();
-		Q_memcpy( vecMatrixPart, shadowToUnit.Base(), sizeof( float ) * 16 );
-		for ( int i = 0; i < 6; i++ )
-		{
-			pRenderContext->SetVectorRenderingParameter( shadowConfig.iParamIndex + i, vecMatrixPart[ i ] );
-		}
+		VMatrix &currentSwapMatrix = s_CSMSwapMatrix[ s_iCSMSwapIndex ][ i ];
+		MatrixMultiply( tmp, worldToProjection, currentSwapMatrix );
+		pRenderContext->SetIntRenderingParameter( INT_CASCADED_MATRIX_ADDRESS_0 + i, (int)&currentSwapMatrix );
 
 		//pRenderContext->SetShadowDepthBiasFactors( 16.0f, 0.0005f );
 		pRenderContext->SetShadowDepthBiasFactors( 8.0f, 0.0005f );
 		UpdateShadowDepthTexture( s_CascadedShadowColorTexture, s_CascadedShadowDepthTexture, cascadedShadowView );
 	}
+
+	s_iCSMSwapIndex = ( s_iCSMSwapIndex + 1 ) % 2;
 }
 
 //-----------------------------------------------------------------------------
