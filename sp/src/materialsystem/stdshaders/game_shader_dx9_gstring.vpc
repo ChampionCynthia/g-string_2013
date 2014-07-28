@@ -76,6 +76,7 @@ $Project	"Shaders (G-String)"
 		$File	"common_vertexlitgeneric_dx9.h"
 		$File	"common_vs_fxc.h"
 		$File	"shader_constant_register_map.h"
+		$File	"gstring_lighting_helper.h"
 	}
 
 	$Folder	"Link Libraries" [$WIN32]

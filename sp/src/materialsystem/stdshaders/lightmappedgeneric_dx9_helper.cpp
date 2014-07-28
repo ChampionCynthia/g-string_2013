@@ -66,7 +66,6 @@ public:
 
 };
 
-
 void InitParamsLightmappedGeneric_DX9( CBaseVSShader *pShader, IMaterialVar** params, const char *pMaterialName, LightmappedGeneric_DX9_Vars_t &info )
 {
 	if ( g_pHardwareConfig->SupportsBorderColor() )
@@ -1227,7 +1226,7 @@ void DrawLightmappedGeneric_DX9_Internal(CBaseVSShader *pShader, IMaterialVar** 
 			DynamicCmdsOut.SetPixelShaderConstant( 20, worldToTexture0->Base(), 4 );
 			DynamicCmdsOut.SetPixelShaderConstant( 15, worldToTexture1->Base(), 4 );
 
-			Vector vecCascadedFwd = pShaderAPI->GetVectorRenderingParameter( VECTOR_RENDERPARM_GSTRING_CASCADED_FORWARD );
+			const Vector vecCascadedFwd = pShaderAPI->GetVectorRenderingParameter( VECTOR_RENDERPARM_GSTRING_CASCADED_FORWARD );
 			float flCascadedFwd[4] = { XYZ( vecCascadedFwd ) };
 			DynamicCmdsOut.SetPixelShaderConstant( 14, flCascadedFwd );
 

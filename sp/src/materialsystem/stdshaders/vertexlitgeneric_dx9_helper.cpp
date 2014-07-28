@@ -25,7 +25,10 @@
 #endif
 
 #include "commandbuilder.h"
+
 #include "convar.h"
+
+#include "gstring_lighting_helper.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -1412,7 +1415,7 @@ static void DrawVertexLitGeneric_DX9_Internal( CBaseVSShader *pShader, IMaterial
 			const FlashlightState_t &flashlightState = pShaderAPI->GetFlashlightState( worldToTexture );
 			SetFlashLightColorFromState( flashlightState, pShaderAPI, 28, bFlashlightNoLambert );
 
-			pShaderAPI->SetVertexShaderConstant( VERTEX_SHADER_SHADER_SPECIFIC_CONST_6, worldToTexture.Base(), 4 );
+			DynamicCmdsOut.SetVertexShaderConstant( VERTEX_SHADER_SHADER_SPECIFIC_CONST_6, worldToTexture.Base(), 4 );
 
 			pShader->BindTexture( SHADER_SAMPLER7, flashlightState.m_pSpotlightTexture, flashlightState.m_nSpotlightTextureFrame );
 
@@ -1440,7 +1443,7 @@ static void DrawVertexLitGeneric_DX9_Internal( CBaseVSShader *pShader, IMaterial
 			pShaderAPI->SetVertexShaderConstant( VERTEX_SHADER_SHADER_SPECIFIC_CONST_6, worldToTexture0->Base(), 4 );
 			pShaderAPI->SetPixelShaderConstant( 24, worldToTexture1->Base(), 4 );
 
-			Vector vecCascadedFwd = pShaderAPI->GetVectorRenderingParameter( VECTOR_RENDERPARM_GSTRING_CASCADED_FORWARD );
+			const Vector vecCascadedFwd = pShaderAPI->GetVectorRenderingParameter( VECTOR_RENDERPARM_GSTRING_CASCADED_FORWARD );
 			float flCascadedFwd[4] = { XYZ( vecCascadedFwd ) };
 			pShaderAPI->SetPixelShaderConstant( 23, flCascadedFwd, 1 );
 
@@ -1450,6 +1453,12 @@ static void DrawVertexLitGeneric_DX9_Internal( CBaseVSShader *pShader, IMaterial
 			vScreenScale[0] = (float) nWidth  / 32.0f;
 			vScreenScale[1] = (float) nHeight / 32.0f;
 			pShaderAPI->SetPixelShaderConstant( 31, vScreenScale, 1 );
+
+			if ( bHasBump || bHasDiffuseWarp )
+			{
+				SetCustomPixelLightingState( DynamicCmdsOut, lightState, pShaderAPI, 13 );
+			}
+			SetCustomVertexLightingState( DynamicCmdsOut, lightState, pShaderAPI, 27 );
 		}
 
 		DynamicCmdsOut.End();
