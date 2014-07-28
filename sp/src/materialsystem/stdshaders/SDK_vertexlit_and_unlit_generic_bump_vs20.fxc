@@ -10,6 +10,12 @@
 //	DYNAMIC: "SKINNING"				"0..1"
 //  DYNAMIC: "MORPHING"				"0..1" [vs30]
 
+// GSTRINGMIGRATION
+//  DYNAMIC: "CASCADED_SHADOW"		"0..1"  [vs30]
+
+// SKIP: ($CASCADED_SHADOW) && ($FLASHLIGHT)
+// END GSTRINGMIGRATION
+
 #include "common_vs_fxc.h"
 
 static const bool g_bSkinning		= SKINNING ? true : false;
@@ -83,9 +89,8 @@ struct VS_OUTPUT
 #endif
 	float4 worldPos_projPosZ									: TEXCOORD6;
 	float3 detailTexCoord_atten3								: TEXCOORD7;
-	float4 fogFactorW											: COLOR1;
 
-#if defined( _X360 ) && FLASHLIGHT
+#if defined( _X360 ) && FLASHLIGHT || CASCADED_SHADOW
 	float4 flashlightSpacePos									: TEXCOORD8;
 #endif
 };
@@ -140,9 +145,8 @@ VS_OUTPUT main( const VS_INPUT v )
 	o.vWorldBinormal.xyz = worldTangentT.xyz;
 #endif
 
-	o.fogFactorW = CalcFog( worldPos, projPos, g_FogType );
 #if !defined( _X360 )
-	o.fog = o.fogFactorW;
+	o.fog = CalcFog( worldPos, projPos, g_FogType );
 #endif
 
  	// Needed for water fog alpha and diffuse lighting
@@ -168,7 +172,7 @@ VS_OUTPUT main( const VS_INPUT v )
 	o.detailTexCoord_atten3.x = dot( v.vTexCoord0, cDetailTexCoordTransform[0] );
 	o.detailTexCoord_atten3.y = dot( v.vTexCoord0, cDetailTexCoordTransform[1] );
 
-#if defined( _X360 ) && FLASHLIGHT
+#if defined( _X360 ) && FLASHLIGHT || CASCADED_SHADOW
 	o.flashlightSpacePos = mul( float4( worldPos, 1.0f ), g_FlashlightWorldToTexture );
 #endif
 

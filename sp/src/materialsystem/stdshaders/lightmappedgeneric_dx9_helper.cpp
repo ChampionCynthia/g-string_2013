@@ -1046,7 +1046,8 @@ void DrawLightmappedGeneric_DX9_Internal(CBaseVSShader *pShader, IMaterialVar** 
 	}
 	DYNAMIC_STATE
 	{
-		CCommandBufferBuilder< CFixedCommandStorageBuffer< 1000 > > DynamicCmdsOut;
+		static CCommandBufferBuilder< CFixedCommandStorageBuffer< 1000 > > DynamicCmdsOut;
+		DynamicCmdsOut.Reset();
 		DynamicCmdsOut.Call( pContextData->m_pStaticCmds );
 		DynamicCmdsOut.Call( pContextData->m_SemiStaticCmdsOut.Base() );
 

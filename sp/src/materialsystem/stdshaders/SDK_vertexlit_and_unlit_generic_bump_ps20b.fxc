@@ -48,6 +48,13 @@
 // SKIP: ( $SELFILLUMFRESNEL == 1 ) && ( $DETAILTEXTURE == 1 )
 // SKIP: ( $SELFILLUMFRESNEL == 1 ) && ( $NORMALMAPALPHAENVMAPMASK == 1 )
 
+// GSTRINGMIGRATION
+// DYNAMIC: "CASCADED_SHADOW"			"0..1"  [ps30]
+
+// SKIP: ($CASCADED_SHADOW) && ($FLASHLIGHT)
+// SKIP: ($CASCADED_SHADOW) && (!$DIFFUSELIGHTING)
+// END GSTRINGMIGRATION
+
 #include "common_flashlight_fxc.h"
 #include "common_vertexlitgeneric_dx9.h"
 
@@ -96,6 +103,11 @@ const float4 g_FlashlightAttenuationFactors	: register( c22 );
 const float3 g_FlashlightPos				: register( c23 );
 const float4x4 g_FlashlightWorldToTexture	: register( c24 ); // through c27
 
+// GSTRINGMIGRATION
+#define g_CascadedForward g_FlashlightPos
+#define g_DirectionalLightMask g_FlashlightAttenuationFactors
+// END GSTRINGMIGRATION
+
 sampler BaseTextureSampler					: register( s0 );
 sampler EnvmapSampler						: register( s1 );
 sampler DetailSampler						: register( s2 );
@@ -110,7 +122,7 @@ sampler DiffuseWarpSampler					: register( s9 );	// Lighting warp sampler (1D te
 struct PS_INPUT
 {
 	float4 baseTexCoord2_tangentSpaceVertToEyeVectorXY			: TEXCOORD0;
-	float3 lightAtten											: TEXCOORD1;
+	float4 lightAtten											: TEXCOORD1;
 	float4 worldVertToEyeVectorXYZ_tangentSpaceVertToEyeVectorZ	: TEXCOORD2;
 	float3 vWorldNormal											: TEXCOORD3;	// World-space normal
 	float4 vWorldTangent										: TEXCOORD4;
@@ -120,13 +132,10 @@ struct PS_INPUT
 	float3 vWorldBinormal										: TEXCOORD5;
 #endif
 	float4 worldPos_projPosZ									: TEXCOORD6;
-	float3 detailTexCoord_atten3								: TEXCOORD7;
-	float4 fogFactorW											: COLOR1;
+	float3 detailTexCoord										: TEXCOORD7;
 
-#if defined( _X360 )
-#if FLASHLIGHT
+#if defined( _X360 ) && FLASHLIGHT || CASCADED_SHADOW
 	float4 flashlightSpacePos									: TEXCOORD8;
-#endif
 #endif
 };
 
@@ -187,13 +196,11 @@ float4 main( PS_INPUT i ) : COLOR
 #endif
 
 	// Unpack four light attenuations
-	float4 vLightAtten = float4( i.lightAtten, i.detailTexCoord_atten3.z );
-
 	float4 baseColor = float4( 1.0f, 1.0f, 1.0f, 1.0f );
 	baseColor = tex2D( BaseTextureSampler, i.baseTexCoord2_tangentSpaceVertToEyeVectorXY.xy );
 
 #if DETAILTEXTURE
-	float4 detailColor = tex2D( DetailSampler, i.detailTexCoord_atten3.xy );
+	float4 detailColor = tex2D( DetailSampler, i.detailTexCoord.xy );
 	baseColor = TextureCombine( baseColor, detailColor, DETAIL_BLEND_MODE, g_DetailBlendFactor );
 #endif
 
@@ -212,6 +219,15 @@ float4 main( PS_INPUT i ) : COLOR
 		worldSpaceNormal = normalize( worldSpaceNormal );
 #else
 		worldSpaceNormal = NormalizeWithCubemap( NormalizeSampler, worldSpaceNormal );
+#endif
+
+		float4 vLightAtten = i.lightAtten;
+#if CASCADED_SHADOW
+		float flShadow = DoCascadedShadow( ShadowDepthSampler, RandRotSampler, worldSpaceNormal,
+			g_CascadedForward, i.flashlightSpacePos, i.worldPos_projPosZ.xyz, g_FlashlightWorldToTexture, FLASHLIGHTDEPTHFILTERMODE,
+			i.vProjPos.xy / i.vProjPos.z, float4( 0.0005, 0.0, 0.0, 0.0 ) );
+		
+		vLightAtten *= lerp( float4( 1, 1, 1, 1 ), float4( flShadow, flShadow, flShadow, flShadow ), g_DirectionalLightMask );
 #endif
 
 		diffuseLighting = PixelShaderDoLighting( i.worldPos_projPosZ.xyz, worldSpaceNormal,

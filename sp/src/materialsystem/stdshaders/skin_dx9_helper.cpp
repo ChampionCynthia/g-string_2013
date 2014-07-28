@@ -515,7 +515,8 @@ void DrawSkin_DX9_Internal( CBaseVSShader *pShader, IMaterialVar** params, IShad
 	}
 	else // not snapshotting -- begin dynamic state
 	{
-		CCommandBufferBuilder< CFixedCommandStorageBuffer< 2000 > > DynamicCmdsOut;
+		static CCommandBufferBuilder< CFixedCommandStorageBuffer< 2000 > > DynamicCmdsOut;
+		DynamicCmdsOut.Reset();
 
 		bool bLightingOnly = mat_fullbright.GetInt() == 2 && !IS_FLAG_SET( MATERIAL_VAR_NO_DEBUG_OVERRIDE );
 		bool bHasEnvmap = !bHasFlashlight && params[info.m_nEnvmap]->IsTexture();
