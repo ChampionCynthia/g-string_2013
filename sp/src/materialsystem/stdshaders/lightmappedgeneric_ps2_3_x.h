@@ -528,7 +528,7 @@ HALF4 main( PS_INPUT i ) : COLOR
 
 	float flShadowMask = 1.0f - saturate( length( cross( g_AmbientLightIdentifier, diffuseLighting - g_AmbientLightMin ) )
 		* g_AmbientLightScale );
-	diffuseLighting = lerp( diffuseLighting, g_AmbientLightMin, flShadow * flShadowMask );
+	diffuseLighting = min( diffuseLighting, lerp( diffuseLighting, g_AmbientLightMin, flShadow * flShadowMask ) );
 	
 	//diffuseLighting *= flShadow;
 #endif

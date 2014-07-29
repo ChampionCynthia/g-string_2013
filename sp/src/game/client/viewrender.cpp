@@ -93,6 +93,21 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+// GSTRINGMIGRATION
+static ConVar gstring_csm_color_light( "gstring_csm_color_light", "0" );
+static ConVar gstring_csm_color_ambient( "gstring_csm_color_ambient", "0" );
+
+static Vector ConvertLightmapGammaToLinear( int *iColor4 )
+{
+	Vector vecColor;
+	for ( int i = 0; i < 3; ++i )
+	{
+		vecColor[i] = powf( iColor4[ i ] / 255.0f, 2.2f );
+	}
+	vecColor *= iColor4[ 3 ] / 255.0f;
+	return vecColor;
+}
+// END GSTRINGMIGRATION
 
 static void testfreezeframe_f( void )
 {
@@ -1921,6 +1936,25 @@ void CViewRender::UpdateCascadedShadow( const CViewSetup &view )
 	Vector vecLight, vecAmbient;
 	g_pCSMEnvLight->GetShadowMappingConstants( angCascadedAngles, vecLight, vecAmbient );
 
+	if ( gstring_csm_color_light.GetBool() )
+	{
+		int iParsed[ 4 ];
+		UTIL_StringToIntArray( iParsed, 4, gstring_csm_color_light.GetString() );
+		vecLight = ConvertLightmapGammaToLinear( iParsed );
+	}
+
+	if ( gstring_csm_color_ambient.GetBool() )
+	{
+		int iParsed[ 4 ];
+		UTIL_StringToIntArray( iParsed, 4, gstring_csm_color_ambient.GetString() );
+		vecAmbient = ConvertLightmapGammaToLinear( iParsed );
+	}
+
+	for (int i = 0; i < 3; i++)
+	{
+		vecAmbient[i] = MIN( vecAmbient[i], vecLight[i] );
+	}
+
 	Vector vecAmbientDelta = vecLight - vecAmbient;
 	vecAmbientDelta.NormalizeInPlace();
 	pRenderContext->SetVectorRenderingParameter( VECTOR_RENDERPARM_GSTRING_CASCADED_AMBIENT_MIN, vecAmbient );
@@ -1963,9 +1997,13 @@ void CViewRender::UpdateCascadedShadow( const CViewSetup &view )
 	{
 		ShadowConfig_t &closeShadow = shadowConfigs[ 0 ];
 		ShadowConfig_t &farShadow = shadowConfigs[ 1 ];
-		closeShadow.flForwardOffset = 32.0f;
-		closeShadow.flOrthoSize = 128.0f;
-		farShadow.flOrthoSize = 448.0f;
+		//closeShadow.flForwardOffset = 32.0f;
+		//closeShadow.flOrthoSize = 128.0f;
+		//farShadow.flOrthoSize = 448.0f;
+		closeShadow.flOrthoSize = 164.0f;
+		closeShadow.flForwardOffset = 102.0f;
+		farShadow.flOrthoSize = 786.0f;
+		farShadow.flForwardOffset = 384.0f;
 
 		vecMainViewFwd.z = 0.0f;
 		vecMainViewFwd.NormalizeInPlace();

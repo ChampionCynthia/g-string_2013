@@ -14,10 +14,7 @@ public:
 
 	virtual void OnDataChanged( DataUpdateType_t type );
 
-	bool IsCascadedShadowMappingEnabled() const
-	{
-		return m_bCascadedShadowMappingEnabled;
-	}
+	bool IsCascadedShadowMappingEnabled() const;
 
 	void GetShadowMappingConstants( QAngle &angSunAngles, Vector &vecLight, Vector &vecAmbient ) const
 	{

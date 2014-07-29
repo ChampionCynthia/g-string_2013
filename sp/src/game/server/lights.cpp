@@ -304,12 +304,16 @@ bool CEnvLight::KeyValue( const char *szKeyName, const char *szValue )
 		int iParsed[ 4 ];
 		UTIL_StringToIntArray( iParsed, 4, szValue );
 		m_vecLight = ConvertLightmapGammaToLinear( iParsed );
+		Msg( "Parsed light_environment light: %i %i %i %i\n",
+			iParsed[ 0 ], iParsed[ 1 ], iParsed[ 2 ], iParsed[ 3 ] );
 	}
 	else if ( FStrEq( szKeyName, "_ambient" ) )
 	{
 		int iParsed[ 4 ];
 		UTIL_StringToIntArray( iParsed, 4, szValue );
 		m_vecAmbient = ConvertLightmapGammaToLinear( iParsed );
+		Msg( "Parsed light_environment ambient: %i %i %i %i\n",
+			iParsed[ 0 ], iParsed[ 1 ], iParsed[ 2 ], iParsed[ 3 ] );
 	}
 	else
 	{

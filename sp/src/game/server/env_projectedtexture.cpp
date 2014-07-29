@@ -71,6 +71,7 @@ private:
 	CNetworkVar( bool, m_bEnableVolumetricsLOD );
 	CNetworkVar( float, m_flVolumetricsFadeDistance );
 	CNetworkVar( int, m_iVolumetricsQuality );
+	CNetworkVar( float, m_flVolumetricsQualityBias );
 	CNetworkVar( float, m_flVolumetricsMultiplier );
 // END GSTRINGMIGRATION
 };
@@ -115,6 +116,7 @@ BEGIN_DATADESC( CEnvProjectedTexture )
 	DEFINE_KEYFIELD( m_bEnableVolumetricsLOD, FIELD_BOOLEAN, "volumetricslod" ),
 	DEFINE_KEYFIELD( m_flVolumetricsFadeDistance, FIELD_FLOAT, "volumetricsfadedistance" ),
 	DEFINE_KEYFIELD( m_iVolumetricsQuality, FIELD_INTEGER, "volumetricsquality" ),
+	DEFINE_KEYFIELD( m_flVolumetricsQualityBias, FIELD_FLOAT, "volumetricsqualitybias" ),
 	DEFINE_KEYFIELD( m_flVolumetricsMultiplier, FIELD_FLOAT, "volumetricsmultiplier" ),
 // END GSTRINGMIGRATION
 END_DATADESC()
@@ -139,6 +141,7 @@ IMPLEMENT_SERVERCLASS_ST( CEnvProjectedTexture, DT_EnvProjectedTexture )
 	SendPropBool( SENDINFO( m_bEnableVolumetricsLOD ) ),
 	SendPropFloat( SENDINFO( m_flVolumetricsFadeDistance ) ),
 	SendPropInt( SENDINFO( m_iVolumetricsQuality ) ),
+	SendPropFloat( SENDINFO( m_flVolumetricsQualityBias ) ),
 	SendPropFloat( SENDINFO( m_flVolumetricsMultiplier ) ),
 // END GSTRINGMIGRATION
 END_SEND_TABLE()
@@ -168,6 +171,10 @@ CEnvProjectedTexture::CEnvProjectedTexture( void )
 	m_flNearZ = 4.0f;
 	m_flFarZ = 750.0f;
 	m_nShadowQuality = 0;
+
+	// GSTRINGMIGRATION
+	m_flVolumetricsQualityBias = 3.0f;
+	// END GSTRINGMIGRATION
 }
 
 void UTIL_ColorStringToLinearFloatColor( Vector &color, const char *pString )

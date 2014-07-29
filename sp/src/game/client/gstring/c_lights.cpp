@@ -3,6 +3,8 @@
 
 C_EnvLight *g_pCSMEnvLight;
 
+static ConVar gstring_csm_enabled( "gstring_csm_enabled", "1", 0, "0 = off, 1 = on, 2 = force" );
+
 IMPLEMENT_CLIENTCLASS_DT_NOBASE( C_EnvLight, DT_CEnvLight, CEnvLight )
 	RecvPropQAngles( RECVINFO( m_angSunAngles ) ),
 	RecvPropVector( RECVINFO( m_vecLight ) ),
@@ -30,8 +32,16 @@ void C_EnvLight::OnDataChanged( DataUpdateType_t type )
 {
 	BaseClass::OnDataChanged( type );
 
-	if ( m_bCascadedShadowMappingEnabled && g_pCSMEnvLight == NULL )
+	if ( g_pCSMEnvLight == NULL ||
+		m_bCascadedShadowMappingEnabled && !g_pCSMEnvLight->m_bCascadedShadowMappingEnabled )
 	{
 		g_pCSMEnvLight = this;
 	}
+}
+
+bool C_EnvLight::IsCascadedShadowMappingEnabled() const
+{
+	const int iCSMCvarEnabled = gstring_csm_enabled.GetInt();
+	return m_bCascadedShadowMappingEnabled && iCSMCvarEnabled == 1 ||
+		iCSMCvarEnabled == 2;
 }

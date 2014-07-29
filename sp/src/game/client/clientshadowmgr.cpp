@@ -81,8 +81,11 @@
 #include "toolframework_client.h"
 #include "bonetoworldarray.h"
 #include "cmodel.h"
-#include "renderparm.h" // GSTRINGMIGRATION
 
+// GSTRINGMIGRATION
+#include "renderparm.h"
+#include "c_lights.h"
+// END GSTRINGMIGRATION
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -945,7 +948,7 @@ private:
 
 	// Initialize, shutdown render-to-texture shadows
 	void InitRenderToTextureShadows();
-	void ShutdownRenderToTextureShadows();
+	void ShutdownRenderToTextureShadows( bool bFullShutdown );
 
 	static bool ShadowHandleCompareFunc( const ClientShadowHandle_t& lhs, const ClientShadowHandle_t& rhs )
 	{
@@ -1360,7 +1363,7 @@ void CClientShadowMgr::Shutdown()
 {
 	m_SimpleShadow.Shutdown();
 	m_Shadows.RemoveAll();
-	ShutdownRenderToTextureShadows();
+	ShutdownRenderToTextureShadows( true );
 
 	ShutdownDepthTextureShadows();
 
@@ -1467,9 +1470,15 @@ void CClientShadowMgr::InitRenderToTextureShadows()
 	if ( !m_RenderToTextureActive )
 	{
 		m_RenderToTextureActive = true;
-		m_RenderShadow.Init( "decals/rendershadow", TEXTURE_GROUP_DECAL );
-		m_RenderModelShadow.Init( "decals/rendermodelshadow", TEXTURE_GROUP_DECAL );
-		m_ShadowAllocator.Init();
+		if ( !m_RenderShadow.IsValid() )
+			m_RenderShadow.Init( "decals/rendershadow", TEXTURE_GROUP_DECAL );
+		if ( !m_RenderModelShadow.IsValid() )
+			m_RenderModelShadow.Init( "decals/rendermodelshadow", TEXTURE_GROUP_DECAL );
+
+		if ( m_ShadowAllocator.GetTexture() == NULL )
+		{
+			m_ShadowAllocator.Init();
+		}
 
 		m_ShadowAllocator.Reset();
 		m_bRenderTargetNeedsClear = true;
@@ -1496,7 +1505,7 @@ void CClientShadowMgr::InitRenderToTextureShadows()
 	}
 }
 
-void CClientShadowMgr::ShutdownRenderToTextureShadows()
+void CClientShadowMgr::ShutdownRenderToTextureShadows( bool bFullShutdown )
 {
 	if (m_RenderToTextureActive)
 	{
@@ -1512,14 +1521,17 @@ void CClientShadowMgr::ShutdownRenderToTextureShadows()
 			ClearExtraClipPlanes( i );
 		}
 
-		m_RenderShadow.Shutdown();
-		m_RenderModelShadow.Shutdown();
+		if ( bFullShutdown )
+		{
+			m_RenderShadow.Shutdown();
+			m_RenderModelShadow.Shutdown();
 
-		m_ShadowAllocator.DeallocateAllTextures();
-		m_ShadowAllocator.Shutdown();
+			m_ShadowAllocator.DeallocateAllTextures();
+			m_ShadowAllocator.Shutdown();
 
-		// Cause the render target to go away
-		materials->UncacheUnusedMaterials();
+			// Cause the render target to go away
+			materials->UncacheUnusedMaterials();
+		}
 
 		m_RenderToTextureActive = false;
 	}
@@ -2976,13 +2988,14 @@ void CClientShadowMgr::PreRender()
 	//
 	// -- Render to Texture Shadows -----------------------
 	//
+	bool bRenderToTextureActive = r_shadowrendertotexture.GetBool() &&
+		( g_pCSMEnvLight == NULL || !g_pCSMEnvLight->IsCascadedShadowMappingEnabled() );
 
-	bool bRenderToTextureActive = r_shadowrendertotexture.GetBool();
 	if ( bRenderToTextureActive != m_RenderToTextureActive )
 	{
 		if ( m_RenderToTextureActive )
 		{
-			ShutdownRenderToTextureShadows();
+			ShutdownRenderToTextureShadows( false );
 		}
 		else
 		{

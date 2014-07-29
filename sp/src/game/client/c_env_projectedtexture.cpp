@@ -121,6 +121,7 @@ private:
 	float m_flVolumetricsFadeDistance;
 	int m_iVolumetricsQuality;
 	float m_flVolumetricsMultiplier;
+	float m_flVolumetricsQualityBias;
 
 	float m_flLastFOV;
 	int m_iCurrentVolumetricsSubDiv;
@@ -164,6 +165,7 @@ IMPLEMENT_CLIENTCLASS_DT( C_EnvProjectedTexture, DT_EnvProjectedTexture, CEnvPro
 	RecvPropBool(	 RECVINFO( m_bEnableVolumetricsLOD ) ),
 	RecvPropFloat(	 RECVINFO( m_flVolumetricsFadeDistance ) ),
 	RecvPropInt(	 RECVINFO( m_iVolumetricsQuality ) ),
+	RecvPropFloat(	 RECVINFO( m_flVolumetricsQualityBias ) ),
 	RecvPropFloat(	 RECVINFO( m_flVolumetricsMultiplier ) ),
 // END GSTRINGMIGRATION
 END_RECV_TABLE()
@@ -173,6 +175,7 @@ C_EnvProjectedTexture::C_EnvProjectedTexture( void )
 	: m_bEnableVolumetrics( false )
 	, m_flLastFOV( 0.0f )
 	, m_iCurrentVolumetricsSubDiv( 1 )
+	, m_flVolumetricsQualityBias( 1.0f )
 // END GSTRINGMIGRATION
 {
 	m_LightHandle = CLIENTSHADOW_INVALID_HANDLE;
@@ -544,7 +547,8 @@ void C_EnvProjectedTexture::RebuildVolumetricMesh()
 	{
 		// never 0.0 or 1.0
 		float flFracX = x / float( m_iCurrentVolumetricsSubDiv * 2 );
-		flFracX = powf( flFracX, 3.0f );
+		//flFracX = powf( flFracX, 3.0f );
+		flFracX = powf( flFracX, m_flVolumetricsQualityBias );
 
 		Vector v00 = origin + vecDirections[ 0 ] * flFracX;
 		Vector v10 = v00 + vecDirections[ 1 ] * flFracX;
