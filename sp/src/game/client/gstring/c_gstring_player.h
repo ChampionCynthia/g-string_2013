@@ -64,6 +64,7 @@ private:
 	void UpdateBodyModel();
 	void UpdateCustomStepSound();
 	void GetSpacecraftCamera( Vector &origin, QAngle &angles, float &flFov );
+	void GetDeathSpacecraftCamera( Vector &origin, QAngle &angles );
 	void UpdateInteraction();
 	void GetInteractionCamera( Vector &origin, QAngle &angles );
 

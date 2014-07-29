@@ -224,7 +224,8 @@ struct breakmodel_t
 struct breakablepropparams_t
 {
 	breakablepropparams_t( const Vector &_origin, const QAngle &_angles, const Vector &_velocity, const AngularImpulse &_angularVelocity )
-		: origin(_origin), angles(_angles), velocity(_velocity), angularVelocity(_angularVelocity)
+		: origin(_origin), angles(_angles), velocity(_velocity), angularVelocity(_angularVelocity),
+		velocityScale(1.0f), randomAngularVelocity(0.0f), pszGibParticleSystemName(NULL), particleChance(1.0f), burstScale(1.0f)
 	{
 		impactEnergyScale = 0;
 		defBurstScale = 0;
@@ -240,6 +241,14 @@ struct breakablepropparams_t
 	float defBurstScale;
 	int defCollisionGroup;
 	int nDefaultSkin;
+
+	// GSTRINGMIGRATION
+	float velocityScale;
+	float randomAngularVelocity;
+	char *pszGibParticleSystemName;
+	float particleChance;
+	float burstScale;
+	// END GSTRINGMIGRATION
 };
 
 const char *GetMassEquivalent(float flMass);

@@ -193,17 +193,7 @@ void C_GstringPlayer::OverrideView( CViewSetup *pSetup )
 
 	if ( m_bSpacecraftDeath )
 	{
-		m_vecSpacecraftDeathOrigin += m_vecSpacecraftDeathVelocity * gpGlobals->frametime;
-		if ( m_vecSpacecraftDeathVelocity.LengthSqr() < 1.0f )
-		{
-			m_vecSpacecraftDeathVelocity.Zero();
-		}
-		else
-		{
-			m_vecSpacecraftDeathVelocity -= m_vecSpacecraftDeathVelocity * MIN( 1.0f, gpGlobals->frametime * 3.0f );
-		}
-		pSetup->angles = m_angSpacecraftDeathAngle;
-		pSetup->origin = m_vecSpacecraftDeathOrigin;
+		GetDeathSpacecraftCamera( pSetup->origin, pSetup->angles );
 		return;
 	}
 	else if ( IsInSpacecraft() )
@@ -1040,4 +1030,38 @@ void C_GstringPlayer::GetSpacecraftCamera( Vector &origin, QAngle &angles, float
 	ConcatTransforms( matTmp, matRot, matCurrent );
 
 	MatrixAngles( matCurrent, angles );
+}
+
+void C_GstringPlayer::GetDeathSpacecraftCamera( Vector &origin, QAngle &angles )
+{
+	if ( !m_vecSpacecraftDeathVelocity.IsZero() )
+	{
+		const Vector vecHull( 5, 5, 5 );
+		Vector vecFwd = m_vecSpacecraftDeathVelocity.Normalized();
+		CTraceFilterSkipTwoEntities filter( this, GetSpacecraft(), COLLISION_GROUP_DEBRIS );
+		Vector vecTraceTest = m_vecSpacecraftDeathOrigin + vecFwd * 128.0f;
+
+		trace_t tr;
+		UTIL_TraceHull( m_vecSpacecraftDeathOrigin, vecTraceTest, -vecHull, vecHull, MASK_SOLID, &filter, &tr );
+
+		if ( !tr.startsolid )
+		{
+			if ( tr.DidHit() )
+			{
+				m_vecSpacecraftDeathVelocity = -m_vecSpacecraftDeathVelocity;
+			}
+			m_vecSpacecraftDeathOrigin += m_vecSpacecraftDeathVelocity * gpGlobals->frametime;
+			if ( m_vecSpacecraftDeathVelocity.LengthSqr() < 1.0f )
+			{
+				m_vecSpacecraftDeathVelocity.Zero();
+			}
+			else
+			{
+				m_vecSpacecraftDeathVelocity -= m_vecSpacecraftDeathVelocity * MIN( 1.0f, gpGlobals->frametime * 3.0f );
+			}
+		}
+	}
+
+	origin = m_vecSpacecraftDeathOrigin;
+	angles = m_angSpacecraftDeathAngle;
 }

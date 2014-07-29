@@ -41,6 +41,7 @@
 #include "physics_collisionevent.h"
 #include "gamestats.h"
 #include "vehicle_base.h"
+#include "particle_parse.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -3296,6 +3297,11 @@ static CBreakableProp *BreakModelCreate_Prop( CBaseEntity *pOwner, breakmodel_t 
 				pEntity->SetModelScale( flScale );
 				UTIL_CreateScaledPhysObject( pEntity, flScale );
 			}
+		}
+
+		if ( params.pszGibParticleSystemName != NULL && RandomFloat( 0.0f, 1.0f ) >= params.particleChance )
+		{
+			DispatchParticleEffect( params.pszGibParticleSystemName, PATTACH_ABSORIGIN_FOLLOW, pEntity );
 		}
 		// END GSTRINGMIGRATION
 

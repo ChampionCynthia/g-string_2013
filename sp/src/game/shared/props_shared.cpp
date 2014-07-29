@@ -1107,7 +1107,14 @@ void PropBreakableCreateAll( int modelindex, IPhysicsObject *pPhysics, const bre
 
 					VectorNormalize( vecBurstDir );
 
-					pBreakable->ApplyAbsVelocityImpulse( vecBurstDir * list[i].burstScale * flModelScale );
+					pBreakable->ApplyAbsVelocityImpulse( vecBurstDir * list[i].burstScale * flModelScale *
+						params.velocityScale * params.burstScale );
+				}
+
+				if ( params.randomAngularVelocity > 0.0f )
+				{
+					AngularImpulse angRandomImpulse = RandomAngularImpulse( -params.randomAngularVelocity, params.randomAngularVelocity );
+					pBreakable->ApplyLocalAngularVelocityImpulse( angRandomImpulse * params.velocityScale );
 				}
 
 				// If this piece is supposed to be motion disabled, disable it

@@ -5,6 +5,7 @@
 #include "gstring/gstring_player_shared.h"
 #include "gstring/gstring_util.h"
 #include "props_shared.h"
+#include "particle_parse.h"
 
 #ifdef CLIENT_DLL
 #include "cdll_client_int.h"
@@ -40,7 +41,15 @@ CON_COMMAND( kill_spacecraft, "" )
 	{
 		CSpacecraft *pSpacecraft = pPlayer->GetSpacecraft();
 
-		CTakeDamageInfo info( NULL, NULL, NULL, RandomVector( -1000, 1000 ), pSpacecraft->GetAbsOrigin(), 9999.0f, DMG_BLAST );
+		Vector vecVelocity;
+		pSpacecraft->VPhysicsGetObject()->GetVelocity( &vecVelocity, NULL );
+
+		if ( vecVelocity.IsZero() )
+		{
+			vecVelocity = RandomVector( -10.0f, 10.0f );
+		}
+
+		CTakeDamageInfo info( NULL, NULL, NULL, vecVelocity, pSpacecraft->GetAbsOrigin(), 9999.0f, DMG_BLAST );
 		pSpacecraft->OnTakeDamage( info );
 	}
 }
@@ -240,9 +249,24 @@ void CSpacecraft::InputEnterVehicle( inputdata_t &inputdata )
 	pPlayer->EnterSpacecraft( this );
 }
 
+void CSpacecraft::VPhysicsCollision( int index, gamevcollisionevent_t *pEvent )
+{
+	BaseClass::VPhysicsCollision( index, pEvent );
+
+	const int iSelfIndex = ( pEvent->pObjects[ 0 ] == VPhysicsGetObject() ) ? 0 : 1;
+	const float flDamage = ( pEvent->preVelocity[ iSelfIndex ] - pEvent->postVelocity[ iSelfIndex ] ).LengthSqr() / 10.0f;
+
+	CTakeDamageInfo info( this, this, flDamage, DMG_DIRECT );
+	info.SetDamageForce( pEvent->preVelocity[ iSelfIndex ] );
+	info.SetDamagePosition( GetAbsOrigin() - pEvent->postVelocity[ iSelfIndex ] );
+	TakeDamage( info );
+}
+
 int CSpacecraft::OnTakeDamage( const CTakeDamageInfo &info )
 {
 	int ret = BaseClass::OnTakeDamage( info );
+
+	DispatchParticleEffect( "ship_hit", info.GetDamagePosition(), GetAbsAngles() );
 
 	return ret;
 }
@@ -264,17 +288,34 @@ void CSpacecraft::Event_Killed( const CTakeDamageInfo &info )
 	IPhysicsObject *pPhysics = VPhysicsGetObject();
 	if ( pPhysics != NULL )
 	{
-		Vector velocity;
 		AngularImpulse angVelocity;
-		pPhysics->GetVelocity( &velocity, &angVelocity );
+		pPhysics->GetVelocity( NULL, &angVelocity );
 
-		breakablepropparams_t params( GetAbsOrigin(), GetAbsAngles(), velocity, angVelocity * 50.0f );
+		breakablepropparams_t params( GetAbsOrigin(), GetAbsAngles(), info.GetDamageForce(), angVelocity * 1.5f );
 		params.impactEnergyScale = 1.0f;
 		params.defCollisionGroup = COLLISION_GROUP_INTERACTIVE;
 		params.defBurstScale = 1.0f;
+		params.randomAngularVelocity = RandomFloat( 500.0f, 600.0f );
+		params.pszGibParticleSystemName = "ship_gib_trail";
+		params.particleChance = 0.5f;
+		params.velocityScale = info.GetDamageForce().Length() / 100.0f;
+		params.velocityScale = MIN( 1.0f, params.velocityScale );
+		params.velocityScale = powf( params.velocityScale, 3.0f );
+
+		if ( ( info.GetDamageType() & DMG_DIRECT ) != 0 )
+		{
+			params.burstScale = 0.0f;
+		}
 
 		MDLCACHE_CRITICAL_SECTION();
 		PropBreakableCreateAll( GetModelIndex(), pPhysics, params, this, -1, true, true );
+	}
+
+	const int iRingCount = RandomInt( 2, 4 );
+	for ( int i = 0; i < iRingCount; i++ )
+	{
+		QAngle angles( RandomFloat( 0.0f, 90.0f ), RandomFloat( 0, 180.0f ), 0.0f );
+		DispatchParticleEffect( "ship_explosion", GetAbsOrigin(), angles );
 	}
 
 	BaseClass::Event_Killed( info );

@@ -58,6 +58,7 @@ public:
 	virtual void VPhysicsUpdate( IPhysicsObject *pPhysics );
 
 	void InputEnterVehicle( inputdata_t &inputdata );
+	virtual void VPhysicsCollision( int index, gamevcollisionevent_t *pEvent );
 	virtual int OnTakeDamage( const CTakeDamageInfo &info );
 	virtual void Event_Killed( const CTakeDamageInfo &info );
 

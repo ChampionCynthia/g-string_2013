@@ -19,6 +19,10 @@
 #include "collisionutils.h"
 #include "clienteffectprecachesystem.h"
 
+// GSTRINGMIGRATION
+#include "cgstring_globals.h"
+// END GSTRINGMIGRATION
+
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -210,6 +214,13 @@ CBulletWhizTimer g_BulletWhiz( "CBulletWhizTimer" );
 
 void FX_TracerSound( const Vector &start, const Vector &end, int iTracerType )
 {
+	// GSTRINGMIGRATION
+	if ( g_pGstringGlobals != NULL && g_pGstringGlobals->IsSpaceMap() )
+	{
+		return;
+	}
+	// END GSTRINGMIGRATION
+
 	const char *pszSoundName = NULL;
 	float flWhizDist = TRACER_MAX_HEAR_DIST;
 	float flMinWhizTime = TRACER_SOUND_TIME_MIN;
