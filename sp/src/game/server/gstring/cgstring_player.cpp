@@ -288,6 +288,11 @@ void CGstringPlayer::StartAdmireGlovesAnimation()
 	BaseClass::StartAdmireGlovesAnimation();
 }
 
+void CGstringPlayer::SetAnimation( PLAYER_ANIM playerAnim )
+{
+	// Stubbed.
+}
+
 void CGstringPlayer::BeginInteraction( CBaseAnimating *pInteractionBody )
 {
 	LockPlayerInPlace();

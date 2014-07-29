@@ -41,6 +41,7 @@ public:
 
 	virtual bool Weapon_CanSwitchTo( CBaseCombatWeapon *pWeapon );
 	virtual void StartAdmireGlovesAnimation();
+	virtual void SetAnimation( PLAYER_ANIM playerAnim );
 
 	void BeginInteraction( CBaseAnimating *pInteractionBody );
 	void EndInteraction();

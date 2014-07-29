@@ -1022,6 +1022,7 @@ void PropBreakableCreateAll( int modelindex, IPhysicsObject *pPhysics, const bre
 			// Increment the number of breakable props this frame.
 			++nPropBreakablesPerFrameCount;
 
+			const float flModelScale = pOwnerAnim->GetModelScale();
 			Vector position = vec3_origin;
 			QAngle angles = params.angles;
 			if ( pOwnerAnim && list[i].placementName[0] )
@@ -1056,7 +1057,8 @@ void PropBreakableCreateAll( int modelindex, IPhysicsObject *pPhysics, const bre
 					placementOrigin -= parentOrigin;
 				}
 
-				VectorTransform( list[i].offset - placementOrigin, matrix, position );
+				VectorTransform( list[i].offset - placementOrigin * flModelScale,
+					matrix, position );
 			}
 			Vector objectVelocity = params.velocity;
 
@@ -1105,7 +1107,7 @@ void PropBreakableCreateAll( int modelindex, IPhysicsObject *pPhysics, const bre
 
 					VectorNormalize( vecBurstDir );
 
-					pBreakable->ApplyAbsVelocityImpulse( vecBurstDir * list[i].burstScale );
+					pBreakable->ApplyAbsVelocityImpulse( vecBurstDir * list[i].burstScale * flModelScale );
 				}
 
 				// If this piece is supposed to be motion disabled, disable it

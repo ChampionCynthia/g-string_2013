@@ -201,6 +201,11 @@ void CSpacecraftProjectile::OnDataChanged( DataUpdateType_t t )
 		el->die = gpGlobals->curtime + 0.1f;
 
 		// FX_TracerSound(  )
+		extern bool FX_AffectRagdolls( Vector vecOrigin, Vector vecStart, int iDamageType );
+		QAngle angles = GetAbsAngles();
+		Vector vecForward;
+		AngleVectors( angles, &vecForward );
+		FX_AffectRagdolls( GetAbsOrigin() + vecForward * 512.0f, GetAbsOrigin(), DMG_BLAST );
 	}
 	else
 	{

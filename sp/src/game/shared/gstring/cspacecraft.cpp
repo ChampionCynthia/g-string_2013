@@ -4,6 +4,7 @@
 #include "gstring/cspacecraft.h"
 #include "gstring/gstring_player_shared.h"
 #include "gstring/gstring_util.h"
+#include "props_shared.h"
 
 #ifdef CLIENT_DLL
 #include "cdll_client_int.h"
@@ -13,6 +14,7 @@
 #include "ivieweffects.h"
 #else
 #include "cspacecraftprojectile.h"
+#include "datacache/imdlcache.h"
 #endif
 
 #include "igamemovement.h"
@@ -28,6 +30,22 @@ V ConvertPhysicsToSource( const V &v )
 {
 	return V( v.y, v.z, v.x );
 }
+
+#ifdef GAME_DLL
+
+CON_COMMAND( kill_spacecraft, "" )
+{
+	CGstringPlayer *pPlayer = ToGstringPlayer( UTIL_GetCommandClient() );
+	if ( pPlayer != NULL && pPlayer->IsInSpacecraft() )
+	{
+		CSpacecraft *pSpacecraft = pPlayer->GetSpacecraft();
+
+		CTakeDamageInfo info( NULL, NULL, NULL, RandomVector( -1000, 1000 ), pSpacecraft->GetAbsOrigin(), 9999.0f, DMG_BLAST );
+		pSpacecraft->OnTakeDamage( info );
+	}
+}
+
+#endif
 
 #define SPACECRAFT_SOUND_THRUSTER_SMALL "Spacecraft.Thruster.Small"
 #define SPACECRAFT_SOUND_ENGINE_START "Spacecraft.Engine.Start"
@@ -156,7 +174,8 @@ void CSpacecraft::Precache()
 {
 	BaseClass::Precache();
 
-	PrecacheModel( STRING( GetModelName() ) );
+	const int iModelIndex = PrecacheModel( STRING( GetModelName() ) );
+	PrecacheGibsForModel( iModelIndex );
 
 	PrecacheScriptSound( SPACECRAFT_SOUND_THRUSTER_SMALL );
 	PrecacheScriptSound( SPACECRAFT_SOUND_ENGINE_START );
@@ -167,7 +186,7 @@ void CSpacecraft::Precache()
 
 void CSpacecraft::Spawn()
 {
-	PrecacheModel( STRING( GetModelName() ) );
+	Precache();
 
 	SetModel( STRING( GetModelName() ) );
 
@@ -240,6 +259,22 @@ void CSpacecraft::Event_Killed( const CTakeDamageInfo &info )
 
 		pPlayer->SetMoveType( MOVETYPE_NONE );
 		pPlayer->SetAbsVelocity( vec3_origin );
+	}
+
+	IPhysicsObject *pPhysics = VPhysicsGetObject();
+	if ( pPhysics != NULL )
+	{
+		Vector velocity;
+		AngularImpulse angVelocity;
+		pPhysics->GetVelocity( &velocity, &angVelocity );
+
+		breakablepropparams_t params( GetAbsOrigin(), GetAbsAngles(), velocity, angVelocity * 50.0f );
+		params.impactEnergyScale = 1.0f;
+		params.defCollisionGroup = COLLISION_GROUP_INTERACTIVE;
+		params.defBurstScale = 1.0f;
+
+		MDLCACHE_CRITICAL_SECTION();
+		PropBreakableCreateAll( GetModelIndex(), pPhysics, params, this, -1, true, true );
 	}
 
 	BaseClass::Event_Killed( info );

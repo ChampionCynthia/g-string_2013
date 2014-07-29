@@ -3286,6 +3286,19 @@ static CBreakableProp *BreakModelCreate_Prop( CBaseEntity *pOwner, breakmodel_t 
 		}
 		pEntity->Spawn();
 
+		// GSTRINGMIGRATION
+		CBaseAnimating *pOwnerAnimating = pOwner->GetBaseAnimating();
+		if ( pOwnerAnimating )
+		{
+			const float flScale = pOwnerAnimating->GetModelScale();
+			if ( !CloseEnough( flScale, 1.0f ) )
+			{
+				pEntity->SetModelScale( flScale );
+				UTIL_CreateScaledPhysObject( pEntity, flScale );
+			}
+		}
+		// END GSTRINGMIGRATION
+
 		// If we're burning, break into burning pieces
 		CBaseAnimating *pAnimating = dynamic_cast<CBreakableProp *>(pOwner);
 		if ( pAnimating && pAnimating->IsOnFire() )
@@ -6051,6 +6064,7 @@ bool UTIL_CreateScaledPhysObject( CBaseAnimating *pInstance, float flScale )
 	// Scale our mass up as well
 	tmpSolid.params.mass *= flScale;
 	tmpSolid.params.volume = physcollision->CollideVolume( pNewCollide );
+	tmpSolid.massCenterOverride *= flScale;
 
 	// Get our surface prop info
 	int surfaceProp = -1;
