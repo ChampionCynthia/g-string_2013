@@ -91,6 +91,11 @@ void CGstringInput::ClampAngles( QAngle &viewangles )
 void CGstringInput::MouseMove( CUserCmd *cmd )
 {
 	C_GstringPlayer *pPlayer = LocalGstringPlayer();
+	if ( pPlayer && pPlayer->IsInInteraction() )
+	{
+		InteractionMouseMove( cmd );
+		return;
+	}
 
 	if ( pPlayer == NULL || !pPlayer->IsInSpacecraft() )
 	{
@@ -329,5 +334,44 @@ void CGstringInput::MouseMove( CUserCmd *cmd )
 
 		// Store out the new viewangles.
 		engine->SetViewAngles( viewangles );
+	}
+}
+
+void CGstringInput::InteractionMouseMove( CUserCmd *cmd )
+{
+	float	mouse_x, mouse_y;
+	float	mx, my;
+
+	// Validate mouse speed/acceleration settings
+	CheckMouseAcclerationVars();
+
+	// Don't drift pitch at all while mouselooking.
+	view->StopPitchDrift();
+
+	//jjb - this disables normal mouse control if the user is trying to 
+	//      move the camera, or if the mouse cursor is visible 
+	if ( !m_fCameraInterceptingMouse && 
+		 !vgui::surface()->IsCursorVisible() )
+	{
+		// Sample mouse one more time
+		AccumulateMouse();
+
+		// Latch accumulated mouse movements and reset accumulators
+		GetAccumulatedMouseDeltasAndResetAccumulators( &mx, &my );
+		
+		// Filter, etc. the delta values and place into mouse_x and mouse_y
+		GetMouseDelta( mx, my, &mouse_x, &mouse_y );
+
+		// Apply scaling factor
+		ScaleMouse( &mouse_x, &mouse_y );
+
+		// Re-center the mouse.
+		ResetMouse();
+
+		C_GstringPlayer *pPlayer = LocalGstringPlayer();
+
+		Assert( pPlayer );
+
+		pPlayer->PerformInteractionMouseMove( mouse_x * 0.022f, mouse_y * 0.022f );
 	}
 }

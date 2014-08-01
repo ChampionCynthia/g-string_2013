@@ -1,10 +1,18 @@
 #ifndef C_CLIENTPARTIALRAGDOLL_H
 #define C_CLIENTPARTIALRAGDOLL_H
 
+#include "cbase.h"
+
 #include "c_baseanimating.h"
 #include "bone_setup.h"
 
 void DispatchGibParticle( C_BaseAnimating *pEntity, const char *pszBone, bool bExplosion, int iBloodType );
+
+struct PartialRagdollGore_t
+{
+	IMesh *m_pMesh;
+	int m_iBone;
+};
 
 class C_ClientPartialRagdoll : public C_ClientRagdoll
 {
@@ -13,10 +21,10 @@ class C_ClientPartialRagdoll : public C_ClientRagdoll
 public:
 
 	C_ClientPartialRagdoll( bool bRestoring = true );
+	~C_ClientPartialRagdoll();
 
 	void SetShrinkingEnabled( bool bEnable );
-
-	void SetRecursiveGibData( const char *pszParentName );
+	void SetRecursiveGibData( const char *pszParentName, const char *pszGoreName );
 
 	void OnRestore();
 
@@ -29,12 +37,17 @@ public:
 	virtual void BuildTransformations( CStudioHdr *hdr, Vector *pos, Quaternion *q,
 		const matrix3x4_t &cameraTransform, int boneMask, CBoneBitList &boneComputed );
 
+	virtual int DrawModel( int flags );
+
 	virtual int BloodColor() { return m_iBloodColor; }
 	virtual void SetBloodColor( int iBloodColor ) { m_iBloodColor = iBloodColor; }
 
-private:
+	void RebuildGore();
+	void DestroyGore();
 
+private:
 	void BuildPartial( ragdollparams_partial_t &params );
+	IMesh *CreateGoreMeshForBone( const CStudioHdr *pHdr, int iBone, bool bRoot );
 
 	bool m_bShrinking;
 	bool m_bIsPartial;
@@ -46,9 +59,13 @@ private:
 	CBoneBitList m_jointBones;
 
 	string_t m_strRecursiveParent;
+	string_t m_strRecursiveGoreName;
 	int m_iBranchRootBone;
 
 	int m_iBoneFlagStorage[ 12 ];
+
+	CUtlVector< PartialRagdollGore_t > m_Gore;
+	static CMaterialReference m_GoreMaterial;
 };
 
 

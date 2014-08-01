@@ -4698,6 +4698,7 @@ C_BaseAnimating *C_BaseAnimating::BecomeRagdollOnClient()
 
 	CUtlVector< ragdollparams_partial_t > gibModels;
 	const char *pszGibGroup = NULL;
+	const char *pszGoreGroup = NULL;
 
 	int iBloodColor = BloodColor();
 	C_BaseCombatCharacter *pCombatChar = dynamic_cast< C_BaseCombatCharacter* >( this );
@@ -4706,7 +4707,7 @@ C_BaseAnimating *C_BaseAnimating::BecomeRagdollOnClient()
 	const float flGibbingChance = ( pCombatChar && ( pCombatChar->GetKillDamageType() & DMG_BLAST ) != 0 ) ?
 		gstring_gibbing_explosion_chance.GetFloat() : gstring_gibbing_chance.GetFloat();
 
-	if ( C_GibConfig::GetInstance()->GetGibsForModel( params, gibModels, &pszGibGroup )
+	if ( C_GibConfig::GetInstance()->GetGibsForModel( params, gibModels, &pszGibGroup, &pszGoreGroup )
 		&& RandomFloat() <= flGibbingChance / 100.0f )
 	{
 		// create gibs based on configs
@@ -4720,7 +4721,7 @@ C_BaseAnimating *C_BaseAnimating::BecomeRagdollOnClient()
 
 			if ( pRecursiveRagdoll != NULL )
 			{
-				pRecursiveRagdoll->SetRecursiveGibData( pszGibGroup );
+				pRecursiveRagdoll->SetRecursiveGibData( pszGibGroup, pszGoreGroup );
 				pRecursiveRagdoll->SetBloodColor( iBloodColor );
 			}
 
@@ -4768,7 +4769,7 @@ C_BaseAnimating *C_BaseAnimating::BecomeRagdollOnClient()
 		if ( pRecursiveRagdoll != NULL
 			&& pszGibGroup != NULL )
 		{
-			pRecursiveRagdoll->SetRecursiveGibData( pszGibGroup );
+			pRecursiveRagdoll->SetRecursiveGibData( pszGibGroup, pszGoreGroup );
 			pRecursiveRagdoll->SetBloodColor( iBloodColor );
 		}
 

@@ -111,6 +111,19 @@ void C_GstringPlayer::OnDataChanged( DataUpdateType_t updateType )
 	}
 }
 
+void C_GstringPlayer::PerformInteractionMouseMove( float mx, float my )
+{
+	m_vecMouseOffset.x += mx;
+	m_vecMouseOffset.y += my;
+
+	const float flMaxDist = 15.0f;
+	if ( m_vecMouseOffset.LengthSqr() > flMaxDist * flMaxDist )
+	{
+		m_vecMouseOffset.NormalizeInPlace();
+		m_vecMouseOffset *= flMaxDist;
+	}
+}
+
 bool C_GstringPlayer::IsOverridingViewmodel()
 {
 	return IsInInteraction();
@@ -883,6 +896,10 @@ void C_GstringPlayer::UpdateInteraction()
 		CGstringInteractionBody *pInteractionBody = assert_cast< CGstringInteractionBody* >( m_hInteractionBody.Get() );
 		pInteractionBody->SetTransitionBlend( m_flInteractionBodyTransitionBlend );
 	}
+	else if ( m_flInteractionBodyTransitionBlend <= FLT_EPSILON )
+	{
+		m_vecMouseOffset.Init();
+	}
 }
 
 void C_GstringPlayer::GetInteractionCamera( Vector &origin, QAngle &angles )
@@ -895,6 +912,21 @@ void C_GstringPlayer::GetInteractionCamera( Vector &origin, QAngle &angles )
 
 	origin = Lerp( m_flInteractionBodyTransitionBlend, origin, m_vecInteractionViewOrigin );
 	angles = Lerp( m_flInteractionBodyTransitionBlend, angles, m_angInteractionViewAngles );
+
+	Vector vecRight, vecUp;
+	AngleVectors( angles, NULL, &vecRight, &vecUp );
+
+	const float flRotationScale = 0.5f;
+	matrix3x4_t rotMatrix, viewMatrix, tmp;
+	AngleMatrix( angles, origin, viewMatrix );
+	MatrixBuildRotationAboutAxis( vecRight, -m_vecMouseOffset.y * m_flInteractionBodyTransitionBlend * flRotationScale,
+		rotMatrix );
+	ConcatTransforms( rotMatrix, viewMatrix, tmp );
+	MatrixBuildRotationAboutAxis( vecUp, -m_vecMouseOffset.x * m_flInteractionBodyTransitionBlend * flRotationScale,
+		rotMatrix );
+	ConcatTransforms( rotMatrix, tmp, viewMatrix );
+
+	MatrixAngles( viewMatrix, angles );
 }
 
 void C_GstringPlayer::UpdateCustomStepSound()
@@ -1038,7 +1070,7 @@ void C_GstringPlayer::GetDeathSpacecraftCamera( Vector &origin, QAngle &angles )
 	{
 		const Vector vecHull( 5, 5, 5 );
 		Vector vecFwd = m_vecSpacecraftDeathVelocity.Normalized();
-		CTraceFilterSkipTwoEntities filter( this, GetSpacecraft(), COLLISION_GROUP_DEBRIS );
+		CTraceFilterSkipTwoEntities filter( this, GetSpacecraft(), COLLISION_GROUP_PLAYER_MOVEMENT );
 		Vector vecTraceTest = m_vecSpacecraftDeathOrigin + vecFwd * 128.0f;
 
 		trace_t tr;

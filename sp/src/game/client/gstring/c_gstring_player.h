@@ -53,6 +53,7 @@ public:
 	CSpacecraft *GetSpacecraft();
 
 	bool IsInInteraction() const;
+	void PerformInteractionMouseMove( float mx, float my );
 
 	virtual bool Weapon_CanSwitchTo( C_BaseCombatWeapon *pWeapon );
 	virtual bool IsOverridingViewmodel();
@@ -116,6 +117,7 @@ private:
 	float m_flInteractionBodyTransitionBlend;
 	Vector m_vecInteractionViewOrigin;
 	QAngle m_angInteractionViewAngles;
+	Vector2D m_vecMouseOffset;
 };
 
 inline C_GstringPlayer *ToGstringPlayer( C_BaseEntity *pPlayer )

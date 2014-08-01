@@ -3,6 +3,7 @@
 #include "c_clientpartialragdoll.h"
 #include "c_gstring_util.h"
 #include "c_gibconfig.h"
+#include "cgore_generator.h"
 
 #include "jigglebones.h"
 #include "viewrender.h"
@@ -39,6 +40,7 @@ BEGIN_DATADESC( C_ClientPartialRagdoll )
 	DEFINE_FIELD( m_bShrinking, FIELD_BOOLEAN ),
 	DEFINE_FIELD( m_bIsPartial, FIELD_BOOLEAN ),
 	DEFINE_FIELD( m_strRecursiveParent, FIELD_STRING ),
+	DEFINE_FIELD( m_strRecursiveGoreName, FIELD_STRING ),
 	DEFINE_ARRAY( m_iBoneFlagStorage, FIELD_INTEGER, 12 ),
 	DEFINE_FIELD( m_iBranchRootBone, FIELD_INTEGER ),
 	DEFINE_FIELD( m_iBloodColor, FIELD_INTEGER ),
@@ -47,6 +49,7 @@ END_DATADESC()
 
 LINK_ENTITY_TO_CLASS( client_ragdoll_partial, C_ClientPartialRagdoll );
 
+CMaterialReference C_ClientPartialRagdoll::m_GoreMaterial;
 
 C_ClientPartialRagdoll::C_ClientPartialRagdoll( bool bRestoring )
 	: BaseClass( bRestoring )
@@ -54,10 +57,16 @@ C_ClientPartialRagdoll::C_ClientPartialRagdoll( bool bRestoring )
 	, m_bIsPartial( false )
 	, m_iBranchRootBone( -1 )
 	, m_iBloodColor( DONT_BLEED )
+	, m_strRecursiveGoreName( NULL )
 {
 	SetClassname( "client_ragdoll_partial" );
 
 	Q_memset( m_iBoneFlagStorage, 0, sizeof( m_iBoneFlagStorage ) );
+}
+
+C_ClientPartialRagdoll::~C_ClientPartialRagdoll()
+{
+	DestroyGore();
 }
 
 void C_ClientPartialRagdoll::SetShrinkingEnabled( bool bEnable )
@@ -65,11 +74,16 @@ void C_ClientPartialRagdoll::SetShrinkingEnabled( bool bEnable )
 	m_bShrinking = bEnable;
 }
 
-void C_ClientPartialRagdoll::SetRecursiveGibData( const char *pszParentName )
+void C_ClientPartialRagdoll::SetRecursiveGibData( const char *pszParentName, const char *pszGoreName )
 {
 	Assert( pszParentName && *pszParentName );
 
 	m_strRecursiveParent = AllocPooledString( pszParentName );
+
+	if ( pszGoreName && *pszGoreName )
+	{
+		m_strRecursiveGoreName = AllocPooledString( pszGoreName );
+	}
 }
 
 void C_ClientPartialRagdoll::OnRestore()
@@ -79,6 +93,8 @@ void C_ClientPartialRagdoll::OnRestore()
 	Q_memcpy( m_normalBones.Base(), m_iBoneFlagStorage, sizeof( int ) * 4 );
 	Q_memcpy( m_trunkBones.Base(), m_iBoneFlagStorage + 4, sizeof( int ) * 4 );
 	Q_memcpy( m_jointBones.Base(), m_iBoneFlagStorage + 8, sizeof( int ) * 4 );
+
+	RebuildGore();
 }
 
 void C_ClientPartialRagdoll::ImpactTrace( trace_t *pTrace, int iDamageType, const char *pCustomImpactName )
@@ -103,7 +119,6 @@ void C_ClientPartialRagdoll::ImpactTrace( trace_t *pTrace, int iDamageType, cons
 
 		if ( index >= 0 )
 		{
-
 			SetShrinkingEnabled( false );
 			InvalidateBoneCache();
 			SetupBones( NULL, -1, BONE_USED_BY_ANYTHING, gpGlobals->curtime );
@@ -212,15 +227,13 @@ void C_ClientPartialRagdoll::ImpactTrace( trace_t *pTrace, int iDamageType, cons
 				}
 
 				C_BaseAnimating *pGib = CreateRagdollCopy( false );
-
 				C_ClientPartialRagdoll *pRecursiveRagdoll = dynamic_cast< C_ClientPartialRagdoll* >( pGib );
-
 				Assert( pRecursiveRagdoll );
 
 				// apply force and propagate cut information
 				if ( pRecursiveRagdoll != NULL )
 				{
-					pRecursiveRagdoll->SetRecursiveGibData( STRING( m_strRecursiveParent ) );
+					pRecursiveRagdoll->SetRecursiveGibData( STRING( m_strRecursiveParent ), STRING( m_strRecursiveGoreName ) );
 					pRecursiveRagdoll->SetShrinkingEnabled( true );
 
 					pRecursiveRagdoll->m_vecForce = ( pTrace->endpos - pTrace->startpos ).Normalized() * RandomFloat( 15000.0f, 35000.0f );
@@ -228,6 +241,19 @@ void C_ClientPartialRagdoll::ImpactTrace( trace_t *pTrace, int iDamageType, cons
 
 					pRecursiveRagdoll->SetBloodColor( BloodColor() );
 					pRecursiveRagdoll->m_jointBones.Or( m_jointBones, &pRecursiveRagdoll->m_jointBones );
+
+					FOR_EACH_VEC( m_Gore, i )
+					{
+						const int iBone = m_Gore[ i ].m_iBone;
+
+						if ( iBone >= 0 && iBone == m_iBranchRootBone )
+						{
+
+						}
+						//pRecursiveRagdoll->m_Gore.AddToTail( m_Gore[ i ] );
+						//m_Gore.Remove( i );
+						//i--;
+					}
 				}
 
 				pGib->InitAsClientRagdoll( boneDelta0, boneDelta1, currentBones, boneDt, false, &partial );
@@ -339,123 +365,6 @@ bool C_ClientPartialRagdoll::InitAsClientRagdoll( const matrix3x4_t *pDeltaBones
 	}
 
 	return BaseClass::InitAsClientRagdoll( pDeltaBones0, pDeltaBones1, pCurrentBonePosition, boneDt, bFixedConstraints, pPartialParams );
-}
-
-void C_ClientPartialRagdoll::BuildPartial( ragdollparams_partial_t &params )
-{
-	CStudioHdr *pHdr = GetModelPtr();
-
-	Assert( pHdr );
-
-	if ( pHdr != NULL )
-	{
-		m_iBranchRootBone = -1;
-
-		// cut all bones that aren't part of this 'branch'
-		// i.e. spine is not part of arm branch
-		CUtlVector< int > tempNormalBones;
-
-		if ( !params.rootBone.IsEmpty() )
-		{
-			const char *pszBranch = params.rootBone;
-
-			int iBone = LookupBone( pszBranch );
-
-			m_iBranchRootBone = iBone;
-
-			m_jointBones.Set( iBone );
-
-			for ( int i = 0; i < pHdr->numbones(); i++ )
-			{
-				const char *pszBone = pHdr->pBone( i )->pszName();
-
-				// this bone is not a child of our new branch root, cut it
-				if ( !BoneHasParent( pHdr, pszBone, pszBranch )
-					&& i != iBone )
-				{
-					if ( !params.cutBones.HasElement( pszBone ) )
-					{
-						params.cutBones.AddToTail( pszBone );
-					}
-				}
-				else // otherwise it will potentially be visible
-				{
-					tempNormalBones.AddToTail( i );
-				}
-			}
-		}
-
-		// cut all bones that aren't part of this trunk
-		// i.e. arm isn't part of pelvis/spline trunk
-
-		FOR_EACH_VEC( params.trunkBones, t )
-		{
-			const char *pszTrunk = params.trunkBones[ t ].Get();
-
-			const int iBone = LookupBone( pszTrunk );
-
-			// don't evaluate trunks that are parents of our branch root
-			if ( m_iBranchRootBone >= 0
-				&& BoneHasParent( pHdr, m_iBranchRootBone, iBone ) )
-				continue;
-
-			Assert( params.rootBone.IsEmpty() || params.rootBone != pszTrunk );
-
-			m_jointBones.Set( iBone );
-
-			for ( int i = 0; i < pHdr->numbones(); i++ )
-			{
-				const char *pszBone = pHdr->pBone( i )->pszName();
-
-				// this bone is a child of the flagged trunk bone, cut it
-				if ( BoneParentDepth( pHdr, pszBone, pszTrunk ) >= 0 )
-				{
-					if ( !params.cutBones.HasElement( pszBone ) )
-					{
-						params.cutBones.AddToTail( pszBone );
-
-						m_trunkBones.Set( i );
-					}
-				}
-				else if ( m_iBranchRootBone < 0 // otherwise it will potentially be visible
-					|| BoneParentDepth( GetModelPtr(), i, m_iBranchRootBone ) >= 0 ) // if it's a child of our branch root
-				{
-					tempNormalBones.AddToTail( i );
-				}
-			}
-		}
-
-		// now accept all potential normal bones
-		// if they haven't been flagged as trunk joint
-		FOR_EACH_VEC( tempNormalBones, i )
-		{
-			if ( !m_trunkBones.IsBitSet( tempNormalBones[ i ] ) )
-				m_normalBones.Set( tempNormalBones[ i ] );
-		}
-
-		//if ( m_iBranchRootBone >= 0 )
-		//{
-		//	for ( int i = 0; i < pHdr->numbones(); i++ )
-		//	{
-		//		// make sure that we didn't add normal bones which aren't
-		//		// part of the new root by accident
-		//		if ( BoneParentDepth( GetModelPtr(), i, m_iBranchRootBone ) < 0 )
-		//		{
-		//			Assert( i != m_iBranchRootBone );
-
-		//			m_normalBones.Clear( i );
-		//		}
-		//	}
-		//}
-
-		Assert( m_iBranchRootBone < 0 || m_normalBones.IsBitSet( m_iBranchRootBone ) );
-		Assert( m_normalBones.FindNextSetBit( 0 ) >= 0 );
-	}
-
-	// copy current flag state to storable arrays
-	Q_memcpy( m_iBoneFlagStorage, m_normalBones.Base(), sizeof( int ) * 4 );
-	Q_memcpy( m_iBoneFlagStorage + 4, m_trunkBones.Base(), sizeof( int ) * 4 );
-	Q_memcpy( m_iBoneFlagStorage + 8, m_jointBones.Base(), sizeof( int ) * 4 );
 }
 
 void C_ClientPartialRagdoll::BuildTransformations( CStudioHdr *hdr, Vector *pos, Quaternion *q,
@@ -636,4 +545,254 @@ void C_ClientPartialRagdoll::BuildTransformations( CStudioHdr *hdr, Vector *pos,
 			}
 		}
 	}
+}
+
+int C_ClientPartialRagdoll::DrawModel( int flags )
+{
+	const int ret = BaseClass::DrawModel( flags );
+
+	if ( m_Gore.Count() > 0 )
+	{
+		CMatRenderContextPtr pRenderContext( materials );
+		pRenderContext->MatrixMode( MATERIAL_MODEL );
+		pRenderContext->PushMatrix();
+
+		pRenderContext->SetNumBoneWeights( 0 );
+		pRenderContext->Bind( m_GoreMaterial );
+
+		FOR_EACH_VEC( m_Gore, i )
+		{
+			const PartialRagdollGore_t &gore = m_Gore[ i ];
+
+			const matrix3x4_t &boneMatrix = GetBone( gore.m_iBone );
+			pRenderContext->LoadMatrix( boneMatrix );
+
+			//pRenderContext->LoadIdentity();
+
+			gore.m_pMesh->Draw();
+
+			//for ( int f = 0; f < g_pClientShadowMgr->GetNumShadowDepthtextures(); f++ )
+			//{
+			//	ShadowHandle_t handle = g_pClientShadowMgr->GetShadowDepthHandle( f );
+
+			//	if ( handle == SHADOW_HANDLE_INVALID )
+			//	{
+			//		continue;
+			//	}
+
+			//	shadowmgr->SetFlashlightRenderState( handle );
+			//	gore.m_pMesh->Draw();
+			//	pRenderContext->SetFlashlightMode( false );
+			//}
+		}
+
+		pRenderContext->MatrixMode( MATERIAL_MODEL );
+		pRenderContext->PopMatrix();
+	}
+
+	return ret;
+}
+
+void C_ClientPartialRagdoll::BuildPartial( ragdollparams_partial_t &params )
+{
+	CStudioHdr *pHdr = GetModelPtr();
+	Assert( pHdr );
+
+	if ( pHdr != NULL )
+	{
+		m_iBranchRootBone = -1;
+
+		// cut all bones that aren't part of this 'branch'
+		// i.e. spine is not part of arm branch
+		CUtlVector< int > tempNormalBones;
+
+		if ( !params.rootBone.IsEmpty() )
+		{
+			const char *pszBranch = params.rootBone;
+			const int iBone = LookupBone( pszBranch );
+
+			m_iBranchRootBone = iBone;
+
+			m_jointBones.Set( iBone );
+
+			for ( int i = 0; i < pHdr->numbones(); i++ )
+			{
+				const char *pszBone = pHdr->pBone( i )->pszName();
+
+				// this bone is not a child of our new branch root, cut it
+				if ( !BoneHasParent( pHdr, pszBone, pszBranch )
+					&& i != iBone )
+				{
+					if ( !params.cutBones.HasElement( pszBone ) )
+					{
+						params.cutBones.AddToTail( pszBone );
+					}
+				}
+				else // otherwise it will potentially be visible
+				{
+					tempNormalBones.AddToTail( i );
+				}
+			}
+		}
+
+		// cut all bones that aren't part of this trunk
+		// i.e. arm isn't part of pelvis/spline trunk
+
+		FOR_EACH_VEC( params.trunkBones, t )
+		{
+			const char *pszTrunk = params.trunkBones[ t ].Get();
+			const int iBone = LookupBone( pszTrunk );
+
+			// don't evaluate trunks that are parents of our branch root
+			if ( m_iBranchRootBone >= 0
+				&& BoneHasParent( pHdr, m_iBranchRootBone, iBone ) )
+				continue;
+
+			Assert( params.rootBone.IsEmpty() || params.rootBone != pszTrunk );
+
+			m_jointBones.Set( iBone );
+
+			for ( int i = 0; i < pHdr->numbones(); i++ )
+			{
+				const char *pszBone = pHdr->pBone( i )->pszName();
+
+				// this bone is a child of the flagged trunk bone, cut it
+				if ( BoneParentDepth( pHdr, pszBone, pszTrunk ) >= 0 )
+				{
+					if ( !params.cutBones.HasElement( pszBone ) )
+					{
+						params.cutBones.AddToTail( pszBone );
+
+						m_trunkBones.Set( i );
+					}
+				}
+				else if ( m_iBranchRootBone < 0 // otherwise it will potentially be visible
+					|| BoneParentDepth( GetModelPtr(), i, m_iBranchRootBone ) >= 0 ) // if it's a child of our branch root
+				{
+					tempNormalBones.AddToTail( i );
+				}
+			}
+		}
+
+		// now accept all potential normal bones
+		// if they haven't been flagged as trunk joint
+		FOR_EACH_VEC( tempNormalBones, i )
+		{
+			if ( !m_trunkBones.IsBitSet( tempNormalBones[ i ] ) )
+				m_normalBones.Set( tempNormalBones[ i ] );
+		}
+
+		//if ( m_iBranchRootBone >= 0 )
+		//{
+		//	for ( int i = 0; i < pHdr->numbones(); i++ )
+		//	{
+		//		// make sure that we didn't add normal bones which aren't
+		//		// part of the new root by accident
+		//		if ( BoneParentDepth( GetModelPtr(), i, m_iBranchRootBone ) < 0 )
+		//		{
+		//			Assert( i != m_iBranchRootBone );
+
+		//			m_normalBones.Clear( i );
+		//		}
+		//	}
+		//}
+
+		Assert( m_iBranchRootBone < 0 || m_normalBones.IsBitSet( m_iBranchRootBone ) );
+		Assert( m_normalBones.FindNextSetBit( 0 ) >= 0 );
+	}
+
+	// copy current flag state to storable arrays
+	Q_memcpy( m_iBoneFlagStorage, m_normalBones.Base(), sizeof( int ) * 4 );
+	Q_memcpy( m_iBoneFlagStorage + 4, m_trunkBones.Base(), sizeof( int ) * 4 );
+	Q_memcpy( m_iBoneFlagStorage + 8, m_jointBones.Base(), sizeof( int ) * 4 );
+
+	RebuildGore();
+}
+
+void C_ClientPartialRagdoll::RebuildGore()
+{
+	if ( !m_GoreMaterial.IsValid() )
+	{
+		m_GoreMaterial.Init( materials->FindMaterial( "models/gibs/human_gore", TEXTURE_GROUP_MODEL ) );
+
+		if ( !m_GoreMaterial.IsValid() )
+		{
+			Assert( 0 );
+			return;
+		}
+	}
+
+	CStudioHdr *pHdr = GetModelPtr();
+	if ( m_iBranchRootBone > 0 )
+	{
+		IMesh *pMesh = CreateGoreMeshForBone( pHdr, m_iBranchRootBone, true );
+		if ( pMesh != NULL )
+		{
+			PartialRagdollGore_t gore;
+			gore.m_iBone = m_iBranchRootBone;
+			gore.m_pMesh = pMesh;
+			m_Gore.AddToTail( gore );
+		}
+	}
+
+	for ( int i = 0; i < pHdr->numbones(); i++ )
+	{
+		const int iParentBone = pHdr->boneParent( i );
+		if ( iParentBone >= 0
+			&& pHdr->boneParent( iParentBone ) >= 0
+			&& m_jointBones.IsBitSet( iParentBone )
+			&& !m_normalBones.IsBitSet( i ) )
+		{
+			IMesh *pMesh = CreateGoreMeshForBone( pHdr, iParentBone, false );
+			if ( pMesh != NULL )
+			{
+				PartialRagdollGore_t gore;
+				gore.m_iBone = pHdr->boneParent( iParentBone );
+				gore.m_pMesh = pMesh;
+				m_Gore.AddToTail( gore );
+			}
+		}
+	}
+}
+
+IMesh *C_ClientPartialRagdoll::CreateGoreMeshForBone( const CStudioHdr *pHdr, int iBone, bool bRoot )
+{
+	Assert( pHdr );
+	Assert( iBone >= 0 );
+	Assert( m_GoreMaterial.IsValid() );
+
+	FOR_EACH_VEC( m_Gore, i )
+	{
+		if ( m_Gore[ i ].m_iBone == iBone )
+		{
+			return NULL;
+		}
+	}
+
+	GoreParams_t goreParams;
+	goreParams.pszGoreClassName = STRING( m_strRecursiveGoreName );
+	goreParams.pszBone = pHdr->pBone( iBone )->pszName();
+	goreParams.bAsRoot = bRoot;
+
+	GoreConfig_t goreConfig;
+	if ( C_GibConfig::GetInstance()->GetGoreConfig( goreParams, goreConfig ) )
+	{
+		CGoreGenerator goreGenerator;
+		return goreGenerator.GenerateMesh( m_GoreMaterial, goreConfig );
+	}
+	else
+	{
+		return NULL;
+	}
+}
+
+void C_ClientPartialRagdoll::DestroyGore()
+{
+	CMatRenderContextPtr pRenderContext( materials );
+	FOR_EACH_VEC( m_Gore, i )
+	{
+		PartialRagdollGore_t &gore = m_Gore[ i ];
+		pRenderContext->DestroyStaticMesh( gore.m_pMesh );
+	}
+	m_Gore.Purge();
 }

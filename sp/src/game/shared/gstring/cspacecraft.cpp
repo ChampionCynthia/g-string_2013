@@ -473,6 +473,15 @@ void CSpacecraft::OnDataChanged( DataUpdateType_t t )
 void CSpacecraft::UpdateOnRemove()
 {
 	BaseClass::UpdateOnRemove();
+
+	for ( int i = 0; i < m_ThrusterSounds.Count(); i++ )
+	{
+		const int guid = m_ThrusterSounds[ i ];
+		if ( enginesound->IsSoundStillPlaying( guid ) )
+		{
+			enginesound->StopSoundByGuid( guid );
+		}
+	}
 }
 
 void CSpacecraft::ClientThink()
@@ -546,7 +555,11 @@ void CSpacecraft::ClientThink()
 	{
 		for ( int i = iActiveThrusterSounds - 1; i >= iActiveThrustersSoundsDesired; i-- )
 		{
-			enginesound->StopSoundByGuid( m_ThrusterSounds[ i ] );
+			const int guid = m_ThrusterSounds[ i ];
+			if ( enginesound->IsSoundStillPlaying( guid ) )
+			{
+				enginesound->StopSoundByGuid( guid );
+			}
 		}
 		m_ThrusterSounds.RemoveMultipleFromTail( iActiveThrusterSounds - iActiveThrustersSoundsDesired );
 	}

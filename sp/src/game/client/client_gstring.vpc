@@ -65,6 +65,8 @@ $Project "Client (G-String)"
 			$File	"gstring\gstring_in_main.h"
 			$File	"gstring\c_lights.cpp"
 			$File	"gstring\c_lights.h"
+			$File	"gstring\cgore_generator.cpp"
+			$File	"gstring\cgore_generator.h"
 			
 			$Folder "vgui"
 			{

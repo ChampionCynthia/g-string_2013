@@ -22,6 +22,8 @@ protected:
 	virtual void MouseMove( CUserCmd *cmd );
 
 private:
+	virtual void InteractionMouseMove( CUserCmd *cmd );
+
 	Vector2D m_MousePosition;
 	bool m_bIsUsingCustomCrosshair;
 

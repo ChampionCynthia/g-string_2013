@@ -3,6 +3,7 @@
 #include "filesystem.h"
 
 #include "c_gibconfig.h"
+#include "c_clientpartialragdoll.h"
 #include "c_gstring_util.h"
 #include "bone_setup.h"
 
@@ -10,12 +11,54 @@ ConVar gstring_gibbing_chance( "gstring_gibbing_chance", "20", FCVAR_CHEAT, "Pro
 ConVar gstring_gibbing_explosion_chance( "gstring_gibbing_explosion_chance", "90", FCVAR_CHEAT, "Probably of gibbing by explosion impacts." );
 ConVar gstring_gibbing_explosion_recursive_chance( "gstring_gibbing_explosion_recursive_chance", "70", FCVAR_CHEAT, "Probably of gibbing multiple times by explosion impacts." );
 
+CON_COMMAND( gstring_gibbing_reload_config, "" )
+{
+	C_GibConfig::GetInstance()->ReloadConfig();
+
+	for ( C_BaseEntity *pEnt = ClientEntityList().FirstBaseEntity(); pEnt; pEnt = ClientEntityList().NextBaseEntity( pEnt ) )
+	{
+		C_ClientPartialRagdoll *pPartialRagdoll = dynamic_cast< C_ClientPartialRagdoll* >( pEnt );
+		if ( pPartialRagdoll != NULL )
+		{
+			pPartialRagdoll->DestroyGore();
+			pPartialRagdoll->RebuildGore();
+		}
+	}
+}
+
+static void ParseGoreConfig( KeyValues *pKV, GoreConfig_t &config )
+{
+	if ( pKV == NULL )
+	{
+		config.angOrientation.Init();
+		config.vecOffset.Init();
+		config.vecScale.Init( 1.0f, 1.0f, 1.0f );
+		config.flBoneSize = 0.0f;
+		config.flBoneSizeRandom = 0.0f;
+		config.flBoneChance = 100.0f;
+		config.flFringeSize = 0.0f;
+		config.flFringeChance = 100.0f;
+	}
+	else
+	{
+		UTIL_StringToVector( config.angOrientation.Base(), pKV->GetString( "orientation", "0 0 0" ) );
+		UTIL_StringToVector( config.vecOffset.Base(), pKV->GetString( "offset", "0 0 0" ) );
+		UTIL_StringToVector( config.vecScale.Base(), pKV->GetString( "scale", "1 1 1" ) );
+		config.flBoneSize = pKV->GetFloat( "bone_size" );
+		config.flBoneSizeRandom = pKV->GetFloat( "bone_size_random" );
+		config.flBoneChance = pKV->GetFloat( "bone_chance", 100.0f );
+		config.flFringeSize = pKV->GetFloat( "fringe" );
+		config.flFringeChance = pKV->GetFloat( "fringe_chance", 100.0f );
+	}
+}
+
 C_GibConfig C_GibConfig::instance;
 
 C_GibConfig::C_GibConfig()
 	: BaseClass( "gibconfig_system" )
 	, m_npcConfigs( CaselessCUtlStringLessThan )
 	, m_ragdollConfigs( CaselessCUtlStringLessThan )
+	, m_goreConfigs( CaselessCUtlStringLessThan )
 {
 }
 
@@ -25,18 +68,15 @@ C_GibConfig::~C_GibConfig()
 
 bool C_GibConfig::Init()
 {
-	return true;
-}
-
-void C_GibConfig::LevelInitPreEntity()
-{
 	ReloadConfig();
+	return true;
 }
 
 void C_GibConfig::ReloadConfig()
 {
 	m_npcConfigs.RemoveAll();
 	m_ragdollConfigs.RemoveAll();
+	m_goreConfigs.RemoveAll();
 
 	KeyValues::AutoDelete pKVManifestRagdoll( "" );
 
@@ -121,12 +161,12 @@ void C_GibConfig::ReloadConfig()
 		NpcConfig_t npc;
 
 		// load models and default setup for each npc class
-		for ( KeyValues *pKVModel = pKVNpc->GetFirstValue();
+		for ( KeyValues *pKVModel = pKVNpc->GetFirstTrueSubKey();
 			pKVModel;
-			pKVModel = pKVModel->GetNextValue() )
+			pKVModel = pKVModel->GetNextTrueSubKey() )
 		{
 			const char *pszModelName = pKVModel->GetName();
-			const char *pszRagdollName = pKVModel->GetString();
+			const char *pszRagdollName = pKVModel->GetString( "ragdoll" );
 
 			if ( !*pszModelName
 				|| !*pszRagdollName )
@@ -137,20 +177,63 @@ void C_GibConfig::ReloadConfig()
 			Q_FixSlashes( szFixedName );
 
 			npc.m_modelConfigs.Insert( szFixedName, pszRagdollName );
+
+			const char *pszGoreName = pKVModel->GetString( "gore" );
+			if ( *pszGoreName )
+			{
+				npc.m_goreConfigs.Insert( szFixedName, pszGoreName );
+			}
 		}
 
 		if ( npc.m_modelConfigs.Count() > 0 )
 			m_npcConfigs.Insert( pszClassName, npc );
 	}
+
+	KeyValues::AutoDelete pKVManifestGore( "" );
+
+	if ( !pKVManifestGore->LoadFromFile( filesystem, "scripts/gibs/manifest_gore.txt" ) )
+	{
+		Assert( 0 );
+		return;
+	}
+
+	for ( KeyValues *pKVGore = pKVManifestGore->GetFirstTrueSubKey();
+		pKVGore;
+		pKVGore = pKVGore->GetNextTrueSubKey() )
+	{
+		const char *pszName = pKVGore->GetName();
+
+		if ( !*pszName )
+			continue;
+
+		GoreClassConfig_t classConfig;
+
+		for ( KeyValues *pKVBone = pKVGore->GetFirstTrueSubKey();
+			pKVBone;
+			pKVBone = pKVBone->GetNextTrueSubKey() )
+		{
+			const char *pszBoneName = pKVBone->GetName();
+
+			if ( !*pszBoneName )
+				continue;
+
+			GoreBoneConfig_t config;
+			ParseGoreConfig( pKVBone->FindKey( "root" ), config.rootConfig );
+			ParseGoreConfig( pKVBone->FindKey( "joint" ), config.jointConfig );
+			classConfig.m_boneConfigs.Insert( pszBoneName, config );
+		}
+
+		m_goreConfigs.Insert( pszName, classConfig );
+	}
 }
 
-bool C_GibConfig::GetGibsForModel( const GibbingParams_t &params, CUtlVector< ragdollparams_partial_t > &gibs, const char **pszGibGroup )
+bool C_GibConfig::GetGibsForModel( const GibbingParams_t &params, CUtlVector< ragdollparams_partial_t > &gibs,
+	const char **pszGibGroup, const char **pszGoreGroup )
 {
 	if ( !params.pHdr )
 		return false;
 
 	unsigned short npcLookup = m_npcConfigs.Find( params.pszClassName );
-
 	if ( !m_npcConfigs.IsValidIndex( npcLookup ) )
 		return false;
 
@@ -161,7 +244,6 @@ bool C_GibConfig::GetGibsForModel( const GibbingParams_t &params, CUtlVector< ra
 	Q_FixSlashes( szModelNameFixed );
 
 	unsigned short modelLookup = npc.m_modelConfigs.Find( szModelNameFixed );
-
 	if ( !npc.m_modelConfigs.IsValidIndex( modelLookup ) )
 	{
 		modelLookup = npc.m_modelConfigs.Find( "default" );
@@ -171,14 +253,12 @@ bool C_GibConfig::GetGibsForModel( const GibbingParams_t &params, CUtlVector< ra
 	}
 
 	const char *pszRagdollConfigName = npc.m_modelConfigs[ modelLookup ];
-
-	unsigned short ragdollLookup = m_ragdollConfigs.Find( pszRagdollConfigName );
+	const unsigned short ragdollLookup = m_ragdollConfigs.Find( pszRagdollConfigName );
 
 	if ( !m_ragdollConfigs.IsValidIndex( ragdollLookup ) )
 		return false;
 
 	const RagdollConfig_t &ragdollConfig = m_ragdollConfigs[ ragdollLookup ];
-
 	Assert( ragdollConfig.m_pData );
 
 	if ( pszGibGroup != NULL )
@@ -186,8 +266,24 @@ bool C_GibConfig::GetGibsForModel( const GibbingParams_t &params, CUtlVector< ra
 		*pszGibGroup = ragdollConfig.m_pData->GetName();
 	}
 
-	const char *pszIdealJointName = GetBestCutJoint( ragdollConfig, params.pHdr, params.pszHitBone );
+	if ( pszGoreGroup != NULL )
+	{
+		unsigned short goreNameLookup = npc.m_goreConfigs.Find( szModelNameFixed );
+		if ( !npc.m_goreConfigs.IsValidIndex( goreNameLookup ) )
+		{
+			goreNameLookup = npc.m_goreConfigs.Find( "default" );
+		}
+		if ( npc.m_goreConfigs.IsValidIndex( goreNameLookup ) )
+		{
+			*pszGoreGroup = npc.m_goreConfigs[ goreNameLookup ];
+		}
+		else
+		{
+			*pszGoreGroup = NULL;
+		}
+	}
 
+	const char *pszIdealJointName = GetBestCutJoint( ragdollConfig, params.pHdr, params.pszHitBone );
 	if ( !pszIdealJointName )
 		return false;
 
@@ -234,7 +330,7 @@ bool C_GibConfig::GetGibsForGroup( const GibbingParamsRecursive_t &params, CUtlV
 
 bool C_GibConfig::GetRandomGibsForGroup( const GibbingParamsRecursive_t &params, CUtlVector< ragdollparams_partial_t > &gibs, const char **pszSplitBone )
 {
-	unsigned short ragdollLookup = m_ragdollConfigs.Find( params.pszParentName );
+	const unsigned short ragdollLookup = m_ragdollConfigs.Find( params.pszParentName );
 
 	if ( !m_ragdollConfigs.IsValidIndex( ragdollLookup ) )
 		return false;
@@ -306,6 +402,33 @@ bool C_GibConfig::GetRandomGibsForGroup( const GibbingParamsRecursive_t &params,
 
 	gibs.AddToTail( params_trunk );
 	gibs.AddToTail( params_branch );
+	return true;
+}
+
+bool C_GibConfig::GetGoreConfig( const GoreParams_t &params, GoreConfig_t &config )
+{
+	const unsigned int goreClassLookup = m_goreConfigs.Find( params.pszGoreClassName );
+	if ( !m_goreConfigs.IsValidIndex( goreClassLookup ) )
+	{
+		return false;
+	}
+
+	const GoreClassConfig_t &goreClassConfig = m_goreConfigs[ goreClassLookup ];
+	const unsigned short boneLookup = goreClassConfig.m_boneConfigs.Find( params.pszBone );
+	if ( !goreClassConfig.m_boneConfigs.IsValidIndex( boneLookup ) )
+	{
+		return false;
+	}
+
+	const GoreBoneConfig_t &boneConfig = goreClassConfig.m_boneConfigs[ boneLookup ];
+	if ( params.bAsRoot )
+	{
+		config = boneConfig.rootConfig;
+	}
+	else
+	{
+		config = boneConfig.jointConfig;
+	}
 	return true;
 }
 

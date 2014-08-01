@@ -132,7 +132,7 @@ struct PS_INPUT
 	float3 vWorldBinormal										: TEXCOORD5;
 #endif
 	float4 worldPos_projPosZ									: TEXCOORD6;
-	float3 detailTexCoord										: TEXCOORD7;
+	float2 detailTexCoord										: TEXCOORD7;
 
 #if defined( _X360 ) && FLASHLIGHT || CASCADED_SHADOW
 	float4 flashlightSpacePos									: TEXCOORD8;
