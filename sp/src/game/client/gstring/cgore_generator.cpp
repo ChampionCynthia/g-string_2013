@@ -4,6 +4,14 @@
 
 #include "materialsystem/imesh.h"
 
+#if DEBUG
+#define DECLARE_FIXED_SIZE_ARRAY( type, name, size ) \
+	CUtlVector< type > name; name.SetCount( size );
+#else
+#define DECLARE_FIXED_SIZE_ARRAY( type, name, size ) \
+	type name[ size ];
+#endif
+
 CGoreGenerator::CGoreGenerator()
 {
 }
@@ -16,13 +24,15 @@ IMesh *CGoreGenerator::GenerateMesh( IMaterial *pMaterial, const GoreConfig_t &c
 	const int iNumStubTris = iStubSubDivision * iStubSubDivision * 2 - 4;
 	const float flStubSize = 5.0f;
 
-	const bool bFringe = config.flFringeSize > 0.0f;
+	const bool bFringe = config.flFringeSize > 0.0f && RandomFloat( 0.0001f, 100.0f ) <= config.flFringeChance;
 	const int iNumFringeTris = bFringe ? 8 : 0;
 
 	const float flBoneThickMin = 0.3f;
 	const float flBoneThickMax = 0.5f;
-	const bool bBone = config.flBoneSize > 0.0f;
-	const int iNumBoneTris = bBone ? 7 : 0;
+	const bool bBone = config.flBoneSize > 0.0f && RandomFloat( 0.0001f, 100.0f ) <= config.flBoneChance;
+	const bool bBoneDecoration = bBone && RandomFloat( 0.0001f, 100.0f ) <= config.flBoneDecorationChance;
+	const float flBoneSize = config.flBoneSize + RandomFloat( -config.flBoneSizeRandom, config.flBoneSizeRandom );
+	const int iNumBoneTris = bBone ? bBoneDecoration ? 19 : 7 : 0;
 
 	const int iNumTris = iNumStubTris + iNumFringeTris + iNumBoneTris;
 
@@ -35,14 +45,31 @@ IMesh *CGoreGenerator::GenerateMesh( IMaterial *pMaterial, const GoreConfig_t &c
 		vecRight * config.vecOffset.y +
 		vecUp * config.vecOffset.z;
 
+	const Vector vecFwdDirection = vecFwd;
+	const Vector vecRightDirection = vecRight;
+
+	matrix3x4_t rotationMatrix, tmp2, dst;
+	AngleMatrix( config.angOrientation, tmp2 );
+	MatrixBuildRotationAboutAxis( vecUp, RandomFloat( 0.0f, 360.0f ), rotationMatrix );
+	ConcatTransforms( rotationMatrix, tmp2, dst );
+
+	QAngle angles;
+	MatrixAngles( dst, angles );
+	AngleVectors( angles, &vecFwd, &vecRight, &vecUp );
+
 	const Vector vecFringeUp = vecUp * config.flFringeSize;
 
 	const Vector vecBoneFwd = vecFwd;
 	const Vector vecBoneRight = vecRight;
-	const Vector vecBoneUp = vecUp * config.flBoneSize;
+	const Vector vecBoneUp = vecUp * flBoneSize;
 
-	vecFwd *= config.vecScale.x;
-	vecRight *= -config.vecScale.y;
+	const Vector vecFwdRotated = vecFwd;
+	vecFwd *= Lerp( abs( DotProduct( vecFwdRotated, vecFwdDirection ) ), 1.0f, config.vecScale.x );
+	vecFwd *= Lerp( abs( DotProduct( vecFwdRotated, vecRightDirection ) ), 1.0f, config.vecScale.y );
+	const Vector vecRightRotated = vecRight;
+	vecRight *= Lerp( abs( DotProduct( vecRightRotated, vecFwdDirection ) ), 1.0f, config.vecScale.x );
+	vecRight *= Lerp( abs( DotProduct( vecRightRotated, vecRightDirection ) ), 1.0f, config.vecScale.y );
+
 	vecUp *= config.vecScale.z;
 
 	VertexFormat_t vertexFormat = VERTEX_POSITION | VERTEX_NORMAL | VERTEX_TEXCOORD_SIZE( 0, 2 ) |
@@ -62,9 +89,9 @@ IMesh *CGoreGenerator::GenerateMesh( IMaterial *pMaterial, const GoreConfig_t &c
 	{
 		// Build geometry helpers
 		const int iNumPoints = iStubSubDivisionPlusOne * iStubSubDivisionPlusOne;
-		Vector vecPositions[ iNumPoints ];
-		Vector vecNormals[ iNumPoints ];
-		Vector2D vecUVs[ iNumPoints ];
+		DECLARE_FIXED_SIZE_ARRAY( Vector, vecPositions, iNumPoints );
+		DECLARE_FIXED_SIZE_ARRAY( Vector, vecNormals, iNumPoints );
+		DECLARE_FIXED_SIZE_ARRAY( Vector2D, vecUVs, iNumPoints );
 		for ( int x = 0; x <= iStubSubDivision; x++ )
 		{
 			for ( int y = 0; y <= iStubSubDivision; y++ )
@@ -208,9 +235,9 @@ IMesh *CGoreGenerator::GenerateMesh( IMaterial *pMaterial, const GoreConfig_t &c
 	if ( bFringe )
 	{
 		const int iFringeVertices = 8;
-		Vector vecPositions[ iFringeVertices ];
-		Vector vecNormals[ iFringeVertices ];
-		Vector2D vecUVs[ iFringeVertices + 2 ];
+		DECLARE_FIXED_SIZE_ARRAY( Vector, vecPositions, iFringeVertices );
+		DECLARE_FIXED_SIZE_ARRAY( Vector, vecNormals, iFringeVertices );
+		DECLARE_FIXED_SIZE_ARRAY( Vector2D, vecUVs, iFringeVertices + 2 );
 
 		vecUVs[ 0 ].y = 0.0f;
 		vecUVs[ 2 ].y = 0.25f;
@@ -288,13 +315,105 @@ IMesh *CGoreGenerator::GenerateMesh( IMaterial *pMaterial, const GoreConfig_t &c
 	///////////////////////
 	// Generate bone
 	///////////////////////
-	if ( bBone )
+	if ( bBoneDecoration )
+	{
+		const int iBoneVertices = 12;
+		const float flUVXStep = ( 2.0f / iBoneVertices ) * 0.25f;
+		const float flDecoSize = flBoneThickMax * 2.5f;
+
+		DECLARE_FIXED_SIZE_ARRAY( Vector, vecPositions, iBoneVertices );
+		DECLARE_FIXED_SIZE_ARRAY( Vector, vecNormals, iBoneVertices );
+		DECLARE_FIXED_SIZE_ARRAY( Vector2D, vecUVs, iBoneVertices + 4 );
+
+		vecPositions[ 0 ] = vecBoneFwd * flBoneThickMax;
+		vecPositions[ 4 ] = vecBoneFwd * flBoneThickMax * -0.5f + vecBoneRight * flBoneThickMax;
+		vecPositions[ 8 ] = vecBoneFwd * flBoneThickMax * -0.5f - vecBoneRight * flBoneThickMax;
+
+		vecPositions[ 1 ] = vecBoneFwd * flBoneThickMin;
+		vecPositions[ 5 ] = vecBoneFwd * flBoneThickMin * -0.5f + vecBoneRight * flBoneThickMin;
+		vecPositions[ 9 ] = vecBoneFwd * flBoneThickMin * -0.5f - vecBoneRight * flBoneThickMin;
+
+		vecPositions[ 2 ] = vecBoneFwd * flBoneThickMax;
+		vecPositions[ 6 ] = vecBoneFwd * flBoneThickMax * -0.5f + vecBoneRight * flBoneThickMax;
+		vecPositions[ 10 ] = vecBoneFwd * flBoneThickMax * -0.5f - vecBoneRight * flBoneThickMax;
+
+		vecPositions[ 3 ] = vecBoneFwd * flDecoSize;
+		vecPositions[ 7 ] = vecBoneFwd * flDecoSize * -0.5f + vecBoneRight * flDecoSize;
+		vecPositions[ 11 ] = vecBoneFwd * flDecoSize * -0.5f - vecBoneRight * flDecoSize;
+
+		for ( int i = 0; i < iBoneVertices + 4; i += 4 )
+		{
+			vecUVs[ i ].y = 0.0f;
+			vecUVs[ i + 1 ].y = 0.45f;
+			vecUVs[ i + 2 ].y = 0.9f;
+			vecUVs[ i + 3 ].y = 1.0f;
+			vecUVs[ i ].x = 0.75f + ( i / 2.0f ) * flUVXStep;
+			vecUVs[ i + 1 ].x = vecUVs[ i ].x;
+			vecUVs[ i + 2 ].x = vecUVs[ i ].x;
+			vecUVs[ i + 3 ].x = vecUVs[ i ].x;
+		}
+
+		for ( int i = 0; i < iBoneVertices; i += 4 )
+		{
+			vecPositions[ i + 1 ] += 0.5f * vecBoneUp * ( flBoneSize - i * 0.05f );
+			vecPositions[ i + 2 ] += 0.7f * vecBoneUp * ( flBoneSize - i * 0.1f );
+			vecPositions[ i + 3 ] += vecBoneUp * ( flBoneSize - i * 0.1f );
+			vecNormals[ i ] = vecPositions[ i ].Normalized();
+			vecNormals[ i + 1 ] = vecNormals[ i ];
+			vecNormals[ i + 2 ] = vecNormals[ i ];
+			vecNormals[ i + 3 ] = vecNormals[ i ] - vecBoneUp.Normalized();
+			vecNormals[ i + 3 ].NormalizeInPlace();
+		}
+
+		const int iQuadIndices[] =
+		{
+			4, 0, 1,
+			4, 1, 5
+		};
+
+		for ( int i = 0; i < 9; i++ )
+		{
+			for ( int v = 0; v < 6; v++ )
+			{
+				const int iQuadBase = i + i / 3;
+				const int iIndex = ( iQuadIndices[ v ] + iQuadBase ) % ( iBoneVertices );
+				const int iIndexUV = iQuadIndices[ v ] + iQuadBase;
+				Assert( iIndex < iBoneVertices );
+				Assert( iIndexUV < ( iBoneVertices + 4 ) );
+
+				meshBuilder.Position3fv( vecPositions[ iIndex ].Base() );
+				meshBuilder.Normal3fv( vecNormals[ iIndex ].Base() );
+				meshBuilder.TexCoord2fv( 0, vecUVs[ iIndexUV ].Base() );
+				meshBuilder.UserData( flUserData );
+				meshBuilder.AdvanceVertex();
+			}
+		}
+
+		meshBuilder.Position3fv( vecPositions[ 3 ].Base() );
+		meshBuilder.Normal3fv( vecNormals[ 3 ].Base() );
+		meshBuilder.TexCoord2fv( 0, vecUVs[ 3 ].Base() );
+		meshBuilder.UserData( flUserData );
+		meshBuilder.AdvanceVertex();
+
+		meshBuilder.Position3fv( vecPositions[ 7 ].Base() );
+		meshBuilder.Normal3fv( vecNormals[ 7 ].Base() );
+		meshBuilder.TexCoord2fv( 0, vecUVs[ 7 ].Base() );
+		meshBuilder.UserData( flUserData );
+		meshBuilder.AdvanceVertex();
+
+		meshBuilder.Position3fv( vecPositions[ 11 ].Base() );
+		meshBuilder.Normal3fv( vecNormals[ 11 ].Base() );
+		meshBuilder.TexCoord2fv( 0, vecUVs[ 8 ].Base() );
+		meshBuilder.UserData( flUserData );
+		meshBuilder.AdvanceVertex();
+	}
+	else if ( bBone )
 	{
 		const int iBoneVertices = 6;
 		const float flUVXStep = ( 2.0f / iBoneVertices ) * 0.25f;
-		Vector vecPositions[ iBoneVertices ];
-		Vector vecNormals[ iBoneVertices ];
-		Vector2D vecUVs[ iBoneVertices + 2 ];
+		DECLARE_FIXED_SIZE_ARRAY( Vector, vecPositions, iBoneVertices );
+		DECLARE_FIXED_SIZE_ARRAY( Vector, vecNormals, iBoneVertices );
+		DECLARE_FIXED_SIZE_ARRAY( Vector2D, vecUVs, iBoneVertices + 2 );
 
 		vecPositions[ 0 ] = vecBoneFwd * flBoneThickMax;
 		vecPositions[ 2 ] = vecBoneFwd * flBoneThickMax * -0.5f + vecBoneRight * flBoneThickMax;
@@ -313,7 +432,7 @@ IMesh *CGoreGenerator::GenerateMesh( IMaterial *pMaterial, const GoreConfig_t &c
 
 		for ( int i = 0; i < iBoneVertices; i += 2 )
 		{
-			vecPositions[ i + 1 ] += vecBoneUp * ( config.flBoneSize - i * 0.1f );
+			vecPositions[ i + 1 ] += vecBoneUp * ( flBoneSize - i * 0.1f );
 			vecNormals[ i ] = vecPositions[ i ].Normalized();
 			vecNormals[ i + 1 ] = vecNormals[ i ];
 		}
@@ -322,6 +441,8 @@ IMesh *CGoreGenerator::GenerateMesh( IMaterial *pMaterial, const GoreConfig_t &c
 		{
 			const int iIndex0 = i * 2;
 			const int iIndex1 = ( iIndex0 == iBoneVertices - 2 ) ? 0 : ( iIndex0 + 2 );
+
+			Assert( iIndex0 + 3 < iBoneVertices + 2 );
 
 			meshBuilder.Position3fv( vecPositions[ iIndex1 ].Base() );
 			meshBuilder.Normal3fv( vecNormals[ iIndex1 ].Base() );

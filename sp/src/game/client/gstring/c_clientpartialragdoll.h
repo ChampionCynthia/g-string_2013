@@ -24,7 +24,7 @@ public:
 	~C_ClientPartialRagdoll();
 
 	void SetShrinkingEnabled( bool bEnable );
-	void SetRecursiveGibData( const char *pszParentName, const char *pszGoreName );
+	void SetRecursiveGibData( const char *pszParentName, const char *pszGoreName, const char *pszGoreMaterialName );
 
 	void OnRestore();
 
@@ -60,6 +60,7 @@ private:
 
 	string_t m_strRecursiveParent;
 	string_t m_strRecursiveGoreName;
+	string_t m_strRecursiveGoreMaterialName;
 	int m_iBranchRootBone;
 
 	int m_iBoneFlagStorage[ 12 ];

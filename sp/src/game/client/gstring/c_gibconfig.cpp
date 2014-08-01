@@ -36,6 +36,7 @@ static void ParseGoreConfig( KeyValues *pKV, GoreConfig_t &config )
 		config.flBoneSize = 0.0f;
 		config.flBoneSizeRandom = 0.0f;
 		config.flBoneChance = 100.0f;
+		config.flBoneDecorationChance = 0.0f;
 		config.flFringeSize = 0.0f;
 		config.flFringeChance = 100.0f;
 	}
@@ -47,7 +48,8 @@ static void ParseGoreConfig( KeyValues *pKV, GoreConfig_t &config )
 		config.flBoneSize = pKV->GetFloat( "bone_size" );
 		config.flBoneSizeRandom = pKV->GetFloat( "bone_size_random" );
 		config.flBoneChance = pKV->GetFloat( "bone_chance", 100.0f );
-		config.flFringeSize = pKV->GetFloat( "fringe" );
+		config.flBoneDecorationChance = pKV->GetFloat( "bone_decoration_chance", 0.0f );
+		config.flFringeSize = pKV->GetFloat( "fringe_size" );
 		config.flFringeChance = pKV->GetFloat( "fringe_chance", 100.0f );
 	}
 }
@@ -183,6 +185,12 @@ void C_GibConfig::ReloadConfig()
 			{
 				npc.m_goreConfigs.Insert( szFixedName, pszGoreName );
 			}
+
+			const char *pszGoreMaterialName = pKVModel->GetString( "gore_material" );
+			if ( *pszGoreMaterialName )
+			{
+				npc.m_goreMaterials.Insert( szFixedName, pszGoreMaterialName );
+			}
 		}
 
 		if ( npc.m_modelConfigs.Count() > 0 )
@@ -228,7 +236,7 @@ void C_GibConfig::ReloadConfig()
 }
 
 bool C_GibConfig::GetGibsForModel( const GibbingParams_t &params, CUtlVector< ragdollparams_partial_t > &gibs,
-	const char **pszGibGroup, const char **pszGoreGroup )
+	const char **pszGibGroup, const char **pszGoreGroup, const char **pszGoreMaterial )
 {
 	if ( !params.pHdr )
 		return false;
@@ -261,26 +269,34 @@ bool C_GibConfig::GetGibsForModel( const GibbingParams_t &params, CUtlVector< ra
 	const RagdollConfig_t &ragdollConfig = m_ragdollConfigs[ ragdollLookup ];
 	Assert( ragdollConfig.m_pData );
 
-	if ( pszGibGroup != NULL )
+	*pszGibGroup = ragdollConfig.m_pData->GetName();
+
+	unsigned short goreNameLookup = npc.m_goreConfigs.Find( szModelNameFixed );
+	if ( !npc.m_goreConfigs.IsValidIndex( goreNameLookup ) )
 	{
-		*pszGibGroup = ragdollConfig.m_pData->GetName();
+		goreNameLookup = npc.m_goreConfigs.Find( "default" );
+	}
+	if ( npc.m_goreConfigs.IsValidIndex( goreNameLookup ) )
+	{
+		*pszGoreGroup = npc.m_goreConfigs[ goreNameLookup ];
+	}
+	else
+	{
+		*pszGoreGroup = NULL;
 	}
 
-	if ( pszGoreGroup != NULL )
+	unsigned short goreMaterialNameLookup = npc.m_goreMaterials.Find( szModelNameFixed );
+	if ( !npc.m_goreMaterials.IsValidIndex( goreMaterialNameLookup ) )
 	{
-		unsigned short goreNameLookup = npc.m_goreConfigs.Find( szModelNameFixed );
-		if ( !npc.m_goreConfigs.IsValidIndex( goreNameLookup ) )
-		{
-			goreNameLookup = npc.m_goreConfigs.Find( "default" );
-		}
-		if ( npc.m_goreConfigs.IsValidIndex( goreNameLookup ) )
-		{
-			*pszGoreGroup = npc.m_goreConfigs[ goreNameLookup ];
-		}
-		else
-		{
-			*pszGoreGroup = NULL;
-		}
+		goreMaterialNameLookup = npc.m_goreMaterials.Find( "default" );
+	}
+	if ( npc.m_goreMaterials.IsValidIndex( goreMaterialNameLookup ) )
+	{
+		*pszGoreMaterial = npc.m_goreMaterials[ goreMaterialNameLookup ];
+	}
+	else
+	{
+		*pszGoreMaterial = NULL;
 	}
 
 	const char *pszIdealJointName = GetBestCutJoint( ragdollConfig, params.pHdr, params.pszHitBone );

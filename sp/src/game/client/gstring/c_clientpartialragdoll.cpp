@@ -41,6 +41,7 @@ BEGIN_DATADESC( C_ClientPartialRagdoll )
 	DEFINE_FIELD( m_bIsPartial, FIELD_BOOLEAN ),
 	DEFINE_FIELD( m_strRecursiveParent, FIELD_STRING ),
 	DEFINE_FIELD( m_strRecursiveGoreName, FIELD_STRING ),
+	DEFINE_FIELD( m_strRecursiveGoreMaterialName, FIELD_STRING ),
 	DEFINE_ARRAY( m_iBoneFlagStorage, FIELD_INTEGER, 12 ),
 	DEFINE_FIELD( m_iBranchRootBone, FIELD_INTEGER ),
 	DEFINE_FIELD( m_iBloodColor, FIELD_INTEGER ),
@@ -58,6 +59,7 @@ C_ClientPartialRagdoll::C_ClientPartialRagdoll( bool bRestoring )
 	, m_iBranchRootBone( -1 )
 	, m_iBloodColor( DONT_BLEED )
 	, m_strRecursiveGoreName( NULL )
+	, m_strRecursiveGoreMaterialName( NULL )
 {
 	SetClassname( "client_ragdoll_partial" );
 
@@ -74,7 +76,8 @@ void C_ClientPartialRagdoll::SetShrinkingEnabled( bool bEnable )
 	m_bShrinking = bEnable;
 }
 
-void C_ClientPartialRagdoll::SetRecursiveGibData( const char *pszParentName, const char *pszGoreName )
+void C_ClientPartialRagdoll::SetRecursiveGibData( const char *pszParentName, const char *pszGoreName,
+	const char *pszGoreMaterialName )
 {
 	Assert( pszParentName && *pszParentName );
 
@@ -83,6 +86,11 @@ void C_ClientPartialRagdoll::SetRecursiveGibData( const char *pszParentName, con
 	if ( pszGoreName && *pszGoreName )
 	{
 		m_strRecursiveGoreName = AllocPooledString( pszGoreName );
+	}
+
+	if ( pszGoreMaterialName && *pszGoreMaterialName )
+	{
+		m_strRecursiveGoreMaterialName = AllocPooledString( pszGoreMaterialName );
 	}
 }
 
@@ -233,7 +241,8 @@ void C_ClientPartialRagdoll::ImpactTrace( trace_t *pTrace, int iDamageType, cons
 				// apply force and propagate cut information
 				if ( pRecursiveRagdoll != NULL )
 				{
-					pRecursiveRagdoll->SetRecursiveGibData( STRING( m_strRecursiveParent ), STRING( m_strRecursiveGoreName ) );
+					pRecursiveRagdoll->SetRecursiveGibData( STRING( m_strRecursiveParent ), STRING( m_strRecursiveGoreName ),
+						STRING( m_strRecursiveGoreMaterialName ) );
 					pRecursiveRagdoll->SetShrinkingEnabled( true );
 
 					pRecursiveRagdoll->m_vecForce = ( pTrace->endpos - pTrace->startpos ).Normalized() * RandomFloat( 15000.0f, 35000.0f );
@@ -711,9 +720,14 @@ void C_ClientPartialRagdoll::BuildPartial( ragdollparams_partial_t &params )
 
 void C_ClientPartialRagdoll::RebuildGore()
 {
+	if ( m_strRecursiveGoreMaterialName == NULL )
+	{
+		return;
+	}
+
 	if ( !m_GoreMaterial.IsValid() )
 	{
-		m_GoreMaterial.Init( materials->FindMaterial( "models/gibs/human_gore", TEXTURE_GROUP_MODEL ) );
+		m_GoreMaterial.Init( materials->FindMaterial( m_strRecursiveGoreMaterialName, TEXTURE_GROUP_MODEL ) );
 
 		if ( !m_GoreMaterial.IsValid() )
 		{

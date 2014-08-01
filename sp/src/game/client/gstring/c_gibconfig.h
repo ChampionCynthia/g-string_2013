@@ -63,6 +63,7 @@ struct GoreConfig_t
 	float flBoneSize;
 	float flBoneSizeRandom;
 	float flBoneChance;
+	float flBoneDecorationChance;
 	float flFringeSize;
 	float flFringeChance;
 };
@@ -82,7 +83,8 @@ public:
 	virtual bool Init();
 	void ReloadConfig();
 
-	bool GetGibsForModel( const GibbingParams_t &params, CUtlVector< ragdollparams_partial_t > &gibs, const char **pszGibGroup, const char **pszGoreGroup );
+	bool GetGibsForModel( const GibbingParams_t &params, CUtlVector< ragdollparams_partial_t > &gibs,
+		const char **pszGibGroup, const char **pszGoreGroup, const char **pszGoreMaterial );
 	bool GetGibsForGroup( const GibbingParamsRecursive_t &params, CUtlVector< ragdollparams_partial_t > &gibs, const char **pszSplitBone );
 	bool GetRandomGibsForGroup( const GibbingParamsRecursive_t &params, CUtlVector< ragdollparams_partial_t > &gibs, const char **pszSplitBone );
 	bool GetGoreConfig( const GoreParams_t &params, GoreConfig_t &config );
@@ -131,10 +133,12 @@ private:
 	struct NpcConfig_t
 	{
 		NpcConfig_t() : m_modelConfigs( CaselessCUtlStringLessThan ),
-			m_goreConfigs( CaselessCUtlStringLessThan ) {}
+			m_goreConfigs( CaselessCUtlStringLessThan ),
+			m_goreMaterials( CaselessCUtlStringLessThan ) {}
 		NpcConfig_t( const NpcConfig_t &other ) :
-			 m_modelConfigs( CaselessCUtlStringLessThan ),
-			 m_goreConfigs( CaselessCUtlStringLessThan )
+			m_modelConfigs( CaselessCUtlStringLessThan ),
+			m_goreConfigs( CaselessCUtlStringLessThan ),
+			m_goreMaterials( CaselessCUtlStringLessThan )
 		{
 			*this = other;
 		}
@@ -150,12 +154,18 @@ private:
 				m_goreConfigs.Insert( other.m_goreConfigs.Key( i ),
 					other.m_goreConfigs.Element( i ) );
 			}
+			FOR_EACH_MAP( other.m_goreMaterials, i )
+			{
+				m_goreMaterials.Insert( other.m_goreMaterials.Key( i ),
+					other.m_goreMaterials.Element( i ) );
+			}
 
 			return *this;
 		}
 
 		CUtlMap< CUtlString, CUtlString > m_modelConfigs;
 		CUtlMap< CUtlString, CUtlString > m_goreConfigs;
+		CUtlMap< CUtlString, CUtlString > m_goreMaterials;
 	};
 
 	struct GoreBoneConfig_t
