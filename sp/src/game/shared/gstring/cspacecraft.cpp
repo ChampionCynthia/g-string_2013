@@ -277,8 +277,11 @@ void CSpacecraft::Event_Killed( const CTakeDamageInfo &info )
 	if ( pPlayer != NULL )
 	{
 		CTakeDamageInfo playerDamage( info );
+		playerDamage.SetAttacker( pPlayer );
+		playerDamage.SetInflictor( pPlayer );
 		playerDamage.SetDamage( pPlayer->GetHealth() + 1 );
-		playerDamage.SetDamageType( playerDamage.GetDamageType() | DMG_NEVERGIB );
+		//playerDamage.SetDamageType( playerDamage.GetDamageType() | DMG_NEVERGIB | DMG_GENERIC );
+		playerDamage.SetDamageType( DMG_GENERIC );
 		pPlayer->TakeDamage( playerDamage );
 
 		pPlayer->SetMoveType( MOVETYPE_NONE );
@@ -297,6 +300,10 @@ void CSpacecraft::Event_Killed( const CTakeDamageInfo &info )
 		params.defBurstScale = 1.0f;
 		params.randomAngularVelocity = RandomFloat( 500.0f, 600.0f );
 		params.pszGibParticleSystemName = "ship_gib_trail";
+		params.connectingParticleNames.AddToTail( "ship_gib_connect_0" );
+		params.connectingParticleNames.AddToTail( "ship_gib_connect_1" );
+		params.connectingParticleNames.AddToTail( "ship_gib_connect_2" );
+		params.connectingParticleNames.AddToTail( "ship_gib_connect_3" );
 		params.particleChance = 0.5f;
 		params.velocityScale = info.GetDamageForce().Length() / 100.0f;
 		params.velocityScale = MIN( 1.0f, params.velocityScale );
@@ -311,12 +318,13 @@ void CSpacecraft::Event_Killed( const CTakeDamageInfo &info )
 		PropBreakableCreateAll( GetModelIndex(), pPhysics, params, this, -1, true, true );
 	}
 
-	const int iRingCount = RandomInt( 2, 4 );
-	for ( int i = 0; i < iRingCount; i++ )
-	{
-		QAngle angles( RandomFloat( 0.0f, 90.0f ), RandomFloat( 0, 180.0f ), 0.0f );
-		DispatchParticleEffect( "ship_explosion", GetAbsOrigin(), angles );
-	}
+	DispatchParticleEffect( "ship_explosion", GetAbsOrigin(), GetAbsAngles() );
+	//const int iRingCount = RandomInt( 2, 4 );
+	//for ( int i = 0; i < iRingCount; i++ )
+	//{
+	//	QAngle angles( RandomFloat( 0.0f, 90.0f ), RandomFloat( 0, 180.0f ), 0.0f );
+	//	DispatchParticleEffect( "ship_explosion", GetAbsOrigin(), angles );
+	//}
 
 	BaseClass::Event_Killed( info );
 }

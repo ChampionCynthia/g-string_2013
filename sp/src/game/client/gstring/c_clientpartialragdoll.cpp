@@ -60,6 +60,7 @@ C_ClientPartialRagdoll::C_ClientPartialRagdoll( bool bRestoring )
 	, m_iBloodColor( DONT_BLEED )
 	, m_strRecursiveGoreName( NULL )
 	, m_strRecursiveGoreMaterialName( NULL )
+	, m_flTouchDecalDelay( gpGlobals->curtime + 0.25f )
 {
 	SetClassname( "client_ragdoll_partial" );
 
@@ -147,7 +148,7 @@ void C_ClientPartialRagdoll::ImpactTrace( trace_t *pTrace, int iDamageType, cons
 		UTIL_BloodImpact( pTrace->endpos, -vecDir, BloodColor(), 5 );
 	}
 
-	if ( m_bReleaseRagdoll )
+	if ( m_bReleaseRagdoll || m_bFadingOut )
 		return;
 
 	const float flGibbingChance = ( ( iDamageType & DMG_BLAST ) != 0 ) ?
@@ -180,7 +181,7 @@ void C_ClientPartialRagdoll::ImpactTrace( trace_t *pTrace, int iDamageType, cons
 		params.pszParentName = STRING( m_strRecursiveParent );
 		params.pszRootBone = ( m_iBranchRootBone >= 0 && m_iBranchRootBone < pHdr->numbones() )
 			? pHdr->pBone( m_iBranchRootBone )->pszName() : NULL;
-		params.pJointBones = &m_trunkBones;
+		params.pJointBones = &m_jointBones;
 
 		const char *pszParentSplitBone;
 
@@ -373,7 +374,23 @@ bool C_ClientPartialRagdoll::InitAsClientRagdoll( const matrix3x4_t *pDeltaBones
 		m_bIsPartial = true;
 	}
 
-	return BaseClass::InitAsClientRagdoll( pDeltaBones0, pDeltaBones1, pCurrentBonePosition, boneDt, bFixedConstraints, pPartialParams );
+	const bool bRet = BaseClass::InitAsClientRagdoll( pDeltaBones0, pDeltaBones1, pCurrentBonePosition, boneDt, bFixedConstraints, pPartialParams );
+	VPhysicsGetObject()->SetCallbackFlags( VPhysicsGetObject()->GetCallbackFlags() | CALLBACK_GLOBAL_TOUCH | CALLBACK_GLOBAL_TOUCH_STATIC );
+	return bRet;
+}
+
+void C_ClientPartialRagdoll::Touch( C_BaseEntity *pOther )
+{
+	if ( m_flTouchDecalDelay < gpGlobals->curtime )
+	{
+		m_flTouchDecalDelay = gpGlobals->curtime + 0.1f;
+
+		trace_t touchTrace;
+		touchTrace = BaseClass::GetTouchTrace();
+		UTIL_BloodDecalTrace( &touchTrace, BloodColor() );
+	}
+
+	BaseClass::Touch( pOther );
 }
 
 void C_ClientPartialRagdoll::BuildTransformations( CStudioHdr *hdr, Vector *pos, Quaternion *q,

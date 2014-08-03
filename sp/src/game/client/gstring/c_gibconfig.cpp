@@ -324,7 +324,7 @@ bool C_GibConfig::GetGibsForGroup( const GibbingParamsRecursive_t &params, CUtlV
 		return false;
 
 	const char *pszIdealJointName = GetBestCutJoint( m_ragdollConfigs[ ragdollLookup ], params.pHdr,
-		params.pszHitBone, params.pszRootBone );
+		params.pszHitBone, params.pszRootBone, params.pJointBones );
 
 	if ( pszSplitBone != NULL )
 	{
@@ -484,7 +484,7 @@ static bool EvaluateCutChild( CStudioHdr *pHdr, const char *pszChild, const char
 }
 
 const char *C_GibConfig::GetBestCutJoint( const RagdollConfig_t &config, CStudioHdr *pHdr,
-	const char *pszHitBone, const char *pszRootBone )
+	const char *pszHitBone, const char *pszRootBone, CBoneBitList *pJointList )
 {
 	// cuts a parent
 	const char *pszIdealJointName = NULL;
@@ -532,7 +532,8 @@ const char *C_GibConfig::GetBestCutJoint( const RagdollConfig_t &config, CStudio
 		}
 
 		// test cutting off a child bone (reverse search)
-		if ( EvaluateCutChild( pHdr, pszHitBone, pszJointName, iBestReverse ) )
+		if ( ( pJointList == NULL || !pJointList->IsBoneMarked( Studio_BoneIndexByName( pHdr, pszJointName ) ) ) &&
+			EvaluateCutChild( pHdr, pszHitBone, pszJointName, iBestReverse ) )
 		{
 			pszIdealJointNameReverse = pszJointName;
 		}

@@ -4631,7 +4631,7 @@ C_BaseAnimating *C_BaseAnimating::CreateRagdollCopy( bool bSnatchInstance ) // G
 	pRagdoll->TransferDissolveFrom( this );
 	pRagdoll->InitModelEffects();
 
-	if ( AddRagdollToFadeQueue() == true )
+	//if ( AddRagdollToFadeQueue() == true ) // GSTRINGMIGRATION
 	{
 		pRagdoll->m_bImportant = NPC_IsImportantNPC( this );
 		s_RagdollLRU.MoveToTopOfLRU( pRagdoll, pRagdoll->m_bImportant );
@@ -4732,12 +4732,12 @@ C_BaseAnimating *C_BaseAnimating::BecomeRagdollOnClient()
 				&& RandomFloat() <= gstring_gibbing_explosion_recursive_chance.GetFloat() / 100.0f )
 			{
 				trace_t tr;
-				Vector dir = RandomVector( -1, 1 );
+				Vector dir = RandomVector( -0.5f, 0.5f ) + m_vecForce.Normalized();
 				dir.NormalizeInPlace();
 				dir *= RandomFloat( 200, 500 );
 
-				UTIL_TraceLine( pGib->WorldSpaceCenter() + dir,
-					pGib->WorldSpaceCenter(), MASK_SOLID, NULL, COLLISION_GROUP_NONE, &tr );
+				UTIL_TraceLine( pGib->WorldSpaceCenter(),
+					pGib->WorldSpaceCenter() + dir, MASK_SOLID, NULL, COLLISION_GROUP_NONE, &tr );
 
 				pGib->ImpactTrace( &tr, pCombatChar->GetKillDamageType(), NULL );
 			}

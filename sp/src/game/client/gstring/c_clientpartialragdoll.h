@@ -33,6 +33,7 @@ public:
 
 	virtual bool InitAsClientRagdoll( const matrix3x4_t *pDeltaBones0, const matrix3x4_t *pDeltaBones1,
 		const matrix3x4_t *pCurrentBonePosition, float boneDt, bool bFixedConstraints = false, ragdollparams_partial_t *pPartialParams = NULL );
+	virtual void Touch( C_BaseEntity *pOther );
 
 	virtual void BuildTransformations( CStudioHdr *hdr, Vector *pos, Quaternion *q,
 		const matrix3x4_t &cameraTransform, int boneMask, CBoneBitList &boneComputed );
@@ -51,6 +52,7 @@ private:
 
 	bool m_bShrinking;
 	bool m_bIsPartial;
+	float m_flTouchDecalDelay;
 
 	int m_iBloodColor;
 

@@ -13,6 +13,7 @@
 #include <vcollide_parse.h>
 #include <bone_setup.h>
 #include <tier0/vprof.h>
+#include "particle_parse.h"
 
 #ifdef CLIENT_DLL
 #include "gamestringpool.h"
@@ -973,8 +974,9 @@ void PropBreakableCreateAll( int modelindex, IPhysicsObject *pPhysics, const bre
 	}
 	
 	CUtlVector<breakmodel_t> list;
-
 	BreakModelList( list, modelindex, params.defBurstScale, params.defCollisionGroup );
+
+	CUtlVector< CBaseEntity* > spawnedGibs;
 
 	if ( list.Count() )
 	{
@@ -1082,6 +1084,8 @@ void PropBreakableCreateAll( int modelindex, IPhysicsObject *pPhysics, const bre
 
 			if ( pBreakable )
 			{
+				spawnedGibs.AddToTail( pBreakable );
+
 #ifdef GAME_DLL
 				if ( GetGibManager() )
 				{
@@ -1217,6 +1221,24 @@ void PropBreakableCreateAll( int modelindex, IPhysicsObject *pPhysics, const bre
 					}
 				}
 			}
+		}
+	}
+
+	if ( params.connectingParticleNames.Count() > 0 && spawnedGibs.Count() > 1 )
+	{
+		const int iGibCount = spawnedGibs.Count();
+		int iParticlesLeft = iGibCount / 2;
+		int iEntIndex0 = RandomInt( 0, iGibCount - 1 );
+		while ( iParticlesLeft > 0 )
+		{
+			iParticlesLeft--;
+			const int iEntIndex1 = ( iEntIndex0 + RandomInt( 1, iGibCount - 1 ) ) % iGibCount;
+			CBaseEntity *pEnt0 = spawnedGibs[ iEntIndex0 ];
+			CBaseEntity *pEnt1 = spawnedGibs[ iEntIndex1 ];
+
+			const int iParticleSystemIndex = RandomInt( 0, params.connectingParticleNames.Count() - 1 );
+			DispatchParticleEffect( params.connectingParticleNames[ iParticleSystemIndex ], pEnt0, pEnt1 );
+			iEntIndex0 = ( iEntIndex0 + RandomInt( 1, iGibCount - 1 ) ) % iGibCount;
 		}
 	}
 }

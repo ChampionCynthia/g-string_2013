@@ -79,8 +79,11 @@ void DispatchParticleEffect( const char *pszParticleName, Vector vecOrigin, Vect
 void DispatchParticleEffect( int iEffectIndex, Vector vecOrigin, Vector vecStart, QAngle vecAngles, CBaseEntity *pEntity = NULL );
 
 void DispatchParticleEffect( const char *pszParticleName, ParticleAttachment_t iAttachType, CBaseEntity *pEntity, const char *pszAttachmentName, Vector vecColor1, Vector vecColor2, bool bUseColors=true, bool bResetAllParticlesOnEntity = false );
-void DispatchParticleEffect( const char *pszParticleName, Vector vecOrigin, QAngle vecAngles, Vector vecColor1, Vector vecColor2, bool bUseColors=true, CBaseEntity *pEntity = NULL, int iAttachType = PATTACH_CUSTOMORIGIN );
+void DispatchParticleEffect( const char *pszParticleName, Vector vecOrigin, QAngle vecAngles, Vector vecColor1, Vector vecColor2, bool bUseColors=true, CBaseEntity *pEntity = NULL, int iAttachType = PATTACH_CUSTOMORIGIN, CBaseEntity *pEntity2 = NULL );
 
+// GSTRINGMIGRATION
+void DispatchParticleEffect( const char *pszParticleName, CBaseEntity *pEntity, CBaseEntity *pEntity2 );
+// END GSTRINGMIGRATION
 
 void StopParticleEffects( CBaseEntity *pEntity );
 

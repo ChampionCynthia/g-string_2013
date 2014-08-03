@@ -834,6 +834,8 @@ static ConVar	violence_agibs( "violence_agibs","1", 0, "Show alien gib entities"
 
 bool UTIL_IsLowViolence( void )
 {
+	return false; // GSTRINGMIGRATION
+
 	// These convars are no longer necessary -- the engine is the final arbiter of
 	// violence settings -- but they're here for legacy support and for testing low
 	// violence when the engine is in normal violence mode.

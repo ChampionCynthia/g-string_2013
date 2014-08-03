@@ -683,8 +683,11 @@ public:
 	bool m_bImportant;
 	float m_flEffectTime;
 
+	// GSTRINGMIGRATION
 protected:
-	bool m_bReleaseRagdoll; // GSTRINGMIGRATION made protected
+	bool m_bReleaseRagdoll;
+	bool m_bFadingOut;
+	// END GSTRINGMIGRATION
 
 private:
 	int m_iCurrentFriction;
@@ -694,8 +697,6 @@ private:
 	float m_flFrictionTime;
 
 	int  m_iFrictionAnimState;
-
-	bool m_bFadingOut;
 
 	float m_flScaleEnd[NUM_HITBOX_FIRES];
 	float m_flScaleTimeStart[NUM_HITBOX_FIRES];

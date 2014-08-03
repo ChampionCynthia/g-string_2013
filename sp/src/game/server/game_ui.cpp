@@ -54,6 +54,7 @@ public:
 	COutputEvent		m_pressedBack;
 	COutputEvent		m_pressedAttack;
 	COutputEvent		m_pressedAttack2;
+	COutputEvent		m_pressedAttack3;
 	
 	COutputEvent		m_unpressedMoveLeft;
 	COutputEvent		m_unpressedMoveRight;
@@ -61,6 +62,7 @@ public:
 	COutputEvent		m_unpressedBack;
 	COutputEvent		m_unpressedAttack;
 	COutputEvent		m_unpressedAttack2;
+	COutputEvent		m_unpressedAttack3;
 
 	COutputFloat		m_xaxis;
 	COutputFloat		m_yaxis;
@@ -94,6 +96,7 @@ BEGIN_DATADESC( CGameUI )
 	DEFINE_OUTPUT( m_pressedBack, "PressedBack" ),
 	DEFINE_OUTPUT( m_pressedAttack, "PressedAttack" ),
 	DEFINE_OUTPUT( m_pressedAttack2, "PressedAttack2" ),
+	DEFINE_OUTPUT( m_pressedAttack3, "PressedAttack3" ),
 
 	DEFINE_OUTPUT( m_unpressedMoveLeft, "UnpressedMoveLeft" ),
 	DEFINE_OUTPUT( m_unpressedMoveRight, "UnpressedMoveRight" ),
@@ -101,6 +104,7 @@ BEGIN_DATADESC( CGameUI )
 	DEFINE_OUTPUT( m_unpressedBack, "UnpressedBack" ),
 	DEFINE_OUTPUT( m_unpressedAttack, "UnpressedAttack" ),
 	DEFINE_OUTPUT( m_unpressedAttack2, "UnpressedAttack2" ),
+	DEFINE_OUTPUT( m_unpressedAttack3, "UnpressedAttack3" ),
 
 	DEFINE_OUTPUT( m_xaxis, "XAxis" ),
 	DEFINE_OUTPUT( m_yaxis, "YAxis" ),
@@ -377,6 +381,18 @@ void CGameUI::Think( void )
 		else
 		{
 			m_pressedAttack2.FireOutput( pPlayer, this, 0 );
+		}
+	}
+
+	if ( nButtonsChanged & IN_ATTACK3 )
+	{
+		if ( m_nLastButtonState & IN_ATTACK3 )
+		{
+			m_unpressedAttack3.FireOutput( pPlayer, this, 0 );
+		}
+		else
+		{
+			m_pressedAttack3.FireOutput( pPlayer, this, 0 );
 		}
 	}
 

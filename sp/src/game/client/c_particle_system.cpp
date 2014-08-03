@@ -10,6 +10,7 @@
 #include "particles_new.h"
 #include "networkstringtable_clientdll.h"
 #include "tier0/vprof.h"
+#include "cliententitylist.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -211,6 +212,15 @@ void ParticleEffectCallback( const CEffectData &data )
 						Vector vecForward, vecRight, vecUp;
 						AngleVectors( data.m_vAngles, &vecForward, &vecRight, &vecUp );
 						pEffect->SetControlPointOrientation( 0, vecForward, vecRight, vecUp );
+					}
+
+					if ( data.m_nSurfaceProp > 0 )
+					{
+						C_BaseEntity *pEntity2 = ClientEntityList().GetEnt( data.m_nSurfaceProp );
+						if ( pEntity2 != NULL )
+						{
+							pEnt->ParticleProp()->AddControlPoint( pEffect.GetObject(), 1, pEntity2, PATTACH_ABSORIGIN_FOLLOW );
+						}
 					}
 				}
 			}

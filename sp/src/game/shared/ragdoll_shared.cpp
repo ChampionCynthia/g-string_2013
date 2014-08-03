@@ -772,7 +772,7 @@ void RagdollSolveSeparation( ragdoll_t &ragdoll, CBaseEntity *pEntity )
 // xbox defaults to 4 ragdolls max
 ConVar g_ragdoll_maxcount("g_ragdoll_maxcount", "4", FCVAR_REPLICATED );
 #else
-ConVar g_ragdoll_maxcount("g_ragdoll_maxcount", "8", FCVAR_REPLICATED );
+ConVar g_ragdoll_maxcount("g_ragdoll_maxcount", "20", FCVAR_REPLICATED );
 #endif
 ConVar g_debug_ragdoll_removal("g_debug_ragdoll_removal", "0", FCVAR_REPLICATED |FCVAR_CHEAT );
 
@@ -787,7 +787,7 @@ void CRagdollLRURetirement::LevelInitPreEntity( void )
 
 bool ShouldRemoveThisRagdoll( CBaseAnimating *pRagdoll )
 {
-	if ( g_RagdollLVManager.IsLowViolence() )
+	//if ( g_RagdollLVManager.IsLowViolence() )
 	{
 		return true;
 	}
@@ -902,7 +902,8 @@ void CRagdollLRURetirement::Update( float frametime ) // EPISODIC VERSION
 			{
 				m_iSimulatedRagdollCount++;
 			}
-			if ( m_LRU.Count() > iMaxRagdollCount )
+			//if ( m_LRU.Count() > iMaxRagdollCount )
+			if ( m_iSimulatedRagdollCount > iMaxRagdollCount )
 			{
 				//Found one, we're done.
 				if ( ShouldRemoveThisRagdoll( m_LRU[i] ) == true )

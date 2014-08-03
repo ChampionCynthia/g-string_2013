@@ -432,7 +432,8 @@ void DispatchParticleEffect( int iEffectIndex, Vector vecOrigin, Vector vecStart
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void DispatchParticleEffect( const char *pszParticleName, Vector vecOrigin, QAngle vecAngles, Vector vecColor1, Vector vecColor2, bool bUseColors, CBaseEntity *pEntity, int iAttachType )
+void DispatchParticleEffect( const char *pszParticleName, Vector vecOrigin, QAngle vecAngles,
+	Vector vecColor1, Vector vecColor2, bool bUseColors, CBaseEntity *pEntity, int iAttachType, CBaseEntity *pEntity2 )
 {
 	int iEffectIndex = GetParticleSystemIndex( pszParticleName );
 
@@ -450,7 +451,12 @@ void DispatchParticleEffect( const char *pszParticleName, Vector vecOrigin, QAng
 		data.m_nEntIndex = pEntity->entindex();
 #endif
 		data.m_fFlags |= PARTICLE_DISPATCH_FROM_ENTITY;
-		data.m_nDamageType = PATTACH_CUSTOMORIGIN;
+		data.m_nDamageType = iAttachType;
+
+		if ( pEntity2 )
+		{
+			data.m_nSurfaceProp = (short)pEntity2->entindex();
+		}
 	}
 	else
 	{
@@ -489,6 +495,14 @@ void DispatchParticleEffect( const char *pszParticleName, Vector vecOrigin, Vect
 	int iIndex = GetParticleSystemIndex( pszParticleName );
 	DispatchParticleEffect( iIndex, vecOrigin, vecStart, vecAngles, pEntity );
 }
+
+// GSTRINGMIGRATION
+void DispatchParticleEffect( const char *pszParticleName, CBaseEntity *pEntity, CBaseEntity *pEntity2 )
+{
+	DispatchParticleEffect( pszParticleName, pEntity->GetAbsOrigin(), pEntity->GetAbsAngles(), vec3_origin, vec3_origin,
+		false, pEntity, PATTACH_ABSORIGIN_FOLLOW, pEntity2 );
+}
+// END GSTRINGMIGRATION
 
 //-----------------------------------------------------------------------------
 // Purpose: 

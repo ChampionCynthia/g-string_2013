@@ -204,7 +204,8 @@ private:
 
 	CUtlMap< CUtlString, GoreClassConfig_t > m_goreConfigs;
 
-	const char *GetBestCutJoint( const RagdollConfig_t &config, CStudioHdr *pHdr, const char *pszHitBone, const char *pszRootBone = NULL );
+	const char *GetBestCutJoint( const RagdollConfig_t &config, CStudioHdr *pHdr, const char *pszHitBone,
+		const char *pszRootBone = NULL, CBoneBitList *pJointList = NULL );
 };
 
 

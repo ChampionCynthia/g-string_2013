@@ -9,7 +9,7 @@
 #include "decals.h"
 #include "particle_parse.h"
 
-static ConVar gstring_spacecraft_damage_player( "gstring_spacecraft_damage_player", "5.0", FCVAR_CHEAT );
+static ConVar gstring_spacecraft_damage_player( "gstring_spacecraft_damage_player", "5.0", FCVAR_CHEAT | FCVAR_REPLICATED );
 
 #ifdef GAME_DLL
 BEGIN_DATADESC( CSpacecraftProjectile )
