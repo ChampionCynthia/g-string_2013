@@ -1,6 +1,7 @@
 
 #include "cbase.h"
 #include "cgstring_player.h"
+#include "cspacecraft_config.h"
 #include "gstring/cgstring_globals.h"
 #include "obstacle_pushaway.h"
 #include "shareddefs.h"
@@ -68,16 +69,21 @@ bool CGstringPlayer::ClientCommand( const CCommand &args )
 {
 	const char *pszCmd = args[ 0 ];
 
-	if ( Q_stricmp( "", pszCmd ) == 0 )
+	if ( Q_stricmp( "__reload_spacecraft_config", pszCmd ) == 0 )
 	{
-		if ( !sv_cheats->GetBool() )
-		{
-			return false;
-		}
-
-		PrecacheFileWeaponInfoDatabase( filesystem, g_pGameRules->GetEncryptionKey() );
+		CSpacecraftConfig::GetInstance()->ReloadConfig();
 		return true;
 	}
+	//else if ( Q_stricmp( "reload_weapon_scripts", pszCmd ) == 0 )
+	//{
+	//	if ( !sv_cheats->GetBool() )
+	//	{
+	//		return false;
+	//	}
+
+	//	PrecacheFileWeaponInfoDatabase( filesystem, g_pGameRules->GetEncryptionKey() );
+	//	return true;
+	//}
 	else
 	{
 		return BaseClass::ClientCommand( args );

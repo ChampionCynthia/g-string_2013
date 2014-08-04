@@ -32,6 +32,14 @@ V ConvertPhysicsToSource( const V &v )
 	return V( v.y, v.z, v.x );
 }
 
+inline void EmitSoundIfSet( CBaseEntity *pEntity, const CUtlString &strSound )
+{
+	if ( !strSound.IsEmpty() )
+	{
+		pEntity->EmitSound( strSound );
+	}
+}
+
 #ifdef GAME_DLL
 
 CON_COMMAND( kill_spacecraft, "" )
@@ -56,18 +64,8 @@ CON_COMMAND( kill_spacecraft, "" )
 
 #endif
 
-#define SPACECRAFT_SOUND_THRUSTER_SMALL "Spacecraft.Thruster.Small"
-#define SPACECRAFT_SOUND_ENGINE_START "Spacecraft.Engine.Start"
-#define SPACECRAFT_SOUND_ENGINE_STOP "Spacecraft.Engine.Stop"
-#define SPACECRAFT_SOUND_BOOST_START "Spacecraft.Boost.Start"
-#define SPACECRAFT_SOUND_BOOST_STOP "Spacecraft.Boost.Stop"
-
 #define ENGINE_VOLUME_LOW 0.4f
 #define ENGINE_VOLUME_HIGH 1.0f
-
-static ConVar gstring_spacecraft_acceleration( "gstring_spacecraft_acceleration", "3.0", FCVAR_REPLICATED );
-static ConVar gstring_spacecraft_acceleration_boost( "gstring_spacecraft_acceleration_boost", "5.0", FCVAR_REPLICATED );
-static ConVar gstring_spacecraft_acceleration_side( "gstring_spacecraft_acceleration_side", "2.2", FCVAR_REPLICATED );
 
 static ConVar gstring_spacecraft_physics_drag( "gstring_spacecraft_physics_drag", "10.0", FCVAR_REPLICATED );
 static ConVar gstring_spacecraft_physics_angulardrag( "gstring_spacecraft_physics_angulardrag", "5000.0", FCVAR_REPLICATED );
@@ -79,6 +77,8 @@ static ConVar gstring_spacecraft_move_drag_up( "gstring_spacecraft_move_drag_up"
 
 #ifdef GAME_DLL
 BEGIN_DATADESC( CSpacecraft )
+
+	DEFINE_KEYFIELD( m_strSettingsName, FIELD_STRING, "settingsname" ),
 
 	// AI
 	DEFINE_KEYFIELD( m_iAIControlled, FIELD_INTEGER, "aicontrolled" ),
@@ -101,25 +101,19 @@ END_DATADESC()
 IMPLEMENT_NETWORKCLASS_DT( CSpacecraft, CSpacecraft_DT )
 
 #ifdef GAME_DLL
-	//SendPropInt( SENDINFO( m_iMaterialIndex ) ),
-
-	//SendPropInt( SENDINFO( m_iRenderMode ) ),
-	SendPropInt( SENDINFO( m_iEngineLevel ) ),
+	SendPropInt( SENDINFO( m_iEngineLevel ), 2, SPROP_UNSIGNED ),
 	SendPropInt( SENDINFO( m_iProjectileParity ), 8, SPROP_UNSIGNED ),
 
-	//SendPropBool( SENDINFO( m_bEngineRunning ) ),
 	SendPropVector( SENDINFO( m_AngularImpulse ) ),
 	SendPropVector( SENDINFO( m_PhysVelocity ) ),
+	SendPropInt( SENDINFO( m_iSettingsIndex ) ),
 #else
-	//RecvPropInt( RECVINFO( m_iMaterialIndex ) ),
-
-	//RecvPropInt( RECVINFO( m_iRenderMode ) ),
 	RecvPropInt( RECVINFO( m_iEngineLevel ) ),
 	RecvPropInt( RECVINFO( m_iProjectileParity ) ),
 
-	//RecvPropBool( RECVINFO( m_bEngineRunning ) ),
 	RecvPropVector( RECVINFO( m_AngularImpulse ) ),
 	RecvPropVector( RECVINFO( m_PhysVelocity ) ),
+	RecvPropInt( RECVINFO( m_iSettingsIndex ) ),
 #endif
 
 END_NETWORK_TABLE();
@@ -146,6 +140,7 @@ CSpacecraft::CSpacecraft()
 	, m_flShakeTimer( 0.0f )
 #endif
 {
+	m_iSettingsIndex = UTL_INVAL_SYMBOL;
 }
 
 CSpacecraft::~CSpacecraft()
@@ -179,34 +174,17 @@ void CSpacecraft::SetAI( ISpacecraftAI *pSpacecraftAI )
 	m_flLastAIThinkTime = gpGlobals->curtime;
 }
 
-void CSpacecraft::Precache()
+void CSpacecraft::Activate()
 {
-	BaseClass::Precache();
+	const CSpacecraftConfig *pConfig = CSpacecraftConfig::GetInstance();
+	m_iSettingsIndex = pConfig->GetSettingsIndex( STRING( m_strSettingsName ) );
+	m_Settings = pConfig->GetSettings( m_iSettingsIndex );
 
-	const int iModelIndex = PrecacheModel( STRING( GetModelName() ) );
-	PrecacheGibsForModel( iModelIndex );
-
-	PrecacheScriptSound( SPACECRAFT_SOUND_THRUSTER_SMALL );
-	PrecacheScriptSound( SPACECRAFT_SOUND_ENGINE_START );
-	PrecacheScriptSound( SPACECRAFT_SOUND_ENGINE_STOP );
-	PrecacheScriptSound( SPACECRAFT_SOUND_BOOST_START );
-	PrecacheScriptSound( SPACECRAFT_SOUND_BOOST_STOP );
-}
-
-void CSpacecraft::Spawn()
-{
-	Precache();
-
-	SetModel( STRING( GetModelName() ) );
+	SetModel( m_Settings.m_strModel );
 
 	SetMoveType( MOVETYPE_VPHYSICS );
 	SetSolid( SOLID_VPHYSICS );
 
-	BaseClass::Spawn();
-}
-
-void CSpacecraft::Activate()
-{
 	m_hPathEntity = gEntList.FindEntityByName( NULL, m_strPathStartName, this );
 	m_hEnemy = gEntList.FindEntityByName( NULL, m_strInitialEnemy, this );
 
@@ -222,7 +200,7 @@ void CSpacecraft::Activate()
 	VPhysicsGetObject()->EnableDrag( true );
 
 	m_takedamage = DAMAGE_YES;
-	SetMaxHealth( 100 );
+	SetMaxHealth( m_Settings.m_iHealth );
 	SetHealth( GetMaxHealth() );
 }
 
@@ -254,19 +232,34 @@ void CSpacecraft::VPhysicsCollision( int index, gamevcollisionevent_t *pEvent )
 	BaseClass::VPhysicsCollision( index, pEvent );
 
 	const int iSelfIndex = ( pEvent->pObjects[ 0 ] == VPhysicsGetObject() ) ? 0 : 1;
-	const float flDamage = ( pEvent->preVelocity[ iSelfIndex ] - pEvent->postVelocity[ iSelfIndex ] ).LengthSqr() / 10.0f;
+	float flDamage = ( pEvent->preVelocity[ iSelfIndex ] - pEvent->postVelocity[ iSelfIndex ] ).LengthSqr() *
+		m_Settings.m_flCollisionDamageScale;
 
-	CTakeDamageInfo info( this, this, flDamage, DMG_DIRECT );
-	info.SetDamageForce( pEvent->preVelocity[ iSelfIndex ] );
-	info.SetDamagePosition( GetAbsOrigin() - pEvent->postVelocity[ iSelfIndex ] );
-	TakeDamage( info );
+	if ( flDamage >= m_Settings.m_flCollisionDamageMin )
+	{
+		flDamage = MIN( m_Settings.m_flCollisionDamageMax, flDamage );
+		Vector vecContactPoint, vecSurfaceNormal;
+		pEvent->pInternalData->GetContactPoint( vecContactPoint );
+		pEvent->pInternalData->GetSurfaceNormal( vecSurfaceNormal );
+
+		if ( iSelfIndex == 0 )
+		{
+			vecSurfaceNormal = -vecSurfaceNormal;
+		}
+
+		CTakeDamageInfo info( this, this, flDamage, DMG_DIRECT );
+		info.SetDamageForce( pEvent->preVelocity[ iSelfIndex ] );
+		info.SetDamagePosition( vecContactPoint + vecSurfaceNormal * 3.0f );
+		TakeDamage( info );
+	}
 }
 
 int CSpacecraft::OnTakeDamage( const CTakeDamageInfo &info )
 {
 	int ret = BaseClass::OnTakeDamage( info );
 
-	DispatchParticleEffect( "ship_hit", info.GetDamagePosition(), GetAbsAngles() );
+	DispatchParticleEffect( m_Settings.m_strParticleDamage, info.GetDamagePosition(), GetAbsAngles() );
+	EmitSoundIfSet( this, m_Settings.m_strSoundDamage );
 
 	return ret;
 }
@@ -299,11 +292,11 @@ void CSpacecraft::Event_Killed( const CTakeDamageInfo &info )
 		params.defCollisionGroup = COLLISION_GROUP_INTERACTIVE;
 		params.defBurstScale = 1.0f;
 		params.randomAngularVelocity = RandomFloat( 500.0f, 600.0f );
-		params.pszGibParticleSystemName = "ship_gib_trail";
-		params.connectingParticleNames.AddToTail( "ship_gib_connect_0" );
-		params.connectingParticleNames.AddToTail( "ship_gib_connect_1" );
-		params.connectingParticleNames.AddToTail( "ship_gib_connect_2" );
-		params.connectingParticleNames.AddToTail( "ship_gib_connect_3" );
+		params.pszGibParticleSystemName = m_Settings.m_strParticleGib;
+		FOR_EACH_VEC( m_Settings.m_ParticleGibConnect, i )
+		{
+			params.connectingParticleNames.AddToTail( m_Settings.m_ParticleGibConnect[ i ] );
+		}
 		params.particleChance = 0.5f;
 		params.velocityScale = info.GetDamageForce().Length() / 100.0f;
 		params.velocityScale = MIN( 1.0f, params.velocityScale );
@@ -318,7 +311,8 @@ void CSpacecraft::Event_Killed( const CTakeDamageInfo &info )
 		PropBreakableCreateAll( GetModelIndex(), pPhysics, params, this, -1, true, true );
 	}
 
-	DispatchParticleEffect( "ship_explosion", GetAbsOrigin(), GetAbsAngles() );
+	EmitSoundIfSet( this, m_Settings.m_strSoundDeath );
+	DispatchParticleEffect( m_Settings.m_strParticleDeath, GetAbsOrigin(), GetAbsAngles() );
 	//const int iRingCount = RandomInt( 2, 4 );
 	//for ( int i = 0; i < iRingCount; i++ )
 	//{
@@ -474,6 +468,8 @@ void CSpacecraft::OnDataChanged( DataUpdateType_t t )
 
 	if ( t == DATA_UPDATE_CREATED )
 	{
+		m_Settings = CSpacecraftConfig::GetInstance()->GetSettings( m_iSettingsIndex );
+
 		SetNextClientThink( CLIENT_THINK_ALWAYS );
 	}
 }
@@ -555,7 +551,7 @@ void CSpacecraft::ClientThink()
 		const int iSoundsToAdd = iActiveThrustersSoundsDesired - iActiveThrusterSounds;
 		for ( int i = 0; i < iSoundsToAdd; i++ )
 		{
-			EmitSound( SPACECRAFT_SOUND_THRUSTER_SMALL );
+			EmitSoundIfSet( this, m_Settings.m_strSoundThruster );
 			m_ThrusterSounds.AddToTail( enginesound->GetGuidForLastSoundEmitted() );
 		}
 	}
@@ -572,7 +568,8 @@ void CSpacecraft::ClientThink()
 		m_ThrusterSounds.RemoveMultipleFromTail( iActiveThrusterSounds - iActiveThrustersSoundsDesired );
 	}
 
-	const float flEngineVolumeTarget = ( m_iEngineLevel == 2 ) ? ENGINE_VOLUME_HIGH : ENGINE_VOLUME_LOW;
+	const float flEngineVolumeTarget = ( m_iEngineLevel == ENGINELEVEL_NORMAL ) ?
+		ENGINE_VOLUME_HIGH : ENGINE_VOLUME_LOW;
 
 	if ( m_iEngineLevelLast != m_iEngineLevel )
 	{
@@ -584,14 +581,14 @@ void CSpacecraft::ClientThink()
 			m_flEngineVolume = flEngineVolumeTarget;
 			if ( bEngineRunning )
 			{
-				EmitSound( SPACECRAFT_SOUND_ENGINE_START );
+				EmitSoundIfSet( this, m_Settings.m_strSoundEngineStart );
 				m_iGUID_Engine = enginesound->GetGuidForLastSoundEmitted();
 			}
 			else
 			{
 				enginesound->StopSoundByGuid( m_iGUID_Engine );
 				m_iGUID_Engine = -1;
-				EmitSound( SPACECRAFT_SOUND_ENGINE_STOP );
+				EmitSoundIfSet( this, m_Settings.m_strSoundEngineStop );
 
 				if ( m_iEngineLevelLast == ENGINELEVEL_IDLE )
 				{
@@ -637,14 +634,14 @@ void CSpacecraft::ClientThink()
 
 		if ( m_iEngineLevel == ENGINELEVEL_BOOST )
 		{
-			EmitSound( SPACECRAFT_SOUND_BOOST_START );
+			EmitSoundIfSet( this, m_Settings.m_strSoundBoostStart );
 			m_iGUID_Boost = enginesound->GetGuidForLastSoundEmitted();
 		}
 		else if ( m_iEngineLevelLast == ENGINELEVEL_BOOST )
 		{
 			enginesound->StopSoundByGuid( m_iGUID_Boost );
 			m_iGUID_Boost = -1;
-			EmitSound( SPACECRAFT_SOUND_BOOST_STOP );
+			EmitSoundIfSet( this, m_Settings.m_strSoundBoostStop );
 		}
 
 		m_iEngineLevelLast = m_iEngineLevel;
@@ -845,9 +842,6 @@ void CSpacecraft::SimulateMove( CMoveData &moveData, float flFrametime )
 	if ( !bCutOffEngines )
 	{
 		const bool bBoosting = ( moveData.m_nButtons & IN_SPEED ) != 0;
-		const float flAcceleration = gstring_spacecraft_acceleration.GetFloat();
-		const float flAccelerationBoost = gstring_spacecraft_acceleration_boost.GetFloat();
-		const float flAccelerationSide = gstring_spacecraft_acceleration_side.GetFloat();
 		const float flMaxMove = 200.0f;
 		Vector vecMove( vec3_origin );
 		vecMove.x = clamp( moveData.m_flForwardMove / flMaxMove, -1.0f, 1.0f );
@@ -860,7 +854,8 @@ void CSpacecraft::SimulateMove( CMoveData &moveData, float flFrametime )
 
 		if ( vecMove.x > 0.0f )
 		{
-			vecImpulse += vecMove.x * vecFwd * ( bBoosting ? flAccelerationBoost : flAcceleration );
+			vecImpulse += vecMove.x * vecFwd * ( bBoosting ? m_Settings.m_flAccelerationBoost :
+				m_Settings.m_flAcceleration );
 			bAccelerationEffects = true;
 			bBoostEffects = bBoosting;
 		}
@@ -869,20 +864,20 @@ void CSpacecraft::SimulateMove( CMoveData &moveData, float flFrametime )
 		{
 			if ( vecMove.y < 0.0f )
 			{
-				vecImpulse += vecMove.y * vecRight * flAccelerationSide;
+				vecImpulse += vecMove.y * vecRight * m_Settings.m_flAccelerationSide;
 				bAccelerationEffects = true;
 			}
 
 			if ( vecMove.y > 0.0f )
 			{
-				vecImpulse += vecMove.y * vecRight * flAccelerationSide;
+				vecImpulse += vecMove.y * vecRight * m_Settings.m_flAccelerationSide;
 				bAccelerationEffects = true;
 			}
 		}
 
 		if ( vecMove.x < 0.0f )
 		{
-			vecImpulse += vecMove.x * vecFwd * flAcceleration;
+			vecImpulse += vecMove.x * vecFwd * m_Settings.m_flAcceleration;
 			bAccelerationEffects = false;
 			bBoostEffects = false;
 		}

@@ -152,7 +152,7 @@ void CSpacecraftProjectile::OnTouch( CBaseEntity *pOther )
 			Vector vecVelocity = GetAbsVelocity();
 			vecVelocity.NormalizeInPlace();
 
-			CTakeDamageInfo dmgInfo( this, GetOwnerEntity(), gstring_spacecraft_damage_player.GetFloat(), DMG_NEVERGIB | DMG_BLAST );
+			CTakeDamageInfo dmgInfo( this, GetOwnerEntity(), gstring_spacecraft_damage_player.GetFloat(), DMG_DIRECT );
 			if ( GetOwnerEntity() != NULL && GetOwnerEntity()->IsPlayer() && pOther->IsNPC() )
 			{
 				dmgInfo.AdjustPlayerDamageInflictedForSkillLevel();

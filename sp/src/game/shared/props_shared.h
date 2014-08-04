@@ -245,7 +245,7 @@ struct breakablepropparams_t
 	// GSTRINGMIGRATION
 	float velocityScale;
 	float randomAngularVelocity;
-	char *pszGibParticleSystemName;
+	const char *pszGibParticleSystemName;
 	CUtlVector< const char* > connectingParticleNames;
 	float particleChance;
 	float burstScale;

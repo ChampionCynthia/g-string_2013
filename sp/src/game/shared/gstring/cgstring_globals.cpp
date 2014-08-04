@@ -26,6 +26,8 @@ BEGIN_DATADESC( CGstringGlobals )
 	DEFINE_INPUTFUNC( FIELD_VOID, "userlightsource_disable", InputUserLightSourceDisable ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "userlightsource_toggle", InputUserLightSourceToggle ),
 
+	DEFINE_INPUTFUNC( FIELD_FLOAT, "OnFireballFired", InputOnFireballFired ),
+
 END_DATADESC()
 
 #endif
@@ -163,6 +165,18 @@ void CGstringGlobals::InputUserLightSourceDisable( inputdata_t &inputdata )
 void CGstringGlobals::InputUserLightSourceToggle( inputdata_t &inputdata )
 {
 	SetUserLightSourceEnabled( !IsUserLightSourceEnabled() );
+}
+
+void CGstringGlobals::InputOnFireballFired( inputdata_t &inputdata )
+{
+	if ( inputdata.value.Convert( FIELD_FLOAT ) )
+	{
+		CSingleUserRecipientFilter filter( UTIL_GetLocalPlayer() );
+		filter.MakeReliable();
+		UserMessageBegin( filter, "Fireball" );
+			WRITE_FLOAT( inputdata.value.Float() );
+		MessageEnd();
+	}
 }
 
 #else

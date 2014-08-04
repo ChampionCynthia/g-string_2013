@@ -788,9 +788,9 @@ void CRagdollLRURetirement::LevelInitPreEntity( void )
 bool ShouldRemoveThisRagdoll( CBaseAnimating *pRagdoll )
 {
 	//if ( g_RagdollLVManager.IsLowViolence() )
-	{
-		return true;
-	}
+	//{
+	//	return true;
+	//}
 
 #ifdef CLIENT_DLL
 
@@ -896,7 +896,14 @@ void CRagdollLRURetirement::Update( float frametime ) // EPISODIC VERSION
 		CBaseAnimating *pRagdoll = m_LRU[i].Get();
 		if ( pRagdoll )
 		{
-			m_iRagdollCount++;
+#ifdef CLIENT_DLL
+			C_ClientRagdoll *pClientRagdoll = dynamic_cast< C_ClientRagdoll* >( pRagdoll );
+			if ( pClientRagdoll == NULL || !pClientRagdoll->IsFadingOut() )
+#endif
+			{
+				m_iRagdollCount++;
+			}
+
 			IPhysicsObject *pObject = pRagdoll->VPhysicsGetObject();
 			if (pObject && !pObject->IsAsleep())
 			{
@@ -938,24 +945,18 @@ void CRagdollLRURetirement::Update( float frametime ) // EPISODIC VERSION
 	CBasePlayer  *pPlayer = UTIL_GetLocalPlayer();
 #endif
 
-	if (pPlayer && m_LRU.Count() > iMaxRagdollCount) // find the furthest one algorithm
+	if (pPlayer && m_iRagdollCount > iMaxRagdollCount) // find the furthest one algorithm
 	{
 		Vector PlayerOrigin = pPlayer->GetAbsOrigin();
-		// const CBasePlayer *pPlayer = UTIL_GetLocalPlayer();
 	
 		for ( i = m_LRU.Head(); i < m_LRU.InvalidIndex(); i = next )
 		{
 			CBaseAnimating *pRagdoll = m_LRU[i].Get();
-
 			next = m_LRU.Next(i);
-			IPhysicsObject *pObject = pRagdoll->VPhysicsGetObject();
-			if ( pRagdoll && (pRagdoll->GetEffectEntity() || ( pObject && !pObject->IsAsleep()) ) )
-				continue;
 
 			if ( pRagdoll )
 			{
-				// float distToPlayer = (pPlayer->GetAbsOrigin() - pRagdoll->GetAbsOrigin()).LengthSqr();
-				float distToPlayer = (PlayerOrigin - pRagdoll->GetAbsOrigin()).LengthSqr();
+				const float distToPlayer = (PlayerOrigin - pRagdoll->GetAbsOrigin()).LengthSqr();
 
 				if (distToPlayer > furthestDistSq)
 				{
@@ -975,31 +976,7 @@ void CRagdollLRURetirement::Update( float frametime ) // EPISODIC VERSION
 #else
 		m_LRU[ furthestOne ]->SUB_StartFadeOut( 0 );
 #endif
-
-	}
-	else // fall back on old-style pick the oldest one algorithm
-	{
-		for ( i = m_LRU.Head(); i < m_LRU.InvalidIndex(); i = next )
-		{
-			if ( m_LRU.Count() <=  iMaxRagdollCount )
-				break;
-
-			next = m_LRU.Next(i);
-
-			CBaseAnimating *pRagdoll = m_LRU[i].Get();
-
-			//Just ignore it until we're done burning/dissolving.
-			IPhysicsObject *pObject = pRagdoll->VPhysicsGetObject();
-			if ( pRagdoll && (pRagdoll->GetEffectEntity() || ( pObject && !pObject->IsAsleep()) ) )
-				continue;
-
-	#ifdef CLIENT_DLL
-			m_LRU[ i ]->SUB_Remove();
-	#else
-			m_LRU[ i ]->SUB_StartFadeOut( 0 );
-	#endif
-			m_LRU.Remove(i);
-		}
+		m_LRU.Remove( furthestOne );
 	}
 }
 

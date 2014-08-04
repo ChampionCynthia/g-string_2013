@@ -25,6 +25,8 @@ $Project
 			
 			$File	"$SRCDIR\game\shared\gstring\cspacecraft.cpp"
 			$File	"$SRCDIR\game\shared\gstring\cspacecraft.h"
+			$File	"$SRCDIR\game\shared\gstring\cspacecraft_config.cpp"
+			$File	"$SRCDIR\game\shared\gstring\cspacecraft_config.h"
 			
 			$File	"$SRCDIR\game\shared\gstring\cspacecraftprojectile.cpp"
 			$File	"$SRCDIR\game\shared\gstring\cspacecraftprojectile.h"

@@ -678,6 +678,7 @@ public:
 
 	void	FadeOut( void );
 	virtual float LastBoneChangedTime();
+	const bool IsFadingOut() const { return m_bFadingOut; }
 
 	bool m_bFadeOut;
 	bool m_bImportant;

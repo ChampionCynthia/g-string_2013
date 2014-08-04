@@ -39,6 +39,8 @@ public:
 
 	void SetUserLightSourceEnabled( bool bEnabled );
 	bool IsUserLightSourceEnabled() const;
+
+	void InputOnFireballFired( inputdata_t &inputdata );
 #else
 	virtual void OnDataChanged( DataUpdateType_t type );
 #endif

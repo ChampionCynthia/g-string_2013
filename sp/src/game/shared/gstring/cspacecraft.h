@@ -10,11 +10,10 @@
 
 #include "igamemovement.h"
 #include "gstring_player_shared_forward.h"
+#include "cspacecraft_config.h"
 
 #ifdef CLIENT_DLL
-
 class CHudCrosshair;
-
 #else
 class ISpacecraftAI
 {
@@ -51,8 +50,6 @@ public:
 #ifdef GAME_DLL
 	void SetAI( ISpacecraftAI *pSpacecraftAI );
 
-	virtual void Precache();
-	virtual void Spawn();
 	virtual void Activate();
 
 	virtual void VPhysicsUpdate( IPhysicsObject *pPhysics );
@@ -91,6 +88,8 @@ public:
 private:
 #ifdef GAME_DLL
 	void SimulateFire( CMoveData &moveData, float flFrametime );
+
+	string_t m_strSettingsName;
 
 	float m_flFireDelay;
 	bool m_bAlternatingWeapons;
@@ -131,6 +130,9 @@ private:
 	CNetworkVector( m_PhysVelocity );
 	CNetworkVar( int, m_iEngineLevel );
 	CNetworkVar( int, m_iProjectileParity );
+
+	CNetworkVar( UtlSymId_t, m_iSettingsIndex );
+	SpacecraftSettings_t m_Settings;
 };
 
 #endif

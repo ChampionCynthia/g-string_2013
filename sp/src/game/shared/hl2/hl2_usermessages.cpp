@@ -46,6 +46,10 @@ void RegisterUserMessages( void )
 	usermessages->Register( "AchievementEvent", -1 );
 	usermessages->Register( "UpdateJalopyRadar", -1 );
 
+	// GSTRINGMIGRATION
+	usermessages->Register( "Fireball", -1 );
+	// END GSTRINGMIGRATION
+
 #ifndef _X360
 	// NVNT register haptic user messages
 	RegisterHapticMessages();
