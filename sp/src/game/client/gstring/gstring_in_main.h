@@ -11,8 +11,12 @@ public:
 	CGstringInput();
 	virtual ~CGstringInput();
 
-	void GetNormalizedMousePosition( Vector2D &vecMousePosition );
-	void GetCrosshairPosition( int &x, int &y, float &angle );
+	bool IsUsingDefaultCrosshair() const;
+	bool IsUsingGamepadCrosshair() const;
+	bool IsUsingFreeCrosshair() const;
+
+	void GetNormalizedMousePosition( Vector2D &vecMousePosition ) const;
+	void GetCrosshairPosition( int &x, int &y, float &angle ) const;
 
 	const CUtlVector< EHANDLE > &GetPotentialAutoAimTargets() const;
 	CBaseEntity *GetAutoAimTarget() const;
@@ -22,7 +26,17 @@ protected:
 	virtual void MouseMove( CUserCmd *cmd );
 
 private:
+	enum CrosshairMode_e
+	{
+		CROSSHAIRMODE_DEFAULT = 0,
+		CROSSHAIRMODE_GAMEPAD,
+		CROSSHAIRMODE_FREE
+	};
+
+	CrosshairMode_e GetCrosshairMode() const;
+
 	virtual void InteractionMouseMove( CUserCmd *cmd );
+	virtual void PerformSpacecraftAutoAim( CUserCmd *cmd );
 
 	Vector2D m_MousePosition;
 	bool m_bIsUsingCustomCrosshair;

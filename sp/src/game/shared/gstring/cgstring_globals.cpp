@@ -5,7 +5,6 @@
 
 #define GSTRINGGLOBALSFLAGS_USERLIGHTSOURCE_ENABLED		0x01
 #define GSTRINGGLOBALSFLAGS_NIGHTVISION_ENABLED			0x02
-//#define GSTRINGGLOBALSFLAGS_CASCADEDSHADOWS_ENABLED		0x04
 #define GSTRINGGLOBALSFLAGS_SPACE_MAP					0x04
 
 CGstringGlobals *g_pGstringGlobals;
@@ -77,7 +76,6 @@ void CGstringGlobals::Spawn()
 
 	SetUserLightSourceEnabled( HasSpawnFlags( GSTRINGGLOBALSFLAGS_USERLIGHTSOURCE_ENABLED ) );
 	SetNightvisionEnabled( HasSpawnFlags( GSTRINGGLOBALSFLAGS_NIGHTVISION_ENABLED ) );
-	//m_bCascadedShadowMappingEnabled = HasSpawnFlags( GSTRINGGLOBALSFLAGS_CASCADEDSHADOWS_ENABLED );
 	m_bIsSpaceMap = HasSpawnFlags( GSTRINGGLOBALSFLAGS_SPACE_MAP );
 
 	if ( m_bIsSpaceMap && physenv )
@@ -185,12 +183,9 @@ void CGstringGlobals::OnDataChanged( DataUpdateType_t type )
 {
 	BaseClass::OnDataChanged( type );
 
-	//if ( type == DATA_UPDATE_DATATABLE_CHANGED )
+	if ( m_bIsSpaceMap && physenv )
 	{
-		if ( m_bIsSpaceMap && physenv )
-		{
-			physenv->SetGravity( vec3_origin );
-		}
+		physenv->SetGravity( vec3_origin );
 	}
 }
 

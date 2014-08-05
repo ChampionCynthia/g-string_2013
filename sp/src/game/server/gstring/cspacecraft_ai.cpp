@@ -29,7 +29,7 @@ CON_COMMAND( gstring_spaceshipai_debug_spawn, "" )
 		if ( pEnemyShip != NULL )
 		{
 			pEnemyShip->SetAbsOrigin( tr.endpos );
-			pEnemyShip->KeyValue( "model", "models/bioproto/spacecraft.mdl" );
+			pEnemyShip->KeyValue( "settingsname", "ricepod" );
 
 			CSpacecraftAIBase *pAI = new CSpacecraftAIBase( pEnemyShip );
 			pEnemyShip->SetAI( pAI );

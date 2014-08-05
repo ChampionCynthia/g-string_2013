@@ -152,12 +152,13 @@ void CSpacecraftProjectile::OnTouch( CBaseEntity *pOther )
 			Vector vecVelocity = GetAbsVelocity();
 			vecVelocity.NormalizeInPlace();
 
-			CTakeDamageInfo dmgInfo( this, GetOwnerEntity(), gstring_spacecraft_damage_player.GetFloat(), DMG_DIRECT );
+			CTakeDamageInfo dmgInfo( this, GetOwnerEntity(), gstring_spacecraft_damage_player.GetFloat(), DMG_BLAST );
 			if ( GetOwnerEntity() != NULL && GetOwnerEntity()->IsPlayer() && pOther->IsNPC() )
 			{
 				dmgInfo.AdjustPlayerDamageInflictedForSkillLevel();
 			}
-			CalculateMeleeDamageForce( &dmgInfo, vecVelocity, tr.endpos, 0.7f );
+			dmgInfo.SetDamageForce( vecVelocity * 7500.0f );
+			//CalculateMeleeDamageForce( &dmgInfo, vecVelocity, tr.endpos, 2.0f );
 			dmgInfo.SetDamagePosition( tr.endpos );
 			pOther->DispatchTraceAttack( dmgInfo, vecVelocity, &tr );
 			ApplyMultiDamage();

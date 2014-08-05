@@ -255,11 +255,12 @@ void CHudCrosshair::Paint( void )
 		return;
 
 	// GSTRINGMIGRATION
-	if ( pPlayer->IsInSpacecraft() )
+	const CGstringInput *pInput = GetGstringInput();
+	if ( !pInput->IsUsingDefaultCrosshair() )
 	{
 		int x, y;
 		float angle;
-		GetGstringInput()->GetCrosshairPosition( x, y, angle );
+		pInput->GetCrosshairPosition( x, y, angle );
 
 		if ( !m_pCrosshair->bRenderUsingFont )
 		{

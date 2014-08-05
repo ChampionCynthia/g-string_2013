@@ -997,45 +997,67 @@ void C_GstringPlayer::GetSpacecraftCamera( Vector &origin, QAngle &angles, float
 	CSpacecraft *pSpacecraft = GetSpacecraft();
 	Assert( pSpacecraft );
 
-	const float flDistance = 40.0f;
+	const CSpacecraft::EngineLevel_e engineLevel = pSpacecraft->GetEngineLevel();
+
+	const float flDistance = ( engineLevel == CSpacecraft::ENGINELEVEL_BOOST ) ? 50.0f : 40.0f;
+	static float s_flDistanceSmooth = flDistance;
+	if ( abs( flDistance - s_flDistanceSmooth ) > 0.5f )
+	{
+		s_flDistanceSmooth += ( flDistance - s_flDistanceSmooth ) * MIN( 1.0f, gpGlobals->frametime * 5.0f );
+	}
+	else
+	{
+		s_flDistanceSmooth = flDistance;
+	}
 
 	Vector vecFwd, vecRight, vecUp;
 	AngleVectors( angles, &vecFwd, &vecRight, &vecUp );
 
 	origin = pSpacecraft->GetRenderOrigin();
 
-	static Vector s_originSmooth( origin );
+	static Vector s_originLast( origin );
 	static float s_flFovSmooth = 0.0f;
-	Vector delta = origin - s_originSmooth;
-	if ( true ) //delta.LengthSqr() > 10000.0f )
+	const Vector delta = origin - s_originLast;
+	s_originLast = origin;
+	if ( delta.LengthSqr() > 10000.0f )
 	{
-		s_originSmooth = origin;
 		s_flFovSmooth = 0.0f;
 	}
-	else if ( delta.LengthSqr() > 0.01f )
+
+	origin -= vecFwd * s_flDistanceSmooth;
+	origin += vecUp * 10.0f;
+
+	Vector2D vecRotationOffset;
+	CGstringInput *pInput = GetGstringInput();
+	if ( pInput->IsUsingFreeCrosshair() )
 	{
-		s_originSmooth += delta * MIN( 1.0f, gpGlobals->frametime * 40.0f );
-		origin = s_originSmooth;
+		pInput->GetNormalizedMousePosition( vecRotationOffset );
+		origin += vecRight * vecRotationOffset.x * 5.0f;
+		origin += vecUp * vecRotationOffset.y * 3.5f;
 	}
 	else
 	{
-		s_originSmooth = origin;
+		static QAngle s_angSmooth( angles );
+		vecRotationOffset.x = AngleDistance( angles.y, s_angSmooth.y ) * 0.04f;
+		vecRotationOffset.y = AngleDistance( angles.x, s_angSmooth.x ) * 0.02f;
+		s_angSmooth = Lerp( MIN( 1.0f, gpGlobals->frametime * 4.0f ), s_angSmooth, angles );
+
+		vecRotationOffset.x *= Bias( RemapValClamped( abs( vecRotationOffset.x ), 0.0f, M_PI_F * 2.0f, 1.0f, 0.0f ), 0.65f );
+		vecRotationOffset.y *= Bias( RemapValClamped( abs( vecRotationOffset.y ), 0.0f, M_PI_F * 2.0f, 1.0f, 0.0f ), 0.65f );
+
+		angles.z = vecRotationOffset.x * -6.0f;
+		origin -= vecRight * vecRotationOffset.x * 4.0f;
+		origin -= vecUp * vecRotationOffset.y * 5.0f;
+
+		vecRotationOffset *= -2.0f;
+		vecRotationOffset *= RemapValClamped( abs( angles.x ), 0.0f, 89.0f, 1.0f, 0.0f );
 	}
 
-	origin -= vecFwd * flDistance;
-	origin += vecUp * 10.0f;
-
-	Vector2D vecMousePosition;
-	GetGstringInput()->GetNormalizedMousePosition( vecMousePosition );
-	origin += vecRight * vecMousePosition.x * 5.0f;
-	origin += vecUp * vecMousePosition.y * 3.5f;
-
 	vieweffects->CalcShake();
-	vieweffects->ApplyShake( origin, angles, 1.0f );
+	vieweffects->ApplyShake( origin, angles, 0.35f );
 
-	const CSpacecraft::EngineLevel_e engineLevel = pSpacecraft->GetEngineLevel();
-	const float flFovAdd = ( engineLevel == CSpacecraft::ENGINELEVEL_BOOST ) ? 20.0f:
-		( engineLevel == CSpacecraft::ENGINELEVEL_NORMAL ) ? 2.5f : 0.0f;
+	const float flFovAdd = ( engineLevel == CSpacecraft::ENGINELEVEL_BOOST ) ? 3.0f:
+		( engineLevel == CSpacecraft::ENGINELEVEL_NORMAL ) ? 1.5f : 0.0f;
 
 	if ( abs( flFovAdd - s_flFovSmooth ) > 0.01f )
 	{
@@ -1056,9 +1078,9 @@ void C_GstringPlayer::GetSpacecraftCamera( Vector &origin, QAngle &angles, float
 
 	matrix3x4_t matRot, matTmp, matCurrent;
 	AngleMatrix( angles, origin, matCurrent );
-	MatrixBuildRotationAboutAxis( Vector( 0, 1.0f, 0 ), vecMousePosition.y * -2.8f, matRot );
+	MatrixBuildRotationAboutAxis( Vector( 0, 1.0f, 0 ), vecRotationOffset.y * -2.8f, matRot );
 	ConcatTransforms( matCurrent, matRot, matTmp );
-	MatrixBuildRotationAboutAxis( Vector( 0, 0, 1.0f ), vecMousePosition.x * 4.0f, matRot );
+	MatrixBuildRotationAboutAxis( Vector( 0, 0, 1.0f ), vecRotationOffset.x * 4.0f, matRot );
 	ConcatTransforms( matTmp, matRot, matCurrent );
 
 	MatrixAngles( matCurrent, angles );

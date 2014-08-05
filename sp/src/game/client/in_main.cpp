@@ -127,7 +127,7 @@ kbutton_t	in_left;
 kbutton_t	in_right;
 static	kbutton_t	in_lookup;
 static	kbutton_t	in_lookdown;
-static	kbutton_t	in_use;
+kbutton_t	in_use;
 static	kbutton_t	in_jump;
 kbutton_t	in_attack;
 static	kbutton_t	in_attack2;
@@ -135,7 +135,7 @@ static	kbutton_t	in_up;
 static kbutton_t	in_down;
 kbutton_t	in_duck;
 static	kbutton_t	in_reload;
-static	kbutton_t	in_alt1;
+kbutton_t	in_alt1;
 static	kbutton_t	in_alt2;
 static	kbutton_t	in_score;
 static	kbutton_t	in_break;
@@ -1498,6 +1498,13 @@ int CInput::GetButtonBits( int bResetState )
 	{
 		s_ClearInputState = 0;
 	}
+
+	// GSTRINGMIGRATION
+	if ( ( in_alt1.state & 2 ) != 0 )
+	{
+		engine->ExecuteClientCmd( "lastinv" );
+	}
+	// END GSTRINGMIGRATION
 
 	return bits;
 }

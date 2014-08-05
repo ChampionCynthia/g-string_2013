@@ -16,6 +16,7 @@
 #else
 #include "cspacecraftprojectile.h"
 #include "datacache/imdlcache.h"
+#include "cgstring_globals.h"
 #endif
 
 #include "igamemovement.h"
@@ -188,8 +189,11 @@ void CSpacecraft::Activate()
 	m_hPathEntity = gEntList.FindEntityByName( NULL, m_strPathStartName, this );
 	m_hEnemy = gEntList.FindEntityByName( NULL, m_strInitialEnemy, this );
 
-	const float flCollisionScale = 1.0f / 16.0f;
-	SetModelScale( flCollisionScale );
+	if ( g_pGstringGlobals != NULL && g_pGstringGlobals->IsSpaceMap() )
+	{
+		const float flCollisionScale = 1.0f / 16.0f;
+		SetModelScale( flCollisionScale );
+	}
 
 	VPhysicsInitNormal( SOLID_VPHYSICS, 0, false );
 
@@ -273,7 +277,6 @@ void CSpacecraft::Event_Killed( const CTakeDamageInfo &info )
 		playerDamage.SetAttacker( pPlayer );
 		playerDamage.SetInflictor( pPlayer );
 		playerDamage.SetDamage( pPlayer->GetHealth() + 1 );
-		//playerDamage.SetDamageType( playerDamage.GetDamageType() | DMG_NEVERGIB | DMG_GENERIC );
 		playerDamage.SetDamageType( DMG_GENERIC );
 		pPlayer->TakeDamage( playerDamage );
 
@@ -302,9 +305,14 @@ void CSpacecraft::Event_Killed( const CTakeDamageInfo &info )
 		params.velocityScale = MIN( 1.0f, params.velocityScale );
 		params.velocityScale = powf( params.velocityScale, 3.0f );
 
-		if ( ( info.GetDamageType() & DMG_DIRECT ) != 0 )
+		const int iDamageType = info.GetDamageType();
+		if ( ( iDamageType & DMG_DIRECT ) != 0 )
 		{
 			params.burstScale = 0.0f;
+		}
+		else if ( ( iDamageType & DMG_BLAST ) != 0 )
+		{
+			params.burstScale = 2.5f;
 		}
 
 		MDLCACHE_CRITICAL_SECTION();
