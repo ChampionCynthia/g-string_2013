@@ -181,7 +181,7 @@ void CSpacecraftProjectile::OnTouch( CBaseEntity *pOther )
 	if ( m_iImpactType != 0 )
 	{
 		tr.m_pEnt = NULL;
-		tr.endpos = tr.endpos + ( tr.endpos - tr.startpos );
+		tr.endpos = tr.endpos + ( tr.endpos - tr.startpos ).Normalized() * 3.0f;
 		ImpactTrace( &tr, DMG_BLAST );
 	}
 }

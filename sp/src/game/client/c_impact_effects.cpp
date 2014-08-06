@@ -19,6 +19,10 @@
 #include "tier0/vprof.h"
 #include "c_te_effect_dispatch.h"
 
+// GSTRINGMIGRATION
+#include "cgstring_globals.h"
+// END GSTRINGMIGRATION
+
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -49,6 +53,13 @@ PMaterialHandle g_Mat_Combine_Muzzleflash[3] = { NULL, NULL, NULL };
 
 static ConVar fx_drawimpactdebris( "fx_drawimpactdebris", "1", FCVAR_DEVELOPMENTONLY, "Draw impact debris effects." );
 static ConVar fx_drawimpactdust( "fx_drawimpactdust", "1", FCVAR_DEVELOPMENTONLY, "Draw impact dust effects." );
+
+// GSTRINGMIGRATION
+static bool IsGravityEnabled()
+{
+	return g_pGstringGlobals == NULL || !g_pGstringGlobals->IsSpaceMap();
+}
+// END GSTRINGMIGRATION
 
 void FX_CacheMaterialHandles( void )
 {
@@ -240,6 +251,8 @@ void FX_DebrisFlecks( const Vector& origin, trace_t *tr, char materialType, int 
 	if ( !fx_drawimpactdebris.GetBool() )
 		return;
 
+	const bool bGravity = IsGravityEnabled();
+
 #ifdef _XBOX
 
 	//
@@ -378,7 +391,10 @@ void FX_DebrisFlecks( const Vector& origin, trace_t *tr, char materialType, int 
 		newParticle.m_uchEndSize	= newParticle.m_uchStartSize * 8 * iScale;
 
 		newParticle.m_vecVelocity = dir * random->RandomFloat( 2.0f, 24.0f )*(i+1);
-		newParticle.m_vecVelocity[2] -= random->RandomFloat( 8.0f, 32.0f )*(i+1);
+		if ( bGravity )
+		{
+			newParticle.m_vecVelocity[2] -= random->RandomFloat( 8.0f, 32.0f )*(i+1);
+		}
 
 		newParticle.m_uchStartAlpha	= random->RandomInt( 100, 200 );
 		newParticle.m_uchEndAlpha	= 0;
@@ -412,7 +428,10 @@ void FX_DebrisFlecks( const Vector& origin, trace_t *tr, char materialType, int 
 		newParticle.m_uchEndSize	= newParticle.m_uchStartSize * 4;
 
 		newParticle.m_vecVelocity = dir * random->RandomFloat( 8.0f, 32.0f );
-		newParticle.m_vecVelocity[2] -= random->RandomFloat( 8.0f, 64.0f );
+		if ( bGravity )
+		{
+			newParticle.m_vecVelocity[2] -= random->RandomFloat( 8.0f, 64.0f );
+		}
 
 		newParticle.m_uchStartAlpha	= 255;
 		newParticle.m_uchEndAlpha	= 0;
@@ -446,7 +465,10 @@ void FX_DebrisFlecks( const Vector& origin, trace_t *tr, char materialType, int 
 	newParticle.m_uchEndSize		= newParticle.m_uchStartSize * 4.0f;
 
 	newParticle.m_vecVelocity = dir * random->RandomFloat( 2.0f, 24.0f );
-	newParticle.m_vecVelocity[2] = random->RandomFloat( -2.0f, 2.0f );
+	if ( bGravity )
+	{
+		newParticle.m_vecVelocity[2] = random->RandomFloat( -2.0f, 2.0f );
+	}
 
 	newParticle.m_uchStartAlpha	= random->RandomInt( 100, 200 );
 	newParticle.m_uchEndAlpha	= 0;
