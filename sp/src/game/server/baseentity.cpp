@@ -67,6 +67,10 @@
 #include "tf_gamerules.h"
 #endif
 
+// GSTRINGMIGRATION
+#include "cgstring_globals.h"
+// END GSTRINGMIGRATION
+
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -7203,6 +7207,13 @@ bool CBaseEntity::SUB_AllowedToFade( void )
 		if( VPhysicsGetObject()->GetGameFlags() & FVPHYSICS_PLAYER_HELD || GetEFlags() & EFL_IS_BEING_LIFTED_BY_BARNACLE )
 			return false;
 	}
+
+	// GSTRINGMIGRATION
+	if ( g_pGstringGlobals != NULL && g_pGstringGlobals->IsSpaceMap() )
+	{
+		return true;
+	}
+	// END GSTRINGMIGRATION
 
 	// on Xbox, allow these to fade out
 #ifndef _XBOX

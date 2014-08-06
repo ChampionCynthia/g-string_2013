@@ -11,6 +11,8 @@ struct SpacecraftSettings_t
 		m_flAccelerationSide( 1.0f ),
 		m_flAccelerationBoost( 1.0f ),
 		m_iHealth( 100 ),
+		m_flRegenerationDelay( 1.0f ),
+		m_flRegenerationRate( 1.0f ),
 		m_flCollisionDamageScale( 0.0f ),
 		m_flCollisionDamageMin( 0.0f ),
 		m_flCollisionDamageMax( FLT_MAX )
@@ -37,6 +39,8 @@ struct SpacecraftSettings_t
 	float m_flAccelerationBoost;
 
 	int m_iHealth;
+	float m_flRegenerationDelay;
+	float m_flRegenerationRate;
 
 	float m_flCollisionDamageScale;
 	float m_flCollisionDamageMin;
@@ -50,11 +54,9 @@ public:
 
 	CSpacecraftConfig();
 
-	virtual bool Init();
-	virtual void LevelInitPreEntity();
-
 	static CSpacecraftConfig *GetInstance() { return &m_Instance; }
 
+	virtual void LevelInitPreEntity();
 	void Precache();
 	void ReloadConfig();
 
@@ -64,6 +66,8 @@ public:
 private:
 	typedef CUtlStringMap< SpacecraftSettings_t > SpacecraftSettingsContrainer;
 	SpacecraftSettingsContrainer m_Settings;
+
+	bool m_bPrecached;
 };
 
 #endif

@@ -21,20 +21,14 @@ static void PrecacheSoundIfSet( const CUtlString &strSound )
 
 CSpacecraftConfig CSpacecraftConfig::m_Instance;
 
-CSpacecraftConfig::CSpacecraftConfig()
+CSpacecraftConfig::CSpacecraftConfig() :
+	m_bPrecached( false )
 {
-}
-
-bool CSpacecraftConfig::Init()
-{
-	ReloadConfig();
-
-	return true;
 }
 
 void CSpacecraftConfig::LevelInitPreEntity()
 {
-	Precache();
+	m_bPrecached = false;
 }
 
 void CSpacecraftConfig::Precache()
@@ -44,25 +38,30 @@ void CSpacecraftConfig::Precache()
 		ReloadConfig();
 	}
 
-	for ( int i = 0; i < m_Settings.GetNumStrings(); i++ )
+	if ( !m_bPrecached )
 	{
-		const SpacecraftSettings_t &settings = m_Settings[ i ];
+		m_bPrecached = true;
+		for ( int i = 0; i < m_Settings.GetNumStrings(); i++ )
+		{
+			const SpacecraftSettings_t &settings = m_Settings[ i ];
 
-		const int iModelIndex = CBaseEntity::PrecacheModel( settings.m_strModel );
-		PrecacheGibsForModel( iModelIndex );
+			const int iModelIndex = CBaseEntity::PrecacheModel( settings.m_strModel );
+			PrecacheGibsForModel( iModelIndex );
 
-		PrecacheSoundIfSet( settings.m_strSoundEngineStart );
-		PrecacheSoundIfSet( settings.m_strSoundEngineStop );
-		PrecacheSoundIfSet( settings.m_strSoundBoostStart );
-		PrecacheSoundIfSet( settings.m_strSoundBoostStop );
-		PrecacheSoundIfSet( settings.m_strSoundThruster );
-		PrecacheSoundIfSet( settings.m_strSoundDamage );
-		PrecacheSoundIfSet( settings.m_strSoundDeath );
+			PrecacheSoundIfSet( settings.m_strSoundEngineStart );
+			PrecacheSoundIfSet( settings.m_strSoundEngineStop );
+			PrecacheSoundIfSet( settings.m_strSoundBoostStart );
+			PrecacheSoundIfSet( settings.m_strSoundBoostStop );
+			PrecacheSoundIfSet( settings.m_strSoundThruster );
+			PrecacheSoundIfSet( settings.m_strSoundDamage );
+			PrecacheSoundIfSet( settings.m_strSoundDeath );
+		}
 	}
 }
 
 void CSpacecraftConfig::ReloadConfig()
 {
+	m_bPrecached = false;
 	m_Settings.Clear();
 
 	KeyValues::AutoDelete pKV( new KeyValues( "" ) );
@@ -114,6 +113,8 @@ void CSpacecraftConfig::ReloadConfig()
 			settings.m_flAccelerationBoost = pChild->GetFloat( "acceleration_boost", settings.m_flAccelerationBoost );
 
 			settings.m_iHealth = pChild->GetInt( "health", settings.m_iHealth );
+			settings.m_flRegenerationDelay = pChild->GetFloat( "regeneration_delay", settings.m_flRegenerationDelay );
+			settings.m_flRegenerationRate = pChild->GetFloat( "regeneration_rate", settings.m_flRegenerationRate );
 
 			settings.m_flCollisionDamageScale = pChild->GetFloat( "collision_damage_scale", settings.m_flCollisionDamageScale );
 			settings.m_flCollisionDamageMin = pChild->GetFloat( "collision_damage_min", settings.m_flCollisionDamageMin );

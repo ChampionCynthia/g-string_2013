@@ -1013,7 +1013,8 @@ void C_GstringPlayer::GetSpacecraftCamera( Vector &origin, QAngle &angles, float
 	Vector vecFwd, vecRight, vecUp;
 	AngleVectors( angles, &vecFwd, &vecRight, &vecUp );
 
-	origin = pSpacecraft->GetRenderOrigin();
+	const Vector vecRenderOrigin = pSpacecraft->GetRenderOrigin();
+	origin = vecRenderOrigin;
 
 	static Vector s_originLast( origin );
 	static float s_flFovSmooth = 0.0f;
@@ -1084,6 +1085,12 @@ void C_GstringPlayer::GetSpacecraftCamera( Vector &origin, QAngle &angles, float
 	ConcatTransforms( matTmp, matRot, matCurrent );
 
 	MatrixAngles( matCurrent, angles );
+
+	trace_t tr;
+	const Vector vecCameraHull( 2, 2, 2 );
+	CTraceFilterSkipTwoEntities filter( this, pSpacecraft, COLLISION_GROUP_DEBRIS );
+	UTIL_TraceHull( vecRenderOrigin, origin, -vecCameraHull, vecCameraHull, MASK_SOLID, &filter, &tr );
+	origin = tr.endpos;
 }
 
 void C_GstringPlayer::GetDeathSpacecraftCamera( Vector &origin, QAngle &angles )

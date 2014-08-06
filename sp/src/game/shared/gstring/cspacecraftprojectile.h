@@ -20,6 +20,7 @@ public:
 	virtual int UpdateTransmitState() { return SetTransmitState( FL_EDICT_ALWAYS ); }
 
 	virtual void Precache();
+	virtual	bool ShouldCollide( const CBaseEntity *pOther ) const;
 	void Fire( CBaseEntity *pPlayer, CBaseEntity *pVehicle,
 		const Vector &vecOrigin, const Vector &vecVelocity );
 #else

@@ -202,7 +202,11 @@ enum CastVote
 #define HIDEHUD_INVEHICLE			( 1<<10 )
 #define HIDEHUD_BONUS_PROGRESS		( 1<<11 )	// Hide bonus progress display (for bonus map challenges)
 
-#define HIDEHUD_BITCOUNT			12
+// GSTRINGMIGRATION
+#define HIDEHUD_SPACECRAFT			( 1 << 12 )
+// END GSTRINGMIGRATION
+
+#define HIDEHUD_BITCOUNT			13
 
 //===================================================================================================================
 // suit usage bits

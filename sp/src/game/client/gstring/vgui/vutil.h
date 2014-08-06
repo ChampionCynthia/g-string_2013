@@ -25,4 +25,14 @@ inline void ScaleByFrametime( float &val )
 	val = pow( val, gpGlobals->frametime );
 }
 
+inline Color Lerp( float flPercent, const Color &from, const Color &to )
+{
+	Color output;
+	output.SetColor( Lerp( flPercent, from.r(), to.r() ),
+		Lerp( flPercent, from.g(), to.g() ),
+		Lerp( flPercent, from.b(), to.b() ),
+		Lerp( flPercent, from.a(), to.a() ) );
+	return output;
+}
+
 #endif

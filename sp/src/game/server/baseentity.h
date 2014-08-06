@@ -450,6 +450,7 @@ public:
 
 	// Called by physics to see if we should avoid a collision test....
 	virtual	bool			ShouldCollide( int collisionGroup, int contentsMask ) const;
+	virtual	bool			ShouldCollide( const CBaseEntity *pOther ) const { return true; }
 
 	// Move type / move collide
 	MoveType_t				GetMoveType() const;

@@ -359,7 +359,7 @@ void CGstringInput::PerformSpacecraftAutoAim( CUserCmd *cmd )
 	CTraceFilterSkipTwoEntities filter( pPlayer, pSpacecraft, COLLISION_GROUP_NONE );
 
 	const Vector vecEnd = vecViewOrigin + vecPickingRay * MAX_TRACE_LENGTH;
-	const Vector vecHull( 10, 10, 10 );
+	const Vector vecHull( 2, 2, 2 );
 	UTIL_TraceHull( vecViewOrigin, vecEnd, -vecHull, vecHull, MASK_SOLID, &filter, &tr );
 
 	cmd->worldShootPosition = tr.endpos;
@@ -372,7 +372,6 @@ void CGstringInput::PerformSpacecraftAutoAim( CUserCmd *cmd )
 
 		const float flMaxWorldDistanceSqr = gstring_spacecraft_autoaim_maxworlddist.GetFloat() *
 			gstring_spacecraft_autoaim_maxworlddist.GetFloat();
-		float flBestWorldDistanceSqr = flMaxWorldDistanceSqr;
 		float flBestScreenDistSqr = gstring_spacecraft_autoaim_maxscreendist.GetFloat() *
 			gstring_spacecraft_autoaim_maxscreendist.GetFloat() * ( vh / 640.0f );
 		for ( C_BaseEntity *pEnt = ClientEntityList().FirstBaseEntity(); pEnt; pEnt = ClientEntityList().NextBaseEntity( pEnt ) )
@@ -394,11 +393,6 @@ void CGstringInput::PerformSpacecraftAutoAim( CUserCmd *cmd )
 
 				m_PotentialAutoAimTargets.AddToTail( pSpacecraft );
 
-				if ( flWorldDistanceSqr > flBestWorldDistanceSqr )
-				{
-					continue;
-				}
-
 				Vector vecScreen( vec3_origin );
 				if ( !ScreenTransform( vecCenter, vecScreen ) )
 				{
@@ -414,7 +408,6 @@ void CGstringInput::PerformSpacecraftAutoAim( CUserCmd *cmd )
 				}
 
 				pAutoAimTarget = pSpacecraft;
-				flBestWorldDistanceSqr = flWorldDistanceSqr;
 				flBestScreenDistSqr = flScreenDistSqr;
 			}
 		}

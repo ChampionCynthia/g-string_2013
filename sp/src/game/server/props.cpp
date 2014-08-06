@@ -3357,13 +3357,14 @@ CBaseEntity *BreakModelCreateSingle( CBaseEntity *pOwner, breakmodel_t *pModel, 
 	{
 		pEntity->m_nSkin = nSkin;
 		pEntity->m_iHealth = pModel->health;
+		float flFadeTime = ( params.fadeTimeOverride >= 0.0f ) ? params.fadeTimeOverride : pModel->fadeTime;
 		if ( g_ActiveGibCount >= ACTIVE_GIB_FADE )
 		{
-			pModel->fadeTime = MIN( 3, pModel->fadeTime );
+			flFadeTime = MIN( 3, flFadeTime );
 		}
-		if ( pModel->fadeTime )
+		if ( flFadeTime )
 		{
-			pEntity->SUB_StartFadeOut( pModel->fadeTime, false );
+			pEntity->SUB_StartFadeOut( flFadeTime, false );
 
 			CBreakableProp *pProp = dynamic_cast<CBreakableProp *>(pEntity);
 			if ( pProp && !pProp->GetNumBreakableChunks() && pProp->m_takedamage == DAMAGE_YES )

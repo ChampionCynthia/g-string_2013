@@ -58,6 +58,15 @@ void CGstringPlayer::Spawn()
 	BaseClass::Spawn();
 
 	SetModel( "models/humans/group02/female_04.mdl" );
+
+	if ( g_pGstringGlobals != NULL && g_pGstringGlobals->IsSpaceMap() )
+	{
+		m_Local.m_iHideHUD |= HIDEHUD_HEALTH;
+	}
+	else
+	{
+		m_Local.m_iHideHUD |= HIDEHUD_SPACECRAFT;
+	}
 }
 
 void CGstringPlayer::DoReloadAnim()

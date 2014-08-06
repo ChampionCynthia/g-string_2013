@@ -79,6 +79,7 @@ static ConVar gstring_spacecraft_move_drag_up( "gstring_spacecraft_move_drag_up"
 #ifdef GAME_DLL
 BEGIN_DATADESC( CSpacecraft )
 
+	DEFINE_THINKFUNC( Think ),
 	DEFINE_KEYFIELD( m_strSettingsName, FIELD_STRING, "settingsname" ),
 
 	// AI
@@ -102,6 +103,9 @@ END_DATADESC()
 IMPLEMENT_NETWORKCLASS_DT( CSpacecraft, CSpacecraft_DT )
 
 #ifdef GAME_DLL
+	SendPropInt( SENDINFO( m_iHealth ), -1, SPROP_VARINT | SPROP_CHANGES_OFTEN ),
+	SendPropInt( SENDINFO( m_iMaxHealth ) ),
+
 	SendPropInt( SENDINFO( m_iEngineLevel ), 2, SPROP_UNSIGNED ),
 	SendPropInt( SENDINFO( m_iProjectileParity ), 8, SPROP_UNSIGNED ),
 
@@ -109,6 +113,9 @@ IMPLEMENT_NETWORKCLASS_DT( CSpacecraft, CSpacecraft_DT )
 	SendPropVector( SENDINFO( m_PhysVelocity ) ),
 	SendPropInt( SENDINFO( m_iSettingsIndex ) ),
 #else
+	RecvPropInt( RECVINFO( m_iHealth ) ),
+	RecvPropInt( RECVINFO( m_iMaxHealth ) ),
+
 	RecvPropInt( RECVINFO( m_iEngineLevel ) ),
 	RecvPropInt( RECVINFO( m_iProjectileParity ) ),
 
@@ -120,19 +127,22 @@ IMPLEMENT_NETWORKCLASS_DT( CSpacecraft, CSpacecraft_DT )
 END_NETWORK_TABLE();
 
 LINK_ENTITY_TO_CLASS( prop_vehicle_spacecraft, CSpacecraft );
-PRECACHE_REGISTER( prop_vehicle_spacecraft );
 
 CSpacecraft::CSpacecraft()
 #ifdef GAME_DLL
 	: m_flFireDelay( 0.0f )
 	, m_bAlternatingWeapons( false )
 	, m_pAI( NULL )
-	, m_flLastAIThinkTime( 0.0f )
 	, m_iAIControlled( 0 )
 	, m_iAIAttackState( 0 )
 	, m_iAITeam( 0 )
+	, m_flCollisionDamageProtection( 0.0f )
+	, m_flLastThinkTime( 0.0f )
+	, m_flRegenerationTimer( 0.0f )
+	, m_flRegeneratedHealth( 0.0f )
 #else
-	: m_iEngineLevelLast( 0 )
+	: m_iMaxHealth( 0 )
+	, m_iEngineLevelLast( 0 )
 	, m_iProjectileParityLast( 0 )
 	, m_iGUID_Engine( -1 )
 	, m_iGUID_Boost( -1 )
@@ -171,12 +181,19 @@ void CSpacecraft::SetAI( ISpacecraftAI *pSpacecraftAI )
 {
 	delete m_pAI;
 	m_pAI = pSpacecraftAI;
+}
 
-	m_flLastAIThinkTime = gpGlobals->curtime;
+void CSpacecraft::Precache()
+{
+	BaseClass::Precache();
+
+	CSpacecraftConfig::GetInstance()->Precache();
 }
 
 void CSpacecraft::Activate()
 {
+	Precache();
+
 	const CSpacecraftConfig *pConfig = CSpacecraftConfig::GetInstance();
 	m_iSettingsIndex = pConfig->GetSettingsIndex( STRING( m_strSettingsName ) );
 	m_Settings = pConfig->GetSettings( m_iSettingsIndex );
@@ -206,20 +223,43 @@ void CSpacecraft::Activate()
 	m_takedamage = DAMAGE_YES;
 	SetMaxHealth( m_Settings.m_iHealth );
 	SetHealth( GetMaxHealth() );
+
+	m_flLastThinkTime = gpGlobals->curtime;
+	SetThink( &CSpacecraft::Think );
+	SetNextThink( gpGlobals->curtime + 0.05f );
 }
 
-void CSpacecraft::VPhysicsUpdate( IPhysicsObject *pPhysics )
+void CSpacecraft::Think()
 {
-	BaseClass::VPhysicsUpdate( pPhysics );
-	if ( m_pAI != NULL )
-	{
-		float flDeltaTime = gpGlobals->curtime - m_flLastAIThinkTime;
-		flDeltaTime = MIN( 0.25f, flDeltaTime );
+	SetNextThink( gpGlobals->curtime + 0.05f );
 
-		if ( flDeltaTime > 0.0f )
+	float flDeltaTime = gpGlobals->curtime - m_flLastThinkTime;
+	flDeltaTime = MIN( 0.25f, flDeltaTime );
+	if ( flDeltaTime > 0.0f )
+	{
+		m_flLastThinkTime = gpGlobals->curtime;
+
+		if ( m_pAI != NULL )
 		{
 			m_pAI->Run( flDeltaTime );
-			m_flLastAIThinkTime = gpGlobals->curtime;
+		}
+
+		if ( GetHealth() < GetMaxHealth() )
+		{
+			if ( m_flRegenerationTimer > 0.0f )
+			{
+				m_flRegenerationTimer -= flDeltaTime;
+				m_flRegeneratedHealth = gpGlobals->curtime;
+			}
+			else if ( m_flRegeneratedHealth < gpGlobals->curtime )
+			{
+				const int iAddedHealth = ( gpGlobals->curtime - m_flRegeneratedHealth ) * m_Settings.m_flRegenerationRate;
+				if ( iAddedHealth > 0 )
+				{
+					m_flRegeneratedHealth = gpGlobals->curtime;
+					TakeHealth( iAddedHealth, DMG_GENERIC );
+				}
+			}
 		}
 	}
 }
@@ -235,12 +275,19 @@ void CSpacecraft::VPhysicsCollision( int index, gamevcollisionevent_t *pEvent )
 {
 	BaseClass::VPhysicsCollision( index, pEvent );
 
+	if ( m_flCollisionDamageProtection > gpGlobals->curtime )
+	{
+		return;
+	}
+
 	const int iSelfIndex = ( pEvent->pObjects[ 0 ] == VPhysicsGetObject() ) ? 0 : 1;
 	float flDamage = ( pEvent->preVelocity[ iSelfIndex ] - pEvent->postVelocity[ iSelfIndex ] ).LengthSqr() *
 		m_Settings.m_flCollisionDamageScale;
 
 	if ( flDamage >= m_Settings.m_flCollisionDamageMin )
 	{
+		m_flCollisionDamageProtection = gpGlobals->curtime + 0.5f;
+
 		flDamage = MIN( m_Settings.m_flCollisionDamageMax, flDamage );
 		Vector vecContactPoint, vecSurfaceNormal;
 		pEvent->pInternalData->GetContactPoint( vecContactPoint );
@@ -254,7 +301,8 @@ void CSpacecraft::VPhysicsCollision( int index, gamevcollisionevent_t *pEvent )
 		CTakeDamageInfo info( this, this, flDamage, DMG_DIRECT );
 		info.SetDamageForce( pEvent->preVelocity[ iSelfIndex ] );
 		info.SetDamagePosition( vecContactPoint + vecSurfaceNormal * 3.0f );
-		TakeDamage( info );
+		// TakeDamage( info );
+		PhysCallbackDamage( this, info );
 	}
 }
 
@@ -264,6 +312,9 @@ int CSpacecraft::OnTakeDamage( const CTakeDamageInfo &info )
 
 	DispatchParticleEffect( m_Settings.m_strParticleDamage, info.GetDamagePosition(), GetAbsAngles() );
 	EmitSoundIfSet( this, m_Settings.m_strSoundDamage );
+
+	m_flRegenerationTimer = m_Settings.m_flRegenerationDelay;
+	m_flRegeneratedHealth = gpGlobals->curtime;
 
 	return ret;
 }
@@ -315,6 +366,8 @@ void CSpacecraft::Event_Killed( const CTakeDamageInfo &info )
 			params.burstScale = 2.5f;
 		}
 
+		params.fadeTimeOverride = ( pPlayer != NULL ) ? 5.0f : 0.5f;
+
 		MDLCACHE_CRITICAL_SECTION();
 		PropBreakableCreateAll( GetModelIndex(), pPhysics, params, this, -1, true, true );
 	}
@@ -329,6 +382,8 @@ void CSpacecraft::Event_Killed( const CTakeDamageInfo &info )
 	//}
 
 	BaseClass::Event_Killed( info );
+
+	AddSolidFlags( FSOLID_NOT_SOLID );
 }
 
 CBaseEntity *CSpacecraft::GetEnemy() const
@@ -476,7 +531,9 @@ void CSpacecraft::OnDataChanged( DataUpdateType_t t )
 
 	if ( t == DATA_UPDATE_CREATED )
 	{
-		m_Settings = CSpacecraftConfig::GetInstance()->GetSettings( m_iSettingsIndex );
+		CSpacecraftConfig *pConfig = CSpacecraftConfig::GetInstance();
+		pConfig->Precache();
+		m_Settings = pConfig->GetSettings( m_iSettingsIndex );
 
 		SetNextClientThink( CLIENT_THINK_ALWAYS );
 	}

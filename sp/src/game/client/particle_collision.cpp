@@ -8,6 +8,10 @@
 #include "particle_collision.h"
 #include "engine/ivdebugoverlay.h"
 
+// GSTRINGMIGRATION
+#include "cgstring_globals.h"
+// END GSTRINGMIGRATION
+
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -238,6 +242,13 @@ CParticleCollision::CParticleCollision( void )
 //-----------------------------------------------------------------------------
 void CParticleCollision::Setup( const Vector &origin, const Vector *dir, float angularSpread, float minSpeed, float maxSpeed, float gravity, float dampen )
 {
+	// GSTRINGMIGRATION
+	if ( g_pGstringGlobals != NULL && g_pGstringGlobals->IsSpaceMap() )
+	{
+		gravity = 0.0f;
+	}
+	// END GSTRINGMIGRATION
+
 	//Take the information for this simulation
 	m_flGravity				= gravity;
 	m_flCollisionDampen		= dampen;
@@ -294,7 +305,7 @@ void CParticleCollision::Setup( const Vector &origin, const Vector *dir, float a
 //			timeDelta - time step
 //-----------------------------------------------------------------------------
 bool CParticleCollision::MoveParticle( Vector &origin, Vector &velocity, float *rollDelta, float timeDelta, trace_t *pTrace )
-{	
+{
 	//Don't bother with non-moving particles
 	if ( velocity == vec3_origin )
 		return false;

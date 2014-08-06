@@ -50,9 +50,8 @@ public:
 #ifdef GAME_DLL
 	void SetAI( ISpacecraftAI *pSpacecraftAI );
 
+	virtual void Precache();
 	virtual void Activate();
-
-	virtual void VPhysicsUpdate( IPhysicsObject *pPhysics );
 
 	void InputEnterVehicle( inputdata_t &inputdata );
 	virtual void VPhysicsCollision( int index, gamevcollisionevent_t *pEvent );
@@ -64,6 +63,9 @@ public:
 	void InputSetEnemy( inputdata_t &inputdata );
 	void InputClearEnemy( inputdata_t &inputdata );
 #else
+	virtual int GetHealth() const { return m_iHealth; }
+	virtual int GetMaxHealth() const { return m_iMaxHealth; }
+
 	//virtual bool IsTransparent() { return false; }
 	virtual bool IsTwoPass() { return true; }
 	virtual RenderGroup_t GetRenderGroup() { return RENDER_GROUP_TWOPASS; }
@@ -87,6 +89,7 @@ public:
 
 private:
 #ifdef GAME_DLL
+	void Think();
 	void SimulateFire( CMoveData &moveData, float flFrametime );
 
 	string_t m_strSettingsName;
@@ -95,7 +98,6 @@ private:
 	bool m_bAlternatingWeapons;
 
 	ISpacecraftAI *m_pAI;
-	float m_flLastAIThinkTime;
 
 	string_t m_strInitialEnemy;
 	EHANDLE m_hEnemy;
@@ -105,6 +107,12 @@ private:
 	int m_iAITeam;
 	string_t m_strPathStartName;
 	EHANDLE m_hPathEntity;
+
+	IMPLEMENT_NETWORK_VAR_FOR_DERIVED( m_iMaxHealth );
+	float m_flCollisionDamageProtection;
+	float m_flLastThinkTime;
+	float m_flRegenerationTimer;
+	float m_flRegeneratedHealth;
 #else
 	CUtlVector< int > m_ThrusterAttachments;
 	CUtlVector< int > m_ThrusterSounds;
@@ -115,6 +123,8 @@ private:
 
 	CSmartPtr< CNewParticleEffect > m_SpaceFieldParticles;
 
+	int m_iMaxHealth;
+
 	int m_iEngineLevelLast;
 	int m_iProjectileParityLast;
 	int m_iGUID_Engine;
@@ -124,6 +134,8 @@ private:
 	float m_flEngineVolume;
 	float m_flShakeTimer;
 #endif
+	IMPLEMENT_NETWORK_VAR_FOR_DERIVED( m_iHealth );
+
 	CUtlVector< int > m_WeaponAttachments;
 
 	CNetworkQAngle( m_AngularImpulse );
@@ -134,5 +146,6 @@ private:
 	CNetworkVar( UtlSymId_t, m_iSettingsIndex );
 	SpacecraftSettings_t m_Settings;
 };
+
 
 #endif

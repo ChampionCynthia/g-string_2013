@@ -59,6 +59,15 @@ void CSpacecraftProjectile::Precache()
 	PrecacheScriptSound( "Spacecraft.Projectile.Fire.Player" );
 }
 
+bool CSpacecraftProjectile::ShouldCollide( const CBaseEntity *pOther ) const
+{
+	if ( pOther == m_hVehicleOwner )
+	{
+		return false;
+	}
+	return BaseClass::ShouldCollide( pOther );
+}
+
 void CSpacecraftProjectile::Fire( CBaseEntity *pPlayer, CBaseEntity *pVehicle,
 	const Vector &vecOrigin, const Vector &vecVelocity )
 {
@@ -172,6 +181,7 @@ void CSpacecraftProjectile::OnTouch( CBaseEntity *pOther )
 	if ( m_iImpactType != 0 )
 	{
 		tr.m_pEnt = NULL;
+		tr.endpos = tr.endpos + ( tr.endpos - tr.startpos );
 		ImpactTrace( &tr, DMG_BLAST );
 	}
 }

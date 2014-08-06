@@ -516,6 +516,11 @@ int CCollisionEvent::ShouldCollide_2( IPhysicsObject *pObj0, IPhysicsObject *pOb
 		// don't collide with your owner
 		if ( pEntity0->GetOwnerEntity() == pEntity1 || pEntity1->GetOwnerEntity() == pEntity0 )
 			return 0;
+
+		// GSTRINGMIGRATION
+		if ( !pEntity0->ShouldCollide( pEntity1 ) || !pEntity1->ShouldCollide( pEntity0 ) )
+			return 0;
+		// END GSTRINGMIGRATION
 	}
 
 	if ( pEntity0->GetMoveParent() || pEntity1->GetMoveParent() )
