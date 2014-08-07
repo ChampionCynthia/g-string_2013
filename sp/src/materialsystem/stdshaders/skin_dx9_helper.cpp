@@ -653,9 +653,9 @@ void DrawSkin_DX9_Internal( CBaseVSShader *pShader, IMaterialVar** params, IShad
 				pShader->BindTexture( SHADER_SAMPLER4, pCascadedDepthTexture );
 
 				VMatrix *worldToTexture0 = (VMatrix*)pShaderAPI->GetIntRenderingParameter( INT_CASCADED_MATRIX_ADDRESS_0 );
-				VMatrix *worldToTexture1 = (VMatrix*)pShaderAPI->GetIntRenderingParameter( INT_CASCADED_MATRIX_ADDRESS_1 );
+				//VMatrix *worldToTexture1 = (VMatrix*)pShaderAPI->GetIntRenderingParameter( INT_CASCADED_MATRIX_ADDRESS_1 );
 				DynamicCmdsOut.SetVertexShaderConstant( 240, worldToTexture0->Base(), 4 );
-				DynamicCmdsOut.SetPixelShaderConstant( PSREG_FLASHLIGHT_TO_WORLD_TEXTURE, worldToTexture1->Base(), 4 );
+				//DynamicCmdsOut.SetPixelShaderConstant( PSREG_FLASHLIGHT_TO_WORLD_TEXTURE, worldToTexture1->Base(), 4 );
 
 				const Vector vecCascadedFwd = pShaderAPI->GetVectorRenderingParameter( VECTOR_RENDERPARM_GSTRING_CASCADED_FORWARD );
 				vRimBoost[0] = vecCascadedFwd.x;
@@ -674,6 +674,19 @@ void DrawSkin_DX9_Internal( CBaseVSShader *pShader, IMaterialVar** params, IShad
 				SetCustomPixelLightingState( DynamicCmdsOut, lightState, pShaderAPI, PSREG_LIGHT_INFO_ARRAY );
 				SetCustomVertexLightingState( DynamicCmdsOut, lightState, pShaderAPI, 27, vDirectionalLights );
 				DynamicCmdsOut.SetPixelShaderConstant( PSREG_FLASHLIGHT_COLOR, vDirectionalLights );
+
+
+
+				float vCascadedStep[4] = { 0.0f };
+				const Vector vecCascadedStep = pShaderAPI->GetVectorRenderingParameter( VECTOR_RENDERPARM_GSTRING_CASCADED_STEP );
+				vCascadedStep[0] = vecCascadedStep.z;
+				vCascadedStep[1] = vecCascadedStep.z;
+				vCascadedStep[2] = vecCascadedStep.x + 0.5f + ( ( 1.0f - vecCascadedStep.z ) * 0.25f );
+				vCascadedStep[3] = vecCascadedStep.y + ( 0.5f - vecCascadedStep.z * 0.5f );
+
+				//vCascadedStep[0] = vCascadedStep[1] = 0.25f;
+
+				DynamicCmdsOut.SetPixelShaderConstant( PSREG_FLASHLIGHT_TO_WORLD_TEXTURE, vCascadedStep, 1 );
 			}
 		}
 

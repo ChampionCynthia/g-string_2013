@@ -15,6 +15,10 @@
 #include "coordsize.h"
 #include "rumble_shared.h"
 
+// GSTRINGMIGRATION
+#include "cgstring_globals.h"
+// END GSTRINGMIGRATION
+
 #if defined(HL2_DLL) || defined(HL2_CLIENT_DLL)
 	#include "hl_movedata.h"
 #endif
@@ -1872,21 +1876,26 @@ void CGameMovement::StayOnGround( void )
 	// using trace.startsolid is unreliable here, it doesn't get set when
 	// tracing bounding box vs. terrain
 
-	// Now trace down from a known safe position
-	TracePlayerBBox( start, end, PlayerSolidMask(), COLLISION_GROUP_PLAYER_MOVEMENT, trace );
-	if ( trace.fraction > 0.0f &&			// must go somewhere
-		trace.fraction < 1.0f &&			// must hit something
-		!trace.startsolid &&				// can't be embedded in a solid
-		trace.plane.normal[2] >= 0.7 )		// can't hit a steep slope that we can't stand on anyway
+	// GSTRINGMIGRATION
+	if ( g_pGstringGlobals == NULL || !g_pGstringGlobals->IsSpaceMap() )
 	{
-		float flDelta = fabs(mv->GetAbsOrigin().z - trace.endpos.z);
-
-		//This is incredibly hacky. The real problem is that trace returning that strange value we can't network over.
-		if ( flDelta > 0.5f * COORD_RESOLUTION)
+		// Now trace down from a known safe position
+		TracePlayerBBox( start, end, PlayerSolidMask(), COLLISION_GROUP_PLAYER_MOVEMENT, trace );
+		if ( trace.fraction > 0.0f &&			// must go somewhere
+			trace.fraction < 1.0f &&			// must hit something
+			!trace.startsolid &&				// can't be embedded in a solid
+			trace.plane.normal[2] >= 0.7 )		// can't hit a steep slope that we can't stand on anyway
 		{
-			mv->SetAbsOrigin( trace.endpos );
+			float flDelta = fabs(mv->GetAbsOrigin().z - trace.endpos.z);
+
+			//This is incredibly hacky. The real problem is that trace returning that strange value we can't network over.
+			if ( flDelta > 0.5f * COORD_RESOLUTION)
+			{
+				mv->SetAbsOrigin( trace.endpos );
+			}
 		}
 	}
+	// END GSTRINGMIGRATION
 }
 
 //-----------------------------------------------------------------------------
@@ -2445,6 +2454,10 @@ bool CGameMovement::CheckJumpButton( void )
 	{
 		flMul = sqrt(2 * GetCurrentGravity() * GAMEMOVEMENT_JUMP_HEIGHT);
 	}
+
+	// GSTRINGMIGRATION
+	flMul *= player->GetGravity();
+	// END GSTRINGMIGRATION
 
 	// Acclerate upward
 	// If we are ducking...

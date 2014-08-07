@@ -8,6 +8,20 @@
 
 static ConVar gstring_nightvision_override( "gstring_nightvision_override", "0", FCVAR_CHEAT );
 
+CON_COMMAND( gstring_spacecraft_forceexit, "" )
+{
+	if ( !sv_cheats->GetBool() )
+	{
+		return;
+	}
+
+	CGstringPlayer *pPlayer = LocalGstringPlayer();
+	if ( pPlayer != NULL )
+	{
+		pPlayer->ExitSpacecraft();
+	}
+}
+
 BEGIN_DATADESC( CGstringPlayer )
 
 	DEFINE_FIELD( m_bNightvisionActive, FIELD_BOOLEAN ),
@@ -58,15 +72,6 @@ void CGstringPlayer::Spawn()
 	BaseClass::Spawn();
 
 	SetModel( "models/humans/group02/female_04.mdl" );
-
-	if ( g_pGstringGlobals != NULL && g_pGstringGlobals->IsSpaceMap() )
-	{
-		m_Local.m_iHideHUD |= HIDEHUD_HEALTH;
-	}
-	else
-	{
-		m_Local.m_iHideHUD |= HIDEHUD_SPACECRAFT;
-	}
 }
 
 void CGstringPlayer::DoReloadAnim()
@@ -266,6 +271,9 @@ void CGstringPlayer::EnterSpacecraft( CSpacecraft *pSpacecraft )
 	AddSolidFlags( FSOLID_NOT_SOLID );
 	m_hSpacecraft.Set( pSpacecraft );
 	pSpacecraft->SetOwnerEntity( this );
+
+	m_Local.m_iHideHUD |= HIDEHUD_HEALTH;
+	m_Local.m_iHideHUD &= ~HIDEHUD_SPACECRAFT;
 }
 
 bool CGstringPlayer::IsInSpacecraft() const
@@ -287,6 +295,15 @@ void CGstringPlayer::ExitSpacecraft()
 	if ( pActiveWeapon != NULL )
 	{
 		pActiveWeapon->Deploy();
+	}
+
+	m_Local.m_iHideHUD |= HIDEHUD_SPACECRAFT;
+	m_Local.m_iHideHUD &= ~HIDEHUD_HEALTH;
+
+	if ( g_pGstringGlobals != NULL )
+	{
+		SetModelScale( g_pGstringGlobals->GetWorldScale() );
+		SetGravity( g_pGstringGlobals->GetWorldScale() );
 	}
 }
 

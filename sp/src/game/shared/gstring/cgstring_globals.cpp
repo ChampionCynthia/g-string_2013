@@ -190,8 +190,3 @@ void CGstringGlobals::OnDataChanged( DataUpdateType_t type )
 }
 
 #endif
-
-bool CGstringGlobals::IsSpaceMap() const
-{
-	return m_bIsSpaceMap;
-}

@@ -206,10 +206,9 @@ void CSpacecraft::Activate()
 	m_hPathEntity = gEntList.FindEntityByName( NULL, m_strPathStartName, this );
 	m_hEnemy = gEntList.FindEntityByName( NULL, m_strInitialEnemy, this );
 
-	if ( g_pGstringGlobals != NULL && g_pGstringGlobals->IsSpaceMap() )
+	if ( g_pGstringGlobals != NULL )
 	{
-		const float flCollisionScale = 1.0f / 16.0f;
-		SetModelScale( flCollisionScale );
+		SetModelScale( g_pGstringGlobals->GetWorldScale() );
 	}
 
 	VPhysicsInitNormal( SOLID_VPHYSICS, 0, false );

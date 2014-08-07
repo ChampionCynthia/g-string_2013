@@ -1997,9 +1997,6 @@ void CViewRender::UpdateCascadedShadow( const CViewSetup &view )
 	{
 		ShadowConfig_t &closeShadow = shadowConfigs[ 0 ];
 		ShadowConfig_t &farShadow = shadowConfigs[ 1 ];
-		//closeShadow.flForwardOffset = 32.0f;
-		//closeShadow.flOrthoSize = 128.0f;
-		//farShadow.flOrthoSize = 448.0f;
 		closeShadow.flOrthoSize = 164.0f;
 		closeShadow.flForwardOffset = 102.0f;
 		farShadow.flOrthoSize = 786.0f;
@@ -2009,8 +2006,54 @@ void CViewRender::UpdateCascadedShadow( const CViewSetup &view )
 		vecMainViewFwd.NormalizeInPlace();
 	}
 
+	vecMainViewFwd -= vecFwd * DotProduct( vecMainViewFwd, vecFwd );
+
+	//vecMainViewFwd.Zero();
+	Vector vecFirstCascadeOrigin( vec3_origin );
+	if ( pPlayer != NULL )
+	{
+		vecFirstCascadeOrigin = pPlayer->GetRenderOrigin() - vecFwd * 1024.0f;
+	}
+	ShadowConfig_t &firstShadow = shadowConfigs[ 0 ];
+	ShadowConfig_t &secondShadow = shadowConfigs[ 1 ];
+	Vector vecSecondCascadeOrigin = vecFirstCascadeOrigin + vecMainViewFwd * secondShadow.flForwardOffset;
+	vecFirstCascadeOrigin += vecMainViewFwd * firstShadow.flForwardOffset;
+
+	const float flCascadedScale = shadowConfigs[ 0 ].flOrthoSize / shadowConfigs[ 1 ].flOrthoSize;
+	Vector vecOffsetShadowMapSpace = vecMainViewFwd * ( shadowConfigs[ 1 ].flForwardOffset - shadowConfigs[ 0 ].flForwardOffset );
+	Vector2D vecCascadedOffset( DotProduct( -vecRight, vecOffsetShadowMapSpace ) * 0.5f,
+		DotProduct( vecUp, vecOffsetShadowMapSpace ) );
+	vecCascadedOffset *= 0.5f / shadowConfigs[ 1 ].flOrthoSize;
+	//vecCascadedOffset *= 0.32f / shadowConfigs[ 1 ].flOrthoSize;
+
+	if ( 1 )
+	{
+		const float flViewFrustumWidthScale = secondShadow.flOrthoSize * 2.0f / cascadedShadowView.width;
+		const float flViewFrustumHeightScale = secondShadow.flOrthoSize * 2.0f / cascadedShadowView.height;
+
+		const float flFractionX = fmod( DotProduct( vecSecondCascadeOrigin, vecRight ), flViewFrustumWidthScale );
+		const float flFractionY = fmod( DotProduct( vecSecondCascadeOrigin, vecUp ), flViewFrustumHeightScale );
+
+		vecCascadedOffset.x += flFractionX * ( 0.75f / cascadedShadowView.width );
+		vecCascadedOffset.y -= flFractionY * ( 1.25f / cascadedShadowView.height );
+
+		vecSecondCascadeOrigin -= flFractionX * vecRight;
+		vecSecondCascadeOrigin -= flFractionY * vecUp;
+	}
+
+	vecOffsetShadowMapSpace.Init( vecCascadedOffset.x, vecCascadedOffset.y, flCascadedScale );
+	pRenderContext->SetVectorRenderingParameter( VECTOR_RENDERPARM_GSTRING_CASCADED_STEP, vecOffsetShadowMapSpace );
+
 	static VMatrix s_CSMSwapMatrix[2][2];
 	static int s_iCSMSwapIndex = 0;
+
+	{
+		const float flViewFrustumWidthScale = firstShadow.flOrthoSize * 2.0f / cascadedShadowView.width;
+		const float flViewFrustumHeightScale = firstShadow.flOrthoSize * 2.0f / cascadedShadowView.height;
+
+		vecFirstCascadeOrigin -= fmod( DotProduct( vecFirstCascadeOrigin, vecRight ), flViewFrustumWidthScale ) * vecRight;
+		vecFirstCascadeOrigin -= fmod( DotProduct( vecFirstCascadeOrigin, vecUp ), flViewFrustumHeightScale ) * vecUp;
+	}
 
 	for ( int i = 0; i < iCascadedShadowCount; i++ )
 	{
@@ -2022,23 +2065,12 @@ void CViewRender::UpdateCascadedShadow( const CViewSetup &view )
 
 		cascadedShadowView.x = i * cascadedShadowView.width;
 		cascadedShadowView.y = 0;
-
-		if ( pPlayer != NULL )
+		cascadedShadowView.origin = vecFirstCascadeOrigin;
+		if ( i > 0 )
 		{
-			cascadedShadowView.origin = pPlayer->GetRenderOrigin() - vecFwd * 1024.0f;
+			//cascadedShadowView.origin += vecMainViewFwd * shadowConfig.flForwardOffset;
+			cascadedShadowView.origin = vecSecondCascadeOrigin;
 		}
-		else
-		{
-			cascadedShadowView.origin = vec3_origin;
-		}
-
-		cascadedShadowView.origin += vecMainViewFwd * shadowConfig.flForwardOffset;
-
-		const float flViewFrustumWidthScale = cascadedShadowView.m_OrthoRight * 2.0f / cascadedShadowView.width;
-		const float flViewFrustumHeightScale = cascadedShadowView.m_OrthoBottom * 2.0f / cascadedShadowView.height;
-
-		cascadedShadowView.origin -= fmod( DotProduct( cascadedShadowView.origin, vecRight ), flViewFrustumWidthScale ) * vecRight;
-		cascadedShadowView.origin -= fmod( DotProduct( cascadedShadowView.origin, vecUp ), flViewFrustumHeightScale ) * vecUp;
 
 		VMatrix worldToView, viewToProjection, worldToProjection, worldToTexture;
 		render->GetMatricesForView( cascadedShadowView, &worldToView, &viewToProjection, &worldToProjection, &worldToTexture );

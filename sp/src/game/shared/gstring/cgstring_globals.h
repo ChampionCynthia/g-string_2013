@@ -45,7 +45,15 @@ public:
 	virtual void OnDataChanged( DataUpdateType_t type );
 #endif
 
-	bool IsSpaceMap() const;
+	bool IsSpaceMap() const
+	{
+		return m_bIsSpaceMap;
+	}
+
+	float GetWorldScale() const
+	{
+		return IsSpaceMap() ? ( 1.0f / 16.0f ) : 1.0f;
+	}
 
 private:
 #ifdef GAME_DLL
