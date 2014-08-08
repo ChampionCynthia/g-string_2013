@@ -851,7 +851,7 @@ float3 DoFlashlight( float3 flashlightPos, float3 worldPos, float4 flashlightSpa
 
 #ifdef NEW_SHADOW_FILTERS
 float DoCascadedShadow( sampler depthSampler, sampler randomSampler, float3 worldNormal, float3 lightDirection,
-	float3 closePosition, float3 worldPosition, float4x4 farWorldToShadowUV, int nShadowLevel,
+	float3 closePosition, float3 worldPosition, int nShadowLevel, float3 cascadedStepData,
 	float2 vScreenPos, float4 vShadowTweaks )
 {
 	float shadow = 0.0;
@@ -860,12 +860,13 @@ float DoCascadedShadow( sampler depthSampler, sampler randomSampler, float3 worl
 	{
 		cascadedDot = saturate( cascadedDot * 12.0 );
 
-		float4 farPosition = mul( float4( worldPosition, 1.0f ), farWorldToShadowUV );
-		farPosition.xyz /= farPosition.w;
-		
-		if ( abs( floor( closePosition.x * 2.02 - 0.01 ) ) > 0.01 || abs( floor( closePosition.y * 1.01 - 0.005 ) ) > 0.01 )
+		float weight = 0.0f;
+
+		if ( abs( floor( closePosition.x * 2.04 - 0.01 ) ) > 0.001 || abs( floor( closePosition.y * 1.02 - 0.01 ) ) > 0.001 )
 		{
-			closePosition = farPosition;
+			closePosition.xy = closePosition.xy * cascadedStepData.x + cascadedStepData.yz;
+			weight = saturate( saturate( abs( closePosition.x * 4.0 - 3.0 ) - 0.9 ) * 10.0 +
+				saturate( abs( closePosition.y * 2.0 - 1.0 ) - 0.9 ) * 10.0 );
 		}
 		
 		if ( nShadowLevel == NVIDIA_PCF_POISSON )
@@ -876,21 +877,9 @@ float DoCascadedShadow( sampler depthSampler, sampler randomSampler, float3 worl
 		else //if( nShadowLevel == ATI_NO_PCF_FETCH4 )
 			shadow = DoShadowPoisson16Sample( depthSampler, randomSampler, closePosition, vScreenPos, vShadowTweaks, false, true );
 		
-		//shadow = DoShadowNvidiaPCF5x5Gaussian( depthSampler, closePosition, float2( 1.0 / 2048.0, 1.0 / 1024.0 ) );
-		
-		float weightX = smoothstep( 0.9, 1.0, abs( farPosition.x * 4.0 - 3.0 ) );
-		float weightY = smoothstep( 0.9, 1.0, abs( farPosition.y * 2.0 - 1.0 ) );
-		
-		shadow = lerp( shadow, 1.0, max( weightX, weightY ) ) * cascadedDot;
+		shadow = lerp( shadow, 1.0, weight ) * cascadedDot;
 	}
 	return shadow;
-
-	//if ( nShadowLevel == NVIDIA_PCF_POISSON )
-	//	shadow = DoShadowNvidiaPCF5x5Gaussian( depthSampler, closePosition, float2( 1.0 / 2048.0, 1.0 / 1024.0 ) );
-	//else if( nShadowLevel == ATI_NOPCF )
-	//	shadow = DoShadowPoisson16Sample( depthSampler, randomSampler, closePosition, vScreenPos, vShadowTweaks, false, false );
-	//else //if( nShadowLevel == ATI_NO_PCF_FETCH4 )
-	//	shadow = DoShadowPoisson16Sample( depthSampler, randomSampler, closePosition, vScreenPos, vShadowTweaks, false, true );
 }
 #endif
 

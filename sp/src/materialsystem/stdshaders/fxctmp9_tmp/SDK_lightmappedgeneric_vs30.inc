@@ -30,7 +30,7 @@ private:
 public:
 	void SetTANGENTSPACE( int i )
 	{
-		Assert( i >= 1 && i <= 1 );
+		Assert( i >= 0 && i <= 1 );
 		m_nTANGENTSPACE = i;
 #ifdef _DEBUG
 		m_bTANGENTSPACE = true;
@@ -238,7 +238,7 @@ public:
 		bool bAllStaticVarsDefined = m_bENVMAP_MASK && m_bTANGENTSPACE && m_bBUMPMAP && m_bDIFFUSEBUMPMAP && m_bVERTEXCOLOR && m_bVERTEXALPHATEXBLENDFACTOR && m_bRELIEF_MAPPING && m_bSEAMLESS && m_bBUMPMASK;
 		Assert( bAllStaticVarsDefined );
 #endif // _DEBUG
-		return ( 16 * m_nENVMAP_MASK ) + ( 32 * m_nTANGENTSPACE ) + ( 32 * m_nBUMPMAP ) + ( 64 * m_nDIFFUSEBUMPMAP ) + ( 128 * m_nVERTEXCOLOR ) + ( 256 * m_nVERTEXALPHATEXBLENDFACTOR ) + ( 512 * m_nRELIEF_MAPPING ) + ( 512 * m_nSEAMLESS ) + ( 1024 * m_nBUMPMASK ) + 0;
+		return ( 16 * m_nENVMAP_MASK ) + ( 32 * m_nTANGENTSPACE ) + ( 64 * m_nBUMPMAP ) + ( 128 * m_nDIFFUSEBUMPMAP ) + ( 256 * m_nVERTEXCOLOR ) + ( 512 * m_nVERTEXALPHATEXBLENDFACTOR ) + ( 1024 * m_nRELIEF_MAPPING ) + ( 1024 * m_nSEAMLESS ) + ( 2048 * m_nBUMPMASK ) + 0;
 	}
 };
 #define shaderStaticTest_sdk_lightmappedgeneric_vs30 vsh_forgot_to_set_static_ENVMAP_MASK + vsh_forgot_to_set_static_TANGENTSPACE + vsh_forgot_to_set_static_BUMPMAP + vsh_forgot_to_set_static_DIFFUSEBUMPMAP + vsh_forgot_to_set_static_VERTEXCOLOR + vsh_forgot_to_set_static_VERTEXALPHATEXBLENDFACTOR + vsh_forgot_to_set_static_RELIEF_MAPPING + vsh_forgot_to_set_static_SEAMLESS + vsh_forgot_to_set_static_BUMPMASK + 0

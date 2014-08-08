@@ -28,14 +28,13 @@
 //  SKIP: $FASTPATH && $PIXELFOGTYPE && $BASETEXTURE2 && $DETAILTEXTURE && $CUBEMAP && ($DETAIL_BLEND_MODE == 10 )
 
 // debug crap:
-// NOSKIP: $DETAILTEXTURE
-// NOSKIP: $CUBEMAP
-// NOSKIP: $ENVMAPMASK
-// NOSKIP: $BASEALPHAENVMAPMASK
-// NOSKIP: $SELFILLUM
-// NOSKIP: $BUMPMAP
-// NOSKIP: $FASTPATH
-// NOSKIP: !$CASCADED_SHADOW
+// SKEIP: $DETAILTEXTURE
+// SKEIP: $CUBEMAP
+// SKEIP: $ENVMAPMASK
+// SKEIP: $BASEALPHAENVMAPMASK
+// SKEIP: $SELFILLUM
+// SKEIP: $BUMPMAP
+// SKEIP: !$CASCADED_SHADOW
 
 #define USE_32BIT_LIGHTMAPS_ON_360 //uncomment to use 32bit lightmaps, be sure to keep this in sync with the same #define in materialsystem/cmatlightmaps.cpp
 
@@ -167,7 +166,8 @@ sampler RandRotSampler			: register( s15 );
 #define g_AmbientLightMin         g_ShadowTweaks.rgb
 #define g_AmbientLightScale       g_ShadowTweaks.a
 
-const float4x4 g_CascadedCloseShadow	: register( c20 ); // through c23
+//const float4x4 g_CascadedCloseShadow	: register( c20 ); // through c23
+const float3 g_CascadedStepData			: register( c15 );
 
 sampler ShadowDepthSampler		: register( s14 );
 sampler RandRotSampler			: register( s15 );
@@ -176,10 +176,10 @@ sampler RandRotSampler			: register( s15 );
 struct PS_INPUT
 {
 #if SEAMLESS
-	float3 SeamlessTexCoord         : TEXCOORD0;            // zy xz
+	float4 SeamlessTexCoord_VertexBlend      : TEXCOORD0;            // zy xz
 	float4 detailOrBumpAndEnvmapMaskTexCoord : TEXCOORD1;   // envmap mask
 #else
-	HALF2 baseTexCoord				: TEXCOORD0;
+	float3 baseTexCoord_VertexBlend          : TEXCOORD0;
 	// detail textures and bumpmaps are mutually exclusive so that we have enough texcoords.
 #if ( RELIEF_MAPPING == 0 )
 	HALF4 detailOrBumpAndEnvmapMaskTexCoord	: TEXCOORD1;
@@ -202,11 +202,13 @@ struct PS_INPUT
 #endif
 
 	HALF4 vertexColor				: COLOR;
-	float4 vertexBlendX_fogFactorW	: COLOR1;
+	//float4 vertexBlendX_fogFactorW	: COLOR1;
 
 	// Extra iterators on 360, used in flashlight combo
-#if defined( _X360 ) && FLASHLIGHT
+#if defined( _X360 ) && FLASHLIGHT || CASCADED_SHADOW
 	float4 flashlightSpacePos		: TEXCOORD8;
+#endif
+#if defined( _X360 ) && FLASHLIGHT
 	float4 vProjPos					: TEXCOORD9;
 #endif
 };
@@ -235,9 +237,9 @@ HALF4 main( PS_INPUT i ) : COLOR
 	float3 baseTexCoords = float3(0,0,0);
 
 #if SEAMLESS
-	baseTexCoords = i.SeamlessTexCoord.xyz;
+	baseTexCoords = i.SeamlessTexCoord_VertexBlend.xyz;
 #else
-	baseTexCoords.xy = i.baseTexCoord.xy;
+	baseTexCoords.xy = i.baseTexCoord_VertexBlend.xy;
 #endif
 
 	GetBaseTextureAndNormal( BaseTextureSampler, BaseTextureSampler2, BumpmapSampler, bBaseTexture2, bBumpmap || bNormalMapAlphaEnvmapMask, 
@@ -273,14 +275,14 @@ HALF4 main( PS_INPUT i ) : COLOR
 #if RELIEF_MAPPING
 	// in the parallax case, all texcoords must be the same in order to free
     // up an iterator for the tangent space view vector
-	HALF2 detailTexCoord = i.baseTexCoord.xy;
-	HALF2 bumpmapTexCoord = i.baseTexCoord.xy;
-	HALF2 envmapMaskTexCoord = i.baseTexCoord.xy;
+	HALF2 detailTexCoord = i.baseTexCoord_VertexBlend.xy;
+	HALF2 bumpmapTexCoord = i.baseTexCoord_VertexBlend.xy;
+	HALF2 envmapMaskTexCoord = i.baseTexCoord_VertexBlend.xy;
 #else
 
 	#if ( DETAILTEXTURE == 1 )
 		HALF2 detailTexCoord = i.detailOrBumpAndEnvmapMaskTexCoord.xy;
-		HALF2 bumpmapTexCoord = i.baseTexCoord.xy;
+		HALF2 bumpmapTexCoord = i.baseTexCoord_VertexBlend.xy;
 	#elif ( BUMPMASK == 1 )
 		HALF2 detailTexCoord = 0.0f;
 		HALF2 bumpmapTexCoord = i.detailOrBumpAndEnvmapMaskTexCoord.xy;
@@ -340,7 +342,11 @@ HALF4 main( PS_INPUT i ) : COLOR
 #if MASKEDBLENDING
 	float blendfactor=0.5;
 #else
-	float blendfactor=i.vertexBlendX_fogFactorW.r;
+	#if SEAMLESS
+		float blendfactor=i.SeamlessTexCoord_VertexBlend.w;
+	#else
+		float blendfactor=i.baseTexCoord_VertexBlend.z;
+	#endif
 #endif
 
 	if( bBaseTexture2 )
@@ -394,7 +400,7 @@ HALF4 main( PS_INPUT i ) : COLOR
 			vNormal.xyz = normalize( vNormal1.xyz + vNormal2.xyz );
 
 			// Third normal map...same coords as base
-			vNormalMask = DecompressNormal( BumpMaskSampler, i.baseTexCoord.xy, NORMALMASK_DECODE_MODE, AlphaMaskSampler );
+			vNormalMask = DecompressNormal( BumpMaskSampler, i.baseTexCoord_VertexBlend.xy, NORMALMASK_DECODE_MODE, AlphaMaskSampler );
 
 			vNormal.xyz = lerp( vNormalMask.xyz, vNormal.xyz, vNormalMask.a );		// Mask out normals from vNormal
 			specularFactor = vNormalMask.a;
@@ -517,20 +523,18 @@ HALF4 main( PS_INPUT i ) : COLOR
 	float flFresnelMinlight = saturate( dot( worldSpaceNormal, vEyeDir ) );
 
 #if CASCADED_SHADOW
-	float4 closePosition = mul( float4( i.worldPos_projPosZ.xyz, 1.0f ), g_CascadedCloseShadow );
-	closePosition.xyz /= closePosition.w;
+	float4 closePosition = i.flashlightSpacePos; //mul( float4( i.worldPos_projPosZ.xyz, 1.0f ), g_CascadedCloseShadow );
+	//closePosition.xyz /= closePosition.w;
 	float4 vProjPos = float4( i.tangentSpaceTranspose_Row0.w, i.tangentSpaceTranspose_Row1.w,
 		i.worldPos_projPosZ.w, i.tangentSpaceTranspose_Row2.w );
 	
 	float flShadow = 1.0 - DoCascadedShadow( ShadowDepthSampler, RandRotSampler, worldSpaceNormal,
-		g_CascadedForward, closePosition, i.worldPos_projPosZ.xyz, g_FlashlightWorldToTexture, FLASHLIGHTDEPTHFILTERMODE,
+		g_CascadedForward, closePosition, i.worldPos_projPosZ.xyz, FLASHLIGHTDEPTHFILTERMODE, g_CascadedStepData,
 		vProjPos.xy / vProjPos.z, float4( 0.0005, 0.0, 0.0, 0.0 ) );
 
 	float flShadowMask = 1.0f - saturate( length( cross( g_AmbientLightIdentifier, diffuseLighting - g_AmbientLightMin ) )
 		* g_AmbientLightScale );
 	diffuseLighting = min( diffuseLighting, lerp( diffuseLighting, g_AmbientLightMin, flShadow * flShadowMask ) );
-	
-	//diffuseLighting *= flShadow;
 #endif
 
 	float3 diffuseComponent = albedo.xyz * lerp( diffuseLighting, 1, g_fMinLighting * flFresnelMinlight );

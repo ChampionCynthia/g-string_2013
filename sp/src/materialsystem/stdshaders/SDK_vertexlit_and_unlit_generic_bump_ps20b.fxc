@@ -106,6 +106,7 @@ const float4x4 g_FlashlightWorldToTexture	: register( c24 ); // through c27
 // GSTRINGMIGRATION
 #define g_CascadedForward g_FlashlightPos
 #define g_DirectionalLightMask g_FlashlightAttenuationFactors
+const float3 g_CascadedStepData			: register( c24 );
 // END GSTRINGMIGRATION
 
 sampler BaseTextureSampler					: register( s0 );
@@ -224,7 +225,7 @@ float4 main( PS_INPUT i ) : COLOR
 		float4 vLightAtten = i.lightAtten;
 #if CASCADED_SHADOW
 		float flShadow = DoCascadedShadow( ShadowDepthSampler, RandRotSampler, worldSpaceNormal,
-			g_CascadedForward, i.flashlightSpacePos, i.worldPos_projPosZ.xyz, g_FlashlightWorldToTexture, FLASHLIGHTDEPTHFILTERMODE,
+			g_CascadedForward, i.flashlightSpacePos, i.worldPos_projPosZ.xyz, FLASHLIGHTDEPTHFILTERMODE, g_CascadedStepData,
 			i.vProjPos.xy / i.vProjPos.z, float4( 0.0005, 0.0, 0.0, 0.0 ) );
 		
 		vLightAtten *= lerp( float4( 1, 1, 1, 1 ), float4( flShadow, flShadow, flShadow, flShadow ), g_DirectionalLightMask );
