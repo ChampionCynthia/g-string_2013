@@ -1019,20 +1019,15 @@ void CBaseEntity::CheckHasThinkFunction( bool isThinking )
 
 bool CBaseEntity::WillSimulateGamePhysics()
 {
-	// players always simulate game physics
-	if ( !IsPlayer() )
-	{
-		MoveType_t movetype = GetMoveType();
-		
-		if ( movetype == MOVETYPE_NONE || movetype == MOVETYPE_VPHYSICS )
-			return false;
+	const MoveType_t movetype = GetMoveType();
+	if ( movetype == MOVETYPE_NONE || movetype == MOVETYPE_VPHYSICS )
+		return false;
 
 #if !defined( CLIENT_DLL )
-		// MOVETYPE_PUSH not supported on the client
-		if ( movetype == MOVETYPE_PUSH && GetMoveDoneTime() <= 0 )
-			return false;
+	// MOVETYPE_PUSH not supported on the client
+	if ( movetype == MOVETYPE_PUSH && GetMoveDoneTime() <= 0 )
+		return false;
 #endif
-	}
 
 	return true;
 }

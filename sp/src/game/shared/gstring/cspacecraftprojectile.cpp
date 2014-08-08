@@ -71,7 +71,7 @@ bool CSpacecraftProjectile::ShouldCollide( const CBaseEntity *pOther ) const
 void CSpacecraftProjectile::Fire( CBaseEntity *pPlayer, CBaseEntity *pVehicle,
 	const Vector &vecOrigin, const Vector &vecVelocity )
 {
-	SetOwnerEntity( pPlayer );
+	SetOwnerEntity( pPlayer ? pPlayer : pVehicle );
 	m_hVehicleOwner = pVehicle;
 
 	Vector vecFinalVelocity = vecVelocity;

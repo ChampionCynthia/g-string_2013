@@ -72,6 +72,8 @@ void CGstringPlayer::Spawn()
 	BaseClass::Spawn();
 
 	SetModel( "models/humans/group02/female_04.mdl" );
+
+	m_Local.m_iHideHUD |= HIDEHUD_SPACECRAFT;
 }
 
 void CGstringPlayer::DoReloadAnim()

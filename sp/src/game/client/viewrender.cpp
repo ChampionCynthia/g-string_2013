@@ -1950,9 +1950,9 @@ void CViewRender::UpdateCascadedShadow( const CViewSetup &view )
 		vecAmbient = ConvertLightmapGammaToLinear( iParsed );
 	}
 
-	for (int i = 0; i < 3; i++)
+	for ( int i = 0; i < 3; i++ )
 	{
-		vecAmbient[i] = MIN( vecAmbient[i], vecLight[i] );
+		vecAmbient[ i ] = MIN( vecAmbient[ i ], vecLight[ i ] );
 	}
 
 	Vector vecAmbientDelta = vecLight - vecAmbient;
@@ -2007,57 +2007,14 @@ void CViewRender::UpdateCascadedShadow( const CViewSetup &view )
 	}
 
 	vecMainViewFwd -= vecFwd * DotProduct( vecMainViewFwd, vecFwd );
-
-	//vecMainViewFwd.Zero();
-	Vector vecFirstCascadeOrigin( vec3_origin );
-	if ( pPlayer != NULL )
-	{
-		vecFirstCascadeOrigin = pPlayer->GetRenderOrigin() - vecFwd * 1024.0f;
-	}
-	ShadowConfig_t &firstShadow = shadowConfigs[ 0 ];
-	ShadowConfig_t &secondShadow = shadowConfigs[ 1 ];
-	Vector vecSecondCascadeOrigin = vecFirstCascadeOrigin + vecMainViewFwd * secondShadow.flForwardOffset;
-	vecFirstCascadeOrigin += vecMainViewFwd * firstShadow.flForwardOffset;
-
-	const float flCascadedScale = shadowConfigs[ 0 ].flOrthoSize / shadowConfigs[ 1 ].flOrthoSize;
-	Vector vecOffsetShadowMapSpace = vecMainViewFwd * ( shadowConfigs[ 1 ].flForwardOffset - shadowConfigs[ 0 ].flForwardOffset );
-	Vector2D vecCascadedOffset( DotProduct( -vecRight, vecOffsetShadowMapSpace ) * 0.5f,
-		DotProduct( vecUp, vecOffsetShadowMapSpace ) );
-	vecCascadedOffset *= 0.5f / shadowConfigs[ 1 ].flOrthoSize;
-	//vecCascadedOffset *= 0.32f / shadowConfigs[ 1 ].flOrthoSize;
-
-	if ( 1 )
-	{
-		const float flViewFrustumWidthScale = secondShadow.flOrthoSize * 2.0f / cascadedShadowView.width;
-		const float flViewFrustumHeightScale = secondShadow.flOrthoSize * 2.0f / cascadedShadowView.height;
-
-		const float flFractionX = fmod( DotProduct( vecSecondCascadeOrigin, vecRight ), flViewFrustumWidthScale );
-		const float flFractionY = fmod( DotProduct( vecSecondCascadeOrigin, vecUp ), flViewFrustumHeightScale );
-
-		vecCascadedOffset.x += flFractionX * ( 0.75f / cascadedShadowView.width );
-		vecCascadedOffset.y -= flFractionY * ( 1.25f / cascadedShadowView.height );
-
-		vecSecondCascadeOrigin -= flFractionX * vecRight;
-		vecSecondCascadeOrigin -= flFractionY * vecUp;
-	}
-
-	vecOffsetShadowMapSpace.Init( vecCascadedOffset.x, vecCascadedOffset.y, flCascadedScale );
-	pRenderContext->SetVectorRenderingParameter( VECTOR_RENDERPARM_GSTRING_CASCADED_STEP, vecOffsetShadowMapSpace );
-
-	static VMatrix s_CSMSwapMatrix[2][2];
+	
+	static VMatrix s_CSMSwapMatrix[2];
 	static int s_iCSMSwapIndex = 0;
-
-	{
-		const float flViewFrustumWidthScale = firstShadow.flOrthoSize * 2.0f / cascadedShadowView.width;
-		const float flViewFrustumHeightScale = firstShadow.flOrthoSize * 2.0f / cascadedShadowView.height;
-
-		vecFirstCascadeOrigin -= fmod( DotProduct( vecFirstCascadeOrigin, vecRight ), flViewFrustumWidthScale ) * vecRight;
-		vecFirstCascadeOrigin -= fmod( DotProduct( vecFirstCascadeOrigin, vecUp ), flViewFrustumHeightScale ) * vecUp;
-	}
+	const Vector vecCascadeOrigin( pPlayer ? pPlayer->GetRenderOrigin() - vecFwd * 1024.0f : vec3_origin );
 
 	for ( int i = 0; i < iCascadedShadowCount; i++ )
 	{
-		const ShadowConfig_t &shadowConfig = shadowConfigs[i];
+		const ShadowConfig_t &shadowConfig = shadowConfigs[ i ];
 		cascadedShadowView.m_OrthoTop = -shadowConfig.flOrthoSize;
 		cascadedShadowView.m_OrthoRight = shadowConfig.flOrthoSize;
 		cascadedShadowView.m_OrthoBottom = shadowConfig.flOrthoSize;
@@ -2065,24 +2022,47 @@ void CViewRender::UpdateCascadedShadow( const CViewSetup &view )
 
 		cascadedShadowView.x = i * cascadedShadowView.width;
 		cascadedShadowView.y = 0;
-		cascadedShadowView.origin = vecFirstCascadeOrigin;
+
+		Vector vecOrigin = vecCascadeOrigin + vecMainViewFwd * shadowConfig.flForwardOffset;
+		const float flViewFrustumWidthScale = shadowConfig.flOrthoSize * 2.0f / cascadedShadowView.width;
+		const float flViewFrustumHeightScale = shadowConfig.flOrthoSize * 2.0f / cascadedShadowView.height;
+		const float flFractionX = fmod( DotProduct( vecOrigin, vecRight ), flViewFrustumWidthScale );
+		const float flFractionY = fmod( DotProduct( vecOrigin, vecUp ), flViewFrustumHeightScale );
+		vecOrigin -= flFractionX * vecRight;
+		vecOrigin -= flFractionY * vecUp;
+
 		if ( i > 0 )
 		{
-			//cascadedShadowView.origin += vecMainViewFwd * shadowConfig.flForwardOffset;
-			cascadedShadowView.origin = vecSecondCascadeOrigin;
+			const ShadowConfig_t &prevShadowConfig = shadowConfigs[ i - 1 ];
+			const float flCascadedScale = prevShadowConfig.flOrthoSize / shadowConfig.flOrthoSize;
+			Vector vecOffsetShadowMapSpace = vecOrigin - cascadedShadowView.origin;
+			Vector2D vecCascadedOffset( DotProduct( -vecRight, vecOffsetShadowMapSpace ) * 0.5f,
+				DotProduct( vecUp, vecOffsetShadowMapSpace ) );
+			vecCascadedOffset *= 0.5f / shadowConfig.flOrthoSize;
+
+			vecCascadedOffset.x = vecCascadedOffset.x + 0.5f + 0.25f * ( 1.0f - flCascadedScale );
+			vecCascadedOffset.y = vecCascadedOffset.y + 0.5f - flCascadedScale * 0.5f;
+
+			vecOffsetShadowMapSpace.Init( flCascadedScale, vecCascadedOffset.x, vecCascadedOffset.y );
+			pRenderContext->SetVectorRenderingParameter( VECTOR_RENDERPARM_GSTRING_CASCADED_STEP, vecOffsetShadowMapSpace );
 		}
+
+		cascadedShadowView.origin = vecOrigin;
 
 		VMatrix worldToView, viewToProjection, worldToProjection, worldToTexture;
 		render->GetMatricesForView( cascadedShadowView, &worldToView, &viewToProjection, &worldToProjection, &worldToTexture );
 
-		VMatrix tmp, shadowToUnit;
-		MatrixBuildScale( tmp, 0.25f, -0.5f, 1.0f );
-		tmp[0][3] = shadowConfig.flUVOffsetX;
-		tmp[1][3] = 0.5f;
+		if ( i == 0 )
+		{
+			VMatrix tmp;
+			MatrixBuildScale( tmp, 0.25f, -0.5f, 1.0f );
+			tmp[0][3] = shadowConfig.flUVOffsetX;
+			tmp[1][3] = 0.5f;
 
-		VMatrix &currentSwapMatrix = s_CSMSwapMatrix[ s_iCSMSwapIndex ][ i ];
-		MatrixMultiply( tmp, worldToProjection, currentSwapMatrix );
-		pRenderContext->SetIntRenderingParameter( INT_CASCADED_MATRIX_ADDRESS_0 + i, (int)&currentSwapMatrix );
+			VMatrix &currentSwapMatrix = s_CSMSwapMatrix[ s_iCSMSwapIndex ];
+			MatrixMultiply( tmp, worldToProjection, currentSwapMatrix );
+			pRenderContext->SetIntRenderingParameter( INT_CASCADED_MATRIX_ADDRESS_0, (int)&currentSwapMatrix );
+		}
 
 		//pRenderContext->SetShadowDepthBiasFactors( 16.0f, 0.0005f );
 		pRenderContext->SetShadowDepthBiasFactors( 8.0f, 0.0005f );

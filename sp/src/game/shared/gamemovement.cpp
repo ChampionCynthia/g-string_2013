@@ -2456,7 +2456,11 @@ bool CGameMovement::CheckJumpButton( void )
 	}
 
 	// GSTRINGMIGRATION
-	flMul *= player->GetGravity();
+	const float flPlayerGravity = player->GetGravity();
+	if ( flPlayerGravity > 0.0f )
+	{
+		flMul *= flPlayerGravity;
+	}
 	// END GSTRINGMIGRATION
 
 	// Acclerate upward

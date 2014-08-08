@@ -54,7 +54,9 @@ public:
 	virtual void Activate();
 
 	void InputEnterVehicle( inputdata_t &inputdata );
+	virtual void PhysicsSimulate();
 	virtual void VPhysicsCollision( int index, gamevcollisionevent_t *pEvent );
+	virtual bool WillSimulateGamePhysics() { return true; }
 	virtual int OnTakeDamage( const CTakeDamageInfo &info );
 	virtual void Event_Killed( const CTakeDamageInfo &info );
 
@@ -89,7 +91,6 @@ public:
 
 private:
 #ifdef GAME_DLL
-	void Think();
 	void SimulateFire( CMoveData &moveData, float flFrametime );
 
 	string_t m_strSettingsName;
@@ -110,7 +111,6 @@ private:
 
 	IMPLEMENT_NETWORK_VAR_FOR_DERIVED( m_iMaxHealth );
 	float m_flCollisionDamageProtection;
-	float m_flLastThinkTime;
 	float m_flRegenerationTimer;
 	float m_flRegeneratedHealth;
 #else

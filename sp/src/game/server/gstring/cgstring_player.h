@@ -29,6 +29,7 @@ public:
 	virtual void DeathSound( const CTakeDamageInfo &info );
 	virtual bool CanBecomeRagdoll();
 	virtual bool ShouldCollide( int collisionGroup, int contentsMask ) const;
+	virtual bool WillSimulateGamePhysics() { return true; }
 
 	virtual void DoReloadAnim();
 

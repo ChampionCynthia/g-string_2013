@@ -1223,9 +1223,7 @@ void DrawLightmappedGeneric_DX9_Internal(CBaseVSShader *pShader, IMaterialVar** 
 			DynamicCmdsOut.BindStandardTexture( SHADER_SAMPLER15, TEXTURE_SHADOW_NOISE_2D );
 
 			VMatrix *worldToTexture0 = (VMatrix*)pShaderAPI->GetIntRenderingParameter( INT_CASCADED_MATRIX_ADDRESS_0 );
-			VMatrix *worldToTexture1 = (VMatrix*)pShaderAPI->GetIntRenderingParameter( INT_CASCADED_MATRIX_ADDRESS_1 );
-			DynamicCmdsOut.SetPixelShaderConstant( 20, worldToTexture0->Base(), 4 );
-			DynamicCmdsOut.SetPixelShaderConstant( 15, worldToTexture1->Base(), 4 );
+			DynamicCmdsOut.SetVertexShaderConstant( VERTEX_SHADER_SHADER_SPECIFIC_CONST_6, worldToTexture0->Base(), 4 );
 
 			const Vector vecCascadedFwd = pShaderAPI->GetVectorRenderingParameter( VECTOR_RENDERPARM_GSTRING_CASCADED_FORWARD );
 			float flCascadedFwd[4] = { XYZ( vecCascadedFwd ) };
@@ -1246,6 +1244,10 @@ void DrawLightmappedGeneric_DX9_Internal(CBaseVSShader *pShader, IMaterialVar** 
 			float flCSMParams1[4] = { XYZ( vecAmbMin ), csmBlendTweak };
 			DynamicCmdsOut.SetPixelShaderConstant( 13, flCSMParams0 );
 			DynamicCmdsOut.SetPixelShaderConstant( 19, flCSMParams1 );
+
+			const Vector vecCascadedStep = pShaderAPI->GetVectorRenderingParameter( VECTOR_RENDERPARM_GSTRING_CASCADED_STEP );
+			float vCascadedStep[4] = { XYZ( vecCascadedStep ) };
+			DynamicCmdsOut.SetPixelShaderConstant( 15, vCascadedStep, 1 );
 		}
 
 		// GSTRINGMIGRATION

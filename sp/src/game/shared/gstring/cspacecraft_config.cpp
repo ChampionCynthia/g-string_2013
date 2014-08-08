@@ -19,6 +19,14 @@ static void PrecacheSoundIfSet( const CUtlString &strSound )
 	}
 }
 
+static void PrecacheParticleIfSet( const CUtlString &strParticle )
+{
+	if ( !strParticle.IsEmpty() )
+	{
+		PrecacheParticleSystem( strParticle );
+	}
+}
+
 CSpacecraftConfig CSpacecraftConfig::m_Instance;
 
 CSpacecraftConfig::CSpacecraftConfig() :
@@ -55,7 +63,28 @@ void CSpacecraftConfig::Precache()
 			PrecacheSoundIfSet( settings.m_strSoundThruster );
 			PrecacheSoundIfSet( settings.m_strSoundDamage );
 			PrecacheSoundIfSet( settings.m_strSoundDeath );
+
+			PrecacheParticleIfSet( settings.m_strParticleDamage );
+			PrecacheParticleIfSet( settings.m_strParticleDeath );
+			PrecacheParticleIfSet( settings.m_strParticleGib );
+
+			FOR_EACH_VEC( settings.m_ParticleGibConnect, p )
+			{
+				PrecacheParticleSystem( settings.m_ParticleGibConnect[ p ] );
+			}
 		}
+
+		PrecacheParticleSystem( "projectile_red_spawn" );
+		PrecacheParticleSystem( "spacefield" );
+
+		PrecacheParticleSystem( "thruster_small" );
+		PrecacheParticleSystem( "idle_loop" );
+		PrecacheParticleSystem( "move_loop" );
+		PrecacheParticleSystem( "boost_loop" );
+
+		PrecacheParticleSystem( "projectile_red" );
+		PrecacheParticleSystem( "projectile_red_hit_enemy" );
+		PrecacheParticleSystem( "projectile_red_hit" );
 	}
 }
 

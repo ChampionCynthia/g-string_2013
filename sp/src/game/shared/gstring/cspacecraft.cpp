@@ -79,7 +79,6 @@ static ConVar gstring_spacecraft_move_drag_up( "gstring_spacecraft_move_drag_up"
 #ifdef GAME_DLL
 BEGIN_DATADESC( CSpacecraft )
 
-	DEFINE_THINKFUNC( Think ),
 	DEFINE_KEYFIELD( m_strSettingsName, FIELD_STRING, "settingsname" ),
 
 	// AI
@@ -137,7 +136,6 @@ CSpacecraft::CSpacecraft()
 	, m_iAIAttackState( 0 )
 	, m_iAITeam( 0 )
 	, m_flCollisionDamageProtection( 0.0f )
-	, m_flLastThinkTime( 0.0f )
 	, m_flRegenerationTimer( 0.0f )
 	, m_flRegeneratedHealth( 0.0f )
 #else
@@ -222,32 +220,31 @@ void CSpacecraft::Activate()
 	m_takedamage = DAMAGE_YES;
 	SetMaxHealth( m_Settings.m_iHealth );
 	SetHealth( GetMaxHealth() );
-
-	m_flLastThinkTime = gpGlobals->curtime;
-	SetThink( &CSpacecraft::Think );
-	SetNextThink( gpGlobals->curtime + 0.05f );
 }
 
-void CSpacecraft::Think()
+void CSpacecraft::InputEnterVehicle( inputdata_t &inputdata )
 {
-	SetNextThink( gpGlobals->curtime + 0.05f );
+	CGstringPlayer *pPlayer = LocalGstringPlayer();
+	SetPlayerSimulated( pPlayer );
+	pPlayer->EnterSpacecraft( this );
+}
 
-	float flDeltaTime = gpGlobals->curtime - m_flLastThinkTime;
-	flDeltaTime = MIN( 0.25f, flDeltaTime );
-	if ( flDeltaTime > 0.0f )
+void CSpacecraft::PhysicsSimulate()
+{
+	BaseClass::PhysicsSimulate();
+
+	if ( gpGlobals->frametime > 0.0f )
 	{
-		m_flLastThinkTime = gpGlobals->curtime;
-
 		if ( m_pAI != NULL )
 		{
-			m_pAI->Run( flDeltaTime );
+			m_pAI->Run( gpGlobals->frametime );
 		}
 
 		if ( GetHealth() < GetMaxHealth() )
 		{
 			if ( m_flRegenerationTimer > 0.0f )
 			{
-				m_flRegenerationTimer -= flDeltaTime;
+				m_flRegenerationTimer -= gpGlobals->frametime;
 				m_flRegeneratedHealth = gpGlobals->curtime;
 			}
 			else if ( m_flRegeneratedHealth < gpGlobals->curtime )
@@ -261,13 +258,6 @@ void CSpacecraft::Think()
 			}
 		}
 	}
-}
-
-void CSpacecraft::InputEnterVehicle( inputdata_t &inputdata )
-{
-	CGstringPlayer *pPlayer = LocalGstringPlayer();
-	SetPlayerSimulated( pPlayer );
-	pPlayer->EnterSpacecraft( this );
 }
 
 void CSpacecraft::VPhysicsCollision( int index, gamevcollisionevent_t *pEvent )

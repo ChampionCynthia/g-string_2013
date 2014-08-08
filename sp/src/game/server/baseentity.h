@@ -1538,6 +1538,10 @@ public:
 	// Add a discontinuity to a step
 	bool					AddStepDiscontinuity( float flTime, const Vector &vecOrigin, const QAngle &vecAngles );
 	int						GetFirstThinkTick();	// get first tick thinking on any context
+
+protected:
+	virtual bool WillSimulateGamePhysics(); // GSTRINGMIGRATION
+
 private:
 	// origin and angles to use in step calculations
 	virtual	Vector			GetStepOrigin( void ) const;
@@ -1547,7 +1551,6 @@ private:
 	void					CheckHasThinkFunction( bool isThinkingHint = false );
 	void					CheckHasGamePhysicsSimulation();
 	bool					WillThink();
-	bool					WillSimulateGamePhysics();
 
 	friend class CPushBlockerEnum;
 
