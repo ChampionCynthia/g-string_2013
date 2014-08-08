@@ -29,6 +29,17 @@
 // END GSTRINGMIGRATION
 
 
+// SEKIP: $FLASHLIGHT
+// SEKIP: $WRINKLEMAP
+// SEKIP: !$CASCADED_SHADOW
+// SEKIP: $SELFILLUMFRESNEL
+// SEKIP: $FLASHLIGHTDEPTHFILTERMODE == 1
+// SEKIP: $FLASHLIGHTDEPTHFILTERMODE == 2
+// SEKIP: $DETAIL_BLEND_MODE
+// SEKIP: $DETAILTEXTURE
+// SEKIP: $NUM_LIGHTS != 1
+
+
 // DISABLEFOG is fastpath only. The odd way fog is handled is to deal with essentially two
 // different sets of fog combos based on FASTPATH_NOBUMP
 
@@ -127,6 +138,7 @@ sampler SelfIllumMaskSampler	: register( s14 );	// selfillummask
 
 // GSTRINGMIGRATION
 const float4 g_DirectionalLightMask			: register( PSREG_FLASHLIGHT_COLOR );
+const float3 g_CascadedStepData				: register( PSREG_FLASHLIGHT_TO_WORLD_TEXTURE );
 #define g_CascadedForward					g_FlashlightPos_RimBoost.xyz
 
 float DoSimpleFlashlightShadow( sampler depthSampler, float3 flashlightSpacePosition )
@@ -259,7 +271,7 @@ float4 main( PS_INPUT i ) : COLOR
 		closePosition /= i.tangentSpaceTranspose_Row2ShadowPosW.w;
 		
 		float flShadow = DoCascadedShadow( ShadowDepthSampler, NormalizeRandRotSampler, worldVertexNormal,
-			g_CascadedForward, closePosition, vWorldPos, g_FlashlightWorldToTexture, FLASHLIGHTDEPTHFILTERMODE,
+			g_CascadedForward, closePosition, vWorldPos, FLASHLIGHTDEPTHFILTERMODE, g_CascadedStepData,
 			vProjPos.xy / vProjPos.z, float4( 0.0005, 0.0, 0.0, 0.0 ) );
 		
 		vLightAtten *= lerp( float4( 1, 1, 1, 1 ), float4( flShadow, flShadow, flShadow, flShadow ), g_DirectionalLightMask );
