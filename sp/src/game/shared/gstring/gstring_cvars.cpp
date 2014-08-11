@@ -20,7 +20,7 @@ ConVar cvar_gstring_drawlensflare( "gstring_DrawLensFlare", "1", FCVAR_ARCHIVE )
 ConVar cvar_gstring_drawbloomflare( "gstring_DrawBloomFlare", "2", FCVAR_ARCHIVE );
 ConVar cvar_gstring_drawwatereffects( "gstring_DrawWaterEffects", "1", FCVAR_ARCHIVE );
 
-ConVar cvar_gstring_bars_scale( "gstring_Bars_scale", "0.14", FCVAR_ARCHIVE );
+ConVar cvar_gstring_bars_scale( "gstring_Bars_scale", "0", FCVAR_ARCHIVE );
 ConVar cvar_gstring_explosionfx_strength( "gstring_ExplosionFx_strength", "0.6", FCVAR_ARCHIVE );
 ConVar cvar_gstring_motionblur_scale( "gstring_MotionBlur_scale", "0.5", FCVAR_ARCHIVE );
 ConVar cvar_gstring_barsandgrain_zoom( "gstring_BarsAndGrain_zoom", "0.06", FCVAR_ARCHIVE );

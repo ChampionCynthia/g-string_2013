@@ -796,7 +796,7 @@ void RumbleEffect( unsigned char effectIndex, unsigned char rumbleData, unsigned
 void UpdateRumbleEffects()
 {
 	C_BasePlayer *localPlayer = C_BasePlayer::GetLocalPlayer();
-	if( !localPlayer || !localPlayer->IsAlive() )
+	if( !localPlayer /*|| !localPlayer->IsAlive()*/ ) // GSTRINGMIGRATION
 	{
 		StopAllRumbleEffects();
 		return;
@@ -810,7 +810,7 @@ void UpdateRumbleEffects()
 void UpdateScreenShakeRumble( float shake, float balance )
 {
 	C_BasePlayer *localPlayer = C_BasePlayer::GetLocalPlayer();
-	if( !localPlayer || !localPlayer->IsAlive() )
+	if( !localPlayer /*|| !localPlayer->IsAlive()*/ ) // GSTRINGMIGRATION
 	{
 		return;
 	}

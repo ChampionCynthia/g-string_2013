@@ -46,8 +46,16 @@ void CGstringGameMovement::ProcessMoveType()
 
 void CGstringGameMovement::SpacecraftMove()
 {
+	float flFrametime = gpGlobals->frametime;
+	if ( flFrametime <= 0.0f )
+	{
+		return;
+	}
+
+	flFrametime = MIN( 0.25f, flFrametime );
+
 	CSharedPlayer *pPlayer = ( CSharedPlayer* )player;
 	CSpacecraft *pSpacecraft = pPlayer->GetSpacecraft();
-	pSpacecraft->SimulateMove( *mv, gpGlobals->frametime );
+	pSpacecraft->SimulateMove( *mv, flFrametime );
 }
 

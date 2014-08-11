@@ -115,7 +115,7 @@ void CGstringInput::MouseMove( CUserCmd *cmd )
 		return;
 	}
 
-	if ( pPlayer == NULL || !pPlayer->IsInSpacecraft() )
+	if ( pPlayer == NULL || !pPlayer->IsInSpacecraft() || m_bControllerMode )
 	{
 		BaseClass::MouseMove( cmd );
 		return;
@@ -132,7 +132,7 @@ void CGstringInput::MouseMove( CUserCmd *cmd )
 		viewangles.z = 0.0f;
 		engine->SetViewAngles( viewangles );
 
-		in_duck.state = 0;
+		//in_duck.state = 0;
 		in_use.state = 0;
 		in_alt1.state = 0;
 	}
@@ -244,18 +244,18 @@ void CGstringInput::MouseMove( CUserCmd *cmd )
 					viewangles.z += flRollSpeed * gpGlobals->frametime;
 				}
 			}
-			else if ( ( in_duck.state & 3 ) != 0 )
-			{
-				if ( ( in_moveleft.state & 3 ) != 0 )
-				{
-					viewangles.z -= flRollSpeed * gpGlobals->frametime;
-				}
+			//else if ( ( in_duck.state & 3 ) != 0 )
+			//{
+			//	if ( ( in_moveleft.state & 3 ) != 0 )
+			//	{
+			//		viewangles.z -= flRollSpeed * gpGlobals->frametime;
+			//	}
 
-				if ( ( in_moveright.state & 3 ) != 0 )
-				{
-					viewangles.z += flRollSpeed * gpGlobals->frametime;
-				}
-			}
+			//	if ( ( in_moveright.state & 3 ) != 0 )
+			//	{
+			//		viewangles.z += flRollSpeed * gpGlobals->frametime;
+			//	}
+			//}
 
 			Vector vecRight, vecUp;
 			AngleVectors( viewangles, NULL, &vecRight, &vecUp );
@@ -287,10 +287,72 @@ void CGstringInput::MouseMove( CUserCmd *cmd )
 	engine->SetViewAngles( viewangles );
 }
 
+void CGstringInput::JoyStickMove( float frametime, CUserCmd *cmd )
+{
+	BaseClass::JoyStickMove( frametime, cmd );
+
+	C_GstringPlayer *pPlayer = LocalGstringPlayer();
+	if ( m_bControllerMode && pPlayer && pPlayer->IsInSpacecraft() )
+	{
+		int vx, vy, vw, vh;
+		vgui::surface()->GetFullscreenViewport( vx, vy, vw, vh );
+
+		m_MousePosition.x = vw / 2.0f;
+		m_MousePosition.y = vh / 2.0f;
+
+		Vector2D vecOffset( m_flPreviousJoystickYaw, m_flPreviousJoystickPitch );
+		const float flScaleOffset = 2.0f;
+		if ( vecOffset.x < 0.0f )
+		{
+			vecOffset.x = -powf( -vecOffset.x, flScaleOffset );
+		}
+		else
+		{
+			vecOffset.x = powf( vecOffset.x, flScaleOffset );
+		}
+
+		if ( vecOffset.y < 0.0f )
+		{
+			vecOffset.y = -powf( -vecOffset.y, flScaleOffset );
+		}
+		else
+		{
+			vecOffset.y = powf( vecOffset.y, flScaleOffset );
+		}
+
+		const float flMaxDistance = ScreenHeight() * 0.2f;
+		vecOffset *= flMaxDistance;
+
+		if ( vecOffset.LengthSqr() > flMaxDistance * flMaxDistance )
+		{
+			vecOffset.NormalizeInPlace();
+			vecOffset *= flMaxDistance;
+		}
+
+		m_MousePosition += vecOffset;
+		m_MousePosition.x = clamp( m_MousePosition.x, 0, vw );
+		m_MousePosition.y = clamp( m_MousePosition.y, 0, vh );
+
+		QAngle viewangles;
+		engine->GetViewAngles( viewangles );
+		viewangles.z = 0.0f;
+		engine->SetViewAngles( viewangles );
+
+		PerformSpacecraftAutoAim( cmd );
+		return;
+	}
+}
+
 CGstringInput::CrosshairMode_e CGstringInput::GetCrosshairMode() const
 {
 	C_GstringPlayer *pPlayer = LocalGstringPlayer();
 	const bool bInSpaceShip = pPlayer != NULL && pPlayer->IsInSpacecraft();
+
+	if ( bInSpaceShip && m_bControllerMode )
+	{
+		return CROSSHAIRMODE_GAMEPAD;
+	}
+
 	return bInSpaceShip ? (CrosshairMode_e)gstring_spacecraft_mouse_mode.GetInt() : CROSSHAIRMODE_DEFAULT;
 }
 

@@ -142,6 +142,8 @@ private:
 	CNetworkVector( m_PhysVelocity );
 	CNetworkVar( int, m_iEngineLevel );
 	CNetworkVar( int, m_iProjectileParity );
+	CNetworkVar( float, m_flMoveX );
+	CNetworkVar( float, m_flMoveY );
 
 	CNetworkVar( UtlSymId_t, m_iSettingsIndex );
 	SpacecraftSettings_t m_Settings;

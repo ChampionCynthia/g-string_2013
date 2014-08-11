@@ -307,6 +307,7 @@ void CInput::AddKeyButton( const char *name, kbutton_t *pkb )
 // Purpose: 
 //-----------------------------------------------------------------------------
 CInput::CInput( void )
+	: m_bControllerMode( false )
 {
 	m_pCommands = NULL;
 	m_pCameraThirdData = NULL;

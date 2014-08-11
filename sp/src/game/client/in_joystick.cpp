@@ -40,6 +40,10 @@
 #include "c_basehlplayer.h"
 #endif
 
+// GSTRINGMIGRATION
+#include "c_gstring_player.h"
+// END GSTRINGMIGRATION
+
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -731,12 +735,18 @@ void CInput::JoyStickMove( float frametime, CUserCmd *cmd )
 		}
 
 		unsigned int idx = m_rgAxes[i].AxisMap;
+
+		if ( gameAxes[idx].value != fAxisValue )
+		{
+			m_bControllerMode = true;
+		}
+
 		gameAxes[idx].value = fAxisValue;
 		gameAxes[idx].controlType = m_rgAxes[i].ControlMap;
 	}
 
 	// Re-map the axis values if necessary, based on the joystick configuration
-	if ( (joy_advanced.GetInt() == 0) && (in_jlook.state & 1) )
+	if ( (joy_advanced.GetInt() == 0) ) //&& (in_jlook.state & 1) ) // GSTRINGMIGRATION
 	{
 		// user wants forward control to become pitch control
 		gameAxes[GAME_AXIS_PITCH] = gameAxes[GAME_AXIS_FORWARD];
@@ -750,7 +760,7 @@ void CInput::JoyStickMove( float frametime, CUserCmd *cmd )
 		}
 	}
 
-	if ( (in_strafe.state & 1) || ( lookstrafe.GetFloat() && (in_jlook.state & 1) ) )
+	if ( (in_strafe.state & 1) ) //|| ( lookstrafe.GetFloat() && (in_jlook.state & 1) ) ) // GSTRINGMIGRATION
 	{
 		// user wants yaw control to become side control
 		gameAxes[GAME_AXIS_SIDE] = gameAxes[GAME_AXIS_YAW];
@@ -835,46 +845,58 @@ void CInput::JoyStickMove( float frametime, CUserCmd *cmd )
 	float dist = move.Length();
 
 	// apply turn control
-	float angle = 0.f;
+	float flYawAngle = 0.f;
+
+	C_GstringPlayer *pPlayer = LocalGstringPlayer();
+	//const int iResponseCurveLook = ( pPlayer && pPlayer->IsInSpacecraft() ) ? 2 : joy_response_look.GetInt();
+	const int iResponseCurveLook = joy_response_look.GetInt();
+	const float flSpacecraftPower = 5.0f;
 
 	if ( JOY_ABSOLUTE_AXIS == gameAxes[GAME_AXIS_YAW].controlType )
 	{
-		float fAxisValue = ResponseCurveLook( joy_response_look.GetInt(), m_flPreviousJoystickYaw, YAW, m_flPreviousJoystickPitch, dist, frametime );
-		angle = fAxisValue * joy_yawsensitivity.GetFloat() * aspeed * cl_yawspeed.GetFloat();
+		float fAxisValue = ResponseCurveLook( iResponseCurveLook, m_flPreviousJoystickYaw, YAW, m_flPreviousJoystickPitch, dist, frametime );
+		if ( pPlayer && pPlayer->IsInSpacecraft() )
+		{
+			fAxisValue = powf( fAxisValue, flSpacecraftPower );
+		}
+		flYawAngle = fAxisValue * joy_yawsensitivity.GetFloat() * aspeed * cl_yawspeed.GetFloat();
 	}
 	else
 	{
-		angle = m_flPreviousJoystickYaw * joy_yawsensitivity.GetFloat() * aspeed * 180.0;
+		flYawAngle = m_flPreviousJoystickYaw * joy_yawsensitivity.GetFloat() * aspeed * 180.0;
 	}
 
-	angle = JoyStickAdjustYaw( angle );
-	viewangles[YAW] += angle;
-	cmd->mousedx = angle;
-
 	// apply look control
-	if ( IsX360() || in_jlook.state & 1 )
+	float flPitchAngle = 0;
+	if ( JOY_ABSOLUTE_AXIS == gameAxes[GAME_AXIS_PITCH].controlType )
 	{
-		float angle = 0;
-		if ( JOY_ABSOLUTE_AXIS == gameAxes[GAME_AXIS_PITCH].controlType )
+		float fAxisValue = ResponseCurveLook( iResponseCurveLook, m_flPreviousJoystickPitch, PITCH, m_flPreviousJoystickYaw, dist, frametime );
+		if ( pPlayer && pPlayer->IsInSpacecraft() )
 		{
-			float fAxisValue = ResponseCurveLook( joy_response_look.GetInt(), m_flPreviousJoystickPitch, PITCH, m_flPreviousJoystickYaw, dist, frametime );
-			angle = fAxisValue * joy_pitchsensitivity.GetFloat() * aspeed * cl_pitchspeed.GetFloat();
+			fAxisValue = powf( fAxisValue, flSpacecraftPower );
 		}
-		else
-		{
-			angle = m_flPreviousJoystickPitch * joy_pitchsensitivity.GetFloat() * aspeed * 180.0;
-		}
-		viewangles[PITCH] += angle;
-		cmd->mousedy = angle;
+		flPitchAngle = fAxisValue * joy_pitchsensitivity.GetFloat() * aspeed * cl_pitchspeed.GetFloat();
+	}
+	else
+	{
+		flPitchAngle = m_flPreviousJoystickPitch * joy_pitchsensitivity.GetFloat() * aspeed * 180.0;
+	}
+
+	flYawAngle = JoyStickAdjustYaw( flYawAngle );
+	viewangles[YAW] += flYawAngle;
+	cmd->mousedx = flYawAngle;
+
+	viewangles[PITCH] += flPitchAngle;
+	cmd->mousedy = flPitchAngle;
+	view->StopPitchDrift();
+
+	if( m_flPreviousJoystickPitch == 0.f && lookspring.GetFloat() == 0.f )
+	{
+		// no pitch movement
+		// disable pitch return-to-center unless requested by user
+		// *** this code can be removed when the lookspring bug is fixed
+		// *** the bug always has the lookspring feature on
 		view->StopPitchDrift();
-		if( m_flPreviousJoystickPitch == 0.f && lookspring.GetFloat() == 0.f )
-		{
-			// no pitch movement
-			// disable pitch return-to-center unless requested by user
-			// *** this code can be removed when the lookspring bug is fixed
-			// *** the bug always has the lookspring feature on
-			view->StopPitchDrift();
-		}
 	}
 
 	// apply player motion relative to screen space

@@ -2499,11 +2499,6 @@ void CViewRender::RenderView( const CViewSetup &view, int nClearFlags, int whatT
 		// Draw an overlay to make it even harder to see inside smoke particle systems.
 		DrawSmokeFogOverlay();
 
-		// Overlay screen fade on entire screen
-		IMaterial* pMaterial = blend ? m_ModulateSingleColor : m_TranslucentSingleColor;
-		render->ViewDrawFade( color, pMaterial );
-		//PerformScreenOverlay( view.x, view.y, view.width, view.height ); // GSTRINGMIGRATION
-
 		// GSTRINGMIGRATION
 		if ( whatToDraw & RENDERVIEW_DRAWHUD && !bBuildingCubemaps )
 		{
@@ -2597,6 +2592,11 @@ void CViewRender::RenderView( const CViewSetup &view, int nClearFlags, int whatT
 		{
 			DrawOverlaysForMode( CScreenoverlayMulti::RENDERMODE_POST_POSTPROCESSING,
 				view.x, view.y, view.width, view.height );
+
+			// Overlay screen fade on entire screen
+			IMaterial* pMaterial = blend ? m_ModulateSingleColor : m_TranslucentSingleColor;
+			render->ViewDrawFade( color, pMaterial );
+			//PerformScreenOverlay( view.x, view.y, view.width, view.height );
 
 			if ( whatToDraw & RENDERVIEW_DRAWHUD )
 				DrawBarsAndGrain( view.x, view.y, view.width, view.height );

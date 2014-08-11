@@ -75,6 +75,7 @@ static ConVar gstring_spacecraft_move_ang_approach_speed( "gstring_spacecraft_mo
 static ConVar gstring_spacecraft_move_drag_side( "gstring_spacecraft_move_drag_side", "2.0", FCVAR_REPLICATED );
 static ConVar gstring_spacecraft_move_drag_fwd( "gstring_spacecraft_move_drag_fwd", "1.0", FCVAR_REPLICATED );
 static ConVar gstring_spacecraft_move_drag_up( "gstring_spacecraft_move_drag_up", "2.0", FCVAR_REPLICATED );
+ConVar gstring_spacecraft_move_mode( "gstring_spacecraft_move_mode", "1", FCVAR_REPLICATED );
 
 #ifdef GAME_DLL
 BEGIN_DATADESC( CSpacecraft )
@@ -111,6 +112,9 @@ IMPLEMENT_NETWORKCLASS_DT( CSpacecraft, CSpacecraft_DT )
 	SendPropVector( SENDINFO( m_AngularImpulse ) ),
 	SendPropVector( SENDINFO( m_PhysVelocity ) ),
 	SendPropInt( SENDINFO( m_iSettingsIndex ) ),
+
+	SendPropFloat( SENDINFO( m_flMoveX ) ),
+	SendPropFloat( SENDINFO( m_flMoveY ) ),
 #else
 	RecvPropInt( RECVINFO( m_iHealth ) ),
 	RecvPropInt( RECVINFO( m_iMaxHealth ) ),
@@ -121,6 +125,9 @@ IMPLEMENT_NETWORKCLASS_DT( CSpacecraft, CSpacecraft_DT )
 	RecvPropVector( RECVINFO( m_AngularImpulse ) ),
 	RecvPropVector( RECVINFO( m_PhysVelocity ) ),
 	RecvPropInt( RECVINFO( m_iSettingsIndex ) ),
+
+	RecvPropFloat( RECVINFO( m_flMoveX ) ),
+	RecvPropFloat( RECVINFO( m_flMoveY ) ),
 #endif
 
 END_NETWORK_TABLE();
@@ -305,6 +312,11 @@ int CSpacecraft::OnTakeDamage( const CTakeDamageInfo &info )
 	m_flRegenerationTimer = m_Settings.m_flRegenerationDelay;
 	m_flRegeneratedHealth = gpGlobals->curtime;
 
+	if ( GetOwnerEntity() && GetOwnerEntity()->IsPlayer() )
+	{
+		UTIL_ScreenShake( GetAbsOrigin(), 1.5f, 7.0f, 0.8f, 128.0f, SHAKE_START_NORUMBLE, true );
+		UTIL_ScreenShake( GetAbsOrigin(), 20.0f, 5.0f, 0.8f, 128.0f, SHAKE_START_RUMBLEONLY, true );
+	}
 	return ret;
 }
 
@@ -373,6 +385,9 @@ void CSpacecraft::Event_Killed( const CTakeDamageInfo &info )
 	BaseClass::Event_Killed( info );
 
 	AddSolidFlags( FSOLID_NOT_SOLID );
+
+	UTIL_ScreenShake( GetAbsOrigin(), 8.0f, 8.0f, 1.2f, 96.0f, SHAKE_START_NORUMBLE, true );
+	UTIL_ScreenShake( GetAbsOrigin(), 40.0f, 5.0f, 1.2f, 96.0f, SHAKE_START_RUMBLEONLY, true );
 }
 
 CBaseEntity *CSpacecraft::GetEnemy() const
@@ -557,6 +572,11 @@ void CSpacecraft::ClientThink()
 
 	int iActiveThrusters = 0;
 
+	Vector vecShipFwd, vecShipRight, vecShipUp;
+	AngleVectors( GetRenderAngles(), &vecShipFwd, &vecShipRight, &vecShipUp );
+	Vector vecMoveDelta( Vector( 0.0f, -1.0f, 0.0 ) * m_flMoveY + Vector( 0.0f, 0.0f, 1.0 ) * m_flMoveX );
+	vecMoveDelta *= -1000.0f;
+
 	FOR_EACH_VEC( m_ThrusterAttachments, i )
 	{
 		const int iAttachmentIndex = m_ThrusterAttachments[ i ];
@@ -572,7 +592,7 @@ void CSpacecraft::ClientThink()
 		AngleVectors( angLocal, &vecFwdLocal );
 
 		VectorRotate( vecPosLocal, matAngularImpulse, vecPosLocalImpulse );
-		Vector vecImpulseDelta = vecPosLocal - vecPosLocalImpulse;
+		Vector vecImpulseDelta = vecPosLocal - vecPosLocalImpulse + vecMoveDelta;
 
 		const float flLocalImpulseStrength = DotProduct( vecImpulseDelta, vecFwdLocal );
 		const bool bShouldShowThruster = flLocalImpulseStrength > 1.5f;
@@ -859,7 +879,7 @@ void CSpacecraft::SimulateMove( CMoveData &moveData, float flFrametime )
 		return;
 	}
 
-	const bool bCutOffEngines = ( moveData.m_nButtons & IN_JUMP ) != 0;
+	const bool bCutOffEngines = ( moveData.m_nButtons & ( IN_JUMP | IN_DUCK ) ) != 0;
 	float flAngularDrag = gstring_spacecraft_physics_angulardrag.GetFloat();
 	if ( bCutOffEngines )
 	{
@@ -895,26 +915,59 @@ void CSpacecraft::SimulateMove( CMoveData &moveData, float flFrametime )
 
 	if ( !bCutOffEngines )
 	{
-		const bool bBoosting = ( moveData.m_nButtons & IN_SPEED ) != 0;
+		const bool bUseScreenMove = gstring_spacecraft_move_mode.GetBool();
 		const float flMaxMove = 200.0f;
-		Vector vecMove( vec3_origin );
+		Vector2D vecMove( vec2_origin );
 		vecMove.x = clamp( moveData.m_flForwardMove / flMaxMove, -1.0f, 1.0f );
 		vecMove.y = clamp( moveData.m_flSideMove / flMaxMove, -1.0f, 1.0f );
-
 		if ( vecMove.LengthSqr() > 1.0f )
 		{
 			vecMove.NormalizeInPlace();
 		}
+		m_flMoveX = vecMove.x;
+		m_flMoveY = vecMove.y;
 
-		if ( vecMove.x > 0.0f )
+		const bool bBoosting = ( moveData.m_nButtons & IN_SPEED ) != 0;
+		if ( bUseScreenMove )
 		{
-			vecImpulse += vecMove.x * vecFwd * ( bBoosting ? m_Settings.m_flAccelerationBoost :
-				m_Settings.m_flAcceleration );
-			bAccelerationEffects = true;
-			bBoostEffects = bBoosting;
+			if ( !bCutOffEngines )
+			{
+				vecImpulse += 1.0f * vecFwd * ( bBoosting ? m_Settings.m_flAccelerationBoost :
+					m_Settings.m_flAcceleration );
+				bAccelerationEffects = true;
+				bBoostEffects = bBoosting;
+			}
+
+			if ( vecMove.x < 0.0f )
+			{
+				vecImpulse += vecMove.x * vecUp * m_Settings.m_flAccelerationSide;
+				bAccelerationEffects = true;
+			}
+
+			if ( vecMove.x > 0.0f )
+			{
+				vecImpulse += vecMove.x * vecUp * m_Settings.m_flAccelerationSide;
+				bAccelerationEffects = true;
+			}
+		}
+		else //if ( !bCutOffEngines )
+		{
+			if ( vecMove.x > 0.0f )
+			{
+				vecImpulse += vecMove.x * vecFwd * ( bBoosting ? m_Settings.m_flAccelerationBoost :
+					m_Settings.m_flAcceleration );
+				bAccelerationEffects = true;
+				bBoostEffects = bBoosting;
+			}
+			else if ( vecMove.x < 0.0f )
+			{
+				vecImpulse += vecMove.x * vecFwd * m_Settings.m_flAcceleration;
+				bAccelerationEffects = false;
+				bBoostEffects = false;
+			}
 		}
 
-		if ( ( moveData.m_nButtons & IN_DUCK ) == 0 )
+		//if ( ( moveData.m_nButtons & IN_DUCK ) == 0 )
 		{
 			if ( vecMove.y < 0.0f )
 			{
@@ -928,13 +981,11 @@ void CSpacecraft::SimulateMove( CMoveData &moveData, float flFrametime )
 				bAccelerationEffects = true;
 			}
 		}
-
-		if ( vecMove.x < 0.0f )
-		{
-			vecImpulse += vecMove.x * vecFwd * m_Settings.m_flAcceleration;
-			bAccelerationEffects = false;
-			bBoostEffects = false;
-		}
+	}
+	else
+	{
+		m_flMoveX = 0.0f;
+		m_flMoveY = 0.0f;
 	}
 
 	m_iEngineLevel = bCutOffEngines ? ENGINELEVEL_STALLED : ( bAccelerationEffects ?
@@ -959,20 +1010,26 @@ void CSpacecraft::SimulateMove( CMoveData &moveData, float flFrametime )
 	AngularImpulse angDelta = angImpulse - angOldImpulse;
 	angImpulse -= angOldImpulse;
 
+	//if ( bCutOffEngines )
+	//{
+	//	vecOldImpulse -= vecFwd * DotProduct( vecFwd, vecOldImpulse );
+	//	vecOldImpulse = vecOldImpulse - ( vecImpulse / gpGlobals->frametime );
+	//}
+
 	if ( !bCutOffEngines )
 	{
-		const float flSideSpeed = DotProduct( vecRight, vecOldImpulse );
-		if ( abs( flSideSpeed ) > 0.1f )
-		{
-			vecImpulse += vecRight * -flSideSpeed * MIN( 1.0f,
-				flFrametime * gstring_spacecraft_move_drag_side.GetFloat() );
-		}
-
 		const float flForwardSpeed = DotProduct( vecFwd, vecOldImpulse );
 		if ( abs( flForwardSpeed ) > 0.1f )
 		{
 			vecImpulse += vecFwd * -flForwardSpeed * MIN( 1.0f,
 				flFrametime * gstring_spacecraft_move_drag_fwd.GetFloat() );
+		}
+
+		const float flSideSpeed = DotProduct( vecRight, vecOldImpulse );
+		if ( abs( flSideSpeed ) > 0.1f )
+		{
+			vecImpulse += vecRight * -flSideSpeed * MIN( 1.0f,
+				flFrametime * gstring_spacecraft_move_drag_side.GetFloat() );
 		}
 
 		const float flUpSpeed = DotProduct( vecUp, vecOldImpulse );

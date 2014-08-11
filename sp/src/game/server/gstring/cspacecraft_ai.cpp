@@ -40,6 +40,8 @@ CON_COMMAND( gstring_spaceshipai_debug_spawn, "" )
 	}
 }
 
+extern ConVar gstring_spacecraft_move_mode;
+
 CSpacecraftAIBase::CSpacecraftAIBase( CSpacecraft *pShip )
 	: m_pShip( pShip )
 	, m_ThinkFunc( NULL )
@@ -55,6 +57,8 @@ CSpacecraftAIBase::CSpacecraftAIBase( CSpacecraft *pShip )
 	moveData.m_iAutoAimEntityIndex = 0;
 	moveData.m_vecWorldShootPosition.Init();
 	moveData.m_vecViewAngles.Init();
+	moveData.m_flForwardMove = 0.0f;
+	moveData.m_flSideMove = 0.0f;
 
 	SetNextThink( 0.0f, &CSpacecraftAIBase::Think_ShootSalvoes );
 	//SetMove( &CSpacecraftAIBase::Move_Follow );
@@ -147,14 +151,25 @@ void CSpacecraftAIBase::Move_Follow( float flFrametime )
 	moveData.m_flSideMove = 0.0f;
 	moveData.m_flUpMove = 0.0f;
 
-	if ( flDistance > 300.0f )
+	if ( gstring_spacecraft_move_mode.GetBool() )
 	{
-		moveData.m_flForwardMove = 200.0f;
+		moveData.m_flForwardMove = 0.0f;
+		if ( flDistance < 50.0f )
+		{
+			moveData.m_flSideMove = 50.0f;
+		}
 	}
-	else if ( flDistance < 50.0f )
+	else
 	{
-		moveData.m_flForwardMove = -200.0f;
-		moveData.m_flSideMove = 50.0f;
+		if ( flDistance > 300.0f )
+		{
+			moveData.m_flForwardMove = 200.0f;
+		}
+		else if ( flDistance < 50.0f )
+		{
+			moveData.m_flForwardMove = -200.0f;
+			moveData.m_flSideMove = 50.0f;
+		}
 	}
 
 	if ( flDistance > 400.0f )
@@ -231,7 +246,15 @@ void CSpacecraftAIBase::Move_Pursuit( float flFrametime )
 		QuaternionAngles( qMoveCurrent, moveData.m_vecViewAngles );
 	}
 
-	moveData.m_flForwardMove = 200.0f;
+	if ( gstring_spacecraft_move_mode.GetBool() )
+	{
+		moveData.m_flForwardMove = 0.0f;
+	}
+	else
+	{
+		moveData.m_flForwardMove = 200.0f;
+	}
+
 	moveData.m_flUpMove = 0.0f;
 	moveData.m_nButtons |= IN_SPEED;
 

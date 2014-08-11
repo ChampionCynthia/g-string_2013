@@ -24,6 +24,7 @@ public:
 protected:
 	virtual void ClampAngles( QAngle &viewangles );
 	virtual void MouseMove( CUserCmd *cmd );
+	virtual void JoyStickMove( float frametime, CUserCmd *cmd );
 
 private:
 	enum CrosshairMode_e

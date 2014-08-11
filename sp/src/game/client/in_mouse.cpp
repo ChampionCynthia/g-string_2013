@@ -351,6 +351,11 @@ void CInput::GetAccumulatedMouseDeltasAndResetAccumulators( float *mx, float *my
 			*my = (float)rawMouseY;
 		}
 	}
+
+	if ( *mx != 0.0f || *my != 0.0f )
+	{
+		m_bControllerMode = false;
+	}
 	
 	m_flAccumulatedMouseXMovement = 0;
 	m_flAccumulatedMouseYMovement = 0;
@@ -616,8 +621,6 @@ void CInput::AccumulateMouse( void )
 		oy = clamp( oy, 0, h - 1 );
 		SetMousePos( ox, oy );
 	}
-
-
 }
 
 //-----------------------------------------------------------------------------

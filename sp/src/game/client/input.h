@@ -138,7 +138,7 @@ protected: // GSTRINGMIGRATION
 
 	// Joystick  movement input helpers
 	void		ControllerMove ( float frametime, CUserCmd *cmd );
-	void		JoyStickMove ( float frametime, CUserCmd *cmd );
+	virtual void	JoyStickMove ( float frametime, CUserCmd *cmd ); // GSTRINGMIGRATION
 	float		ScaleAxisValue( const float axisValue, const float axisThreshold );
 	virtual float JoyStickAdjustYaw( float flSpeed ) { return flSpeed; }
 
@@ -195,6 +195,7 @@ protected: // GSTRINGMIGRATION
 	bool		m_fJoystickAdvancedInit;
 	// Used to support hotplugging by reinitializing the advanced joystick system when we toggle between some/none joysticks.
 	bool		m_fHadJoysticks;
+	bool		m_bControllerMode; // GSTRINGMIGRATION
 
 	// Accumulated mouse deltas
 	float		m_flAccumulatedMouseXMovement;
