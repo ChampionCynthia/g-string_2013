@@ -26,6 +26,8 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+#include "vgui/vutil.h"
+
 #include <ctype.h>
 
 using namespace vgui;
@@ -88,7 +90,7 @@ public:
 		byte		type;
 		byte		r, g, b, a;
 	};
-
+	
 	CHudMessage( const char *pElementName );
 	~CHudMessage();
 
@@ -105,7 +107,6 @@ public:
 	int YPosition( float y, int height );
 
 	void MessageAdd( const char *pName );
-	void MessageDrawScan( client_textmessage_t *pMessage, float time );
 	void MessageScanStart( void );
 	void MessageScanNextChar( void );
 	void Reset( void );
@@ -125,14 +126,29 @@ public: // ITextMessage
 	virtual void		SetDefaultFont( void );
 
 private:
+	struct ExtendedClientMessage_t
+	{
+		ExtendedClientMessage_t() :
+			m_pMessage( NULL ),
+			m_iImage( -1 ),
+			m_iNormalizedImageWidth( 64 ),
+			m_iNormalizedImageHeight( 64 )
+		{
+		}
 
-	message_t			*AllocMessage( void );
-	void				ResetCharacters( void );
-	void				PaintCharacters();
-	virtual void		GetTextExtents( int *wide, int *tall, const char *string );
+		client_textmessage_t *m_pMessage;
+		int m_iImage;
+		int m_iNormalizedImageWidth;
+		int m_iNormalizedImageHeight;
+	};
 
+	message_t	*AllocMessage( void );
+	void		ResetCharacters( void );
+	void		PaintCharacters();
+	void		GetTextExtents( int *wide, int *tall, const char *string );
+	void		MessageDrawScan( ExtendedClientMessage_t &pMessage, float time );
 
-	client_textmessage_t		*m_pMessages[maxHUDMessages];
+	ExtendedClientMessage_t		m_pMessages[maxHUDMessages];
 	float						m_startTime[maxHUDMessages];
 	message_parms_t				m_parms;
 	float						m_gameTitleTime;
@@ -231,9 +247,8 @@ void CHudMessage::VidInit( void )
 //-----------------------------------------------------------------------------
 void CHudMessage::Reset( void )
 {
- 	memset( m_pMessages, 0, sizeof( m_pMessages[0] ) * maxHUDMessages );
 	memset( m_startTime, 0, sizeof( m_startTime[0] ) * maxHUDMessages );
-	
+
 	m_gameTitleTime = 0;
 	m_pGameTitle = NULL;
 	m_bHaveMessage = false;
@@ -460,8 +475,28 @@ void CHudMessage::MessageScanStart( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CHudMessage::MessageDrawScan( client_textmessage_t *pMessage, float time )
+void CHudMessage::MessageDrawScan( ExtendedClientMessage_t &pExtendedMessage, float time )
 {
+	client_textmessage_t *pMessage = pExtendedMessage.m_pMessage;
+
+	if ( pExtendedMessage.m_iImage >= 0 )
+	{
+		m_parms.vguiFontName = NULL;
+		m_parms.time = time;
+		m_parms.pMessage = pMessage;
+		MessageScanStart();
+
+		const int iWidth = scheme()->GetProportionalScaledValue( pExtendedMessage.m_iNormalizedImageWidth );
+		const int iHeight = scheme()->GetProportionalScaledValue( pExtendedMessage.m_iNormalizedImageHeight );
+		const int iXPosition = XPosition( pMessage->x, iWidth, iWidth );
+		const int iYPosition = YPosition( pMessage->y, iHeight );
+
+		surface()->DrawSetColor( Color( 255, 255, 255, 255 - m_parms.fadeBlend ) );
+		surface()->DrawSetTexture( pExtendedMessage.m_iImage );
+		surface()->DrawTexturedRect( iXPosition, iYPosition, iXPosition + iWidth, iYPosition + iHeight );
+		return;
+	}
+
 	int i, j, length, width;
 	const wchar_t *pText;
 	wchar_t textBuf[ 1024 ];
@@ -651,9 +686,9 @@ void CHudMessage::Paint()
 	for ( i = 0; i < maxHUDMessages; i++ )
 	{
 		// Assume m_parms.time contains last time
-		if ( m_pMessages[i] )
+		if ( m_pMessages[i].m_pMessage )
 		{
-			pMessage = m_pMessages[i];
+			pMessage = m_pMessages[i].m_pMessage;
 			if ( m_startTime[i] > gpGlobals->curtime )
 				m_startTime[i] = gpGlobals->curtime + m_parms.time - m_startTime[i] + 0.2;	// Server takes 0.2 seconds to spawn, adjust for this
 		}
@@ -661,9 +696,9 @@ void CHudMessage::Paint()
 
 	for ( i = 0; i < maxHUDMessages; i++ )
 	{
-		if ( m_pMessages[i] )
+		if ( m_pMessages[i].m_pMessage )
 		{
-			pMessage = m_pMessages[i];
+			pMessage = m_pMessages[i].m_pMessage;
 
 			// This is when the message is over
 			switch( pMessage->effect )
@@ -691,14 +726,14 @@ void CHudMessage::Paint()
 				// effect 0 is fade in/fade out
 				// effect 1 is flickery credits
 				// effect 2 is write out (training room)
-				MessageDrawScan( pMessage, messageTime );
+				MessageDrawScan( m_pMessages[i], messageTime );
 
 				drawn++;
 			}
 			else
 			{
 				// The message is over
-				m_pMessages[i] = NULL;
+				m_pMessages[i].m_pMessage = NULL;
 			}
 		}
 	}
@@ -742,20 +777,52 @@ void CHudMessage::MessageAdd( const char *pName )
 	{
 		for ( i = 0; i < maxHUDMessages; i++ )
 		{
-			if ( m_pMessages[ i ] && !Q_stricmp( m_pMessages[ i ]->pName, pMessage->pClearMessage ) )
+			if ( m_pMessages[ i ].m_pMessage && !Q_stricmp( m_pMessages[ i ].m_pMessage->pName, pMessage->pClearMessage ) )
 			{
 				m_startTime[ i ] = 0.0f;
-				m_pMessages[ i ] = NULL;
+				m_pMessages[ i ].m_pMessage = NULL;
 				break;
 			}
 		}
 	}
 
+	int iImage = -1;
+	int iNormalizedImageSize[ 2 ] = { 64, 64 };
+	if ( Q_stristr( pMessage->pMessage, "img://" ) == pMessage->pMessage )
+	{
+		char szFixedPath[ MAX_PATH ];
+		Q_strncpy( szFixedPath, pMessage->pMessage + 6, sizeof( szFixedPath ) );
+		char *pszParseImageData = szFixedPath;
+		bool bParsedParameters = false;
+		while ( *pszParseImageData )
+		{
+			if ( !bParsedParameters &&
+				( V_isspace( *pszParseImageData ) || !V_isprint( *pszParseImageData ) ) )
+			{
+				char *pszParamStart = pszParseImageData;
+				while ( V_isspace( *pszParseImageData ) )
+				{
+					pszParseImageData++;
+				}
+				bParsedParameters = true;
+				UTIL_StringToIntArray( iNormalizedImageSize, 2, pszParseImageData );
+				*pszParamStart = 0;
+				break;
+			}
+			pszParseImageData++;
+		}
+		SetupVGUITex( szFixedPath, iImage );
+	}
+
 	for ( i = 0; i < maxHUDMessages; i++ )
 	{
-		if ( !m_pMessages[i] )
+		ExtendedClientMessage_t &message = m_pMessages[i];
+		if ( !message.m_pMessage )
 		{
-			m_pMessages[i] = pMessage;
+			message.m_pMessage = pMessage;
+			message.m_iImage = iImage;
+			message.m_iNormalizedImageWidth = iNormalizedImageSize[ 0 ];
+			message.m_iNormalizedImageHeight = iNormalizedImageSize[ 1 ];
 			m_startTime[i] = time;
 			break;
 		}

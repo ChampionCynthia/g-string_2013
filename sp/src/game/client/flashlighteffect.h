@@ -17,7 +17,7 @@ class CFlashlightEffect
 {
 public:
 
-	CFlashlightEffect(int nEntIndex = 0);
+	CFlashlightEffect( int nEntIndex = 0, const char *pszFlashlightTexture = NULL );
 	virtual ~CFlashlightEffect();
 
 	virtual void UpdateLight(const Vector &vecPos, const Vector &vecDir, const Vector &vecRight, const Vector &vecUp, int nDistance, bool bUseOffset = true);

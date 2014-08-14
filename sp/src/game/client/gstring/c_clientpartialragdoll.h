@@ -49,10 +49,13 @@ public:
 private:
 	void BuildPartial( ragdollparams_partial_t &params );
 	IMesh *CreateGoreMeshForBone( const CStudioHdr *pHdr, int iBone, bool bRoot );
+	bool ShouldCreateBloodParticles();
 
 	bool m_bShrinking;
 	bool m_bIsPartial;
 	float m_flTouchDecalDelay;
+	static float m_flLastParticleTime;
+	static int m_iParticleCount;
 
 	int m_iBloodColor;
 

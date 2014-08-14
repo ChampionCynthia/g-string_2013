@@ -19,7 +19,8 @@ public:
 #ifdef GAME_DLL
 	virtual void Spawn();
 
-	virtual int ObjectCaps( void ){
+	virtual int ObjectCaps()
+	{
 		return BaseClass::ObjectCaps() & ~FCAP_ACROSS_TRANSITION;
 	};
 

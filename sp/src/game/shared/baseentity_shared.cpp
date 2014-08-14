@@ -1925,6 +1925,16 @@ void CBaseEntity::FireBullets( const FireBulletsInfo_t &info )
 					if ( bDoServerEffects == true )
 					{
 						DoImpactEffect( tr, nDamageType );
+
+						if ( !tr.DidHit() || ( tr.surface.flags & SURF_SKY ) != 0 )
+						{
+							CEffectData data;
+							data.m_vStart = tr.startpos;
+							data.m_vOrigin = tr.endpos;
+							data.m_nDamageType = nDamageType;
+					
+							DispatchEffect( "RagdollImpact", data );
+						}
 					}
 					else
 					{

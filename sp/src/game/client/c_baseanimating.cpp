@@ -298,6 +298,7 @@ C_ClientRagdoll::C_ClientRagdoll( bool bRestoring )
 	m_bFadingOut = false;
 	m_bImportant = false;
 	m_bNoModelParticles = false;
+	m_flProtectTime = gpGlobals->curtime + 3.0f;
 
 	SetClassname("client_ragdoll");
 

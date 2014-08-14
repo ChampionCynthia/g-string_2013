@@ -66,7 +66,7 @@ void r_newflashlightCallback_f( IConVar *pConVar, const char *pOldString, float 
 //			vecPos - The position of the light emitter.
 //			vecDir - The direction of the light emission.
 //-----------------------------------------------------------------------------
-CFlashlightEffect::CFlashlightEffect(int nEntIndex)
+CFlashlightEffect::CFlashlightEffect( int nEntIndex, const char *pszFlashlightTexture )
 {
 	m_FlashlightHandle = CLIENTSHADOW_INVALID_HANDLE;
 	m_nEntIndex = nEntIndex;
@@ -76,17 +76,21 @@ CFlashlightEffect::CFlashlightEffect(int nEntIndex)
 	if( engine->GetDXSupportLevel() < 70 )
 	{
 		r_newflashlight.SetValue( 0 );
-	}	
-
-	if ( g_pMaterialSystemHardwareConfig->SupportsBorderColor() )
-	{
-		m_FlashlightTexture.Init( "effects/flashlight_border", TEXTURE_GROUP_OTHER, true );
-	}
-	else
-	{
-		m_FlashlightTexture.Init( "effects/flashlight001", TEXTURE_GROUP_OTHER, true );
 	}
 
+	if ( pszFlashlightTexture == NULL || !*pszFlashlightTexture )
+	{
+		if ( g_pMaterialSystemHardwareConfig->SupportsBorderColor() )
+		{
+			pszFlashlightTexture = "effects/flashlight_border";
+		}
+		else
+		{
+			pszFlashlightTexture = "effects/flashlight001";
+		}
+	}
+
+	m_FlashlightTexture.Init( pszFlashlightTexture, TEXTURE_GROUP_OTHER, true );
 	m_flHorizontalFOV = 90.0f; // GSTRINGMIGRATION
 }
 

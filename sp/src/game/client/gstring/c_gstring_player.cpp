@@ -40,6 +40,7 @@ C_GstringPlayer::C_GstringPlayer()
 	, m_pMuzzleFlashEffect( NULL )
 	, m_flMuzzleFlashDuration( 0.0f )
 	, m_bFlashlightVisible( false )
+	, m_iFlashlightWeaponModelIndex( -1 )
 	, m_pBobViewModel( NULL )
 	, m_flBobModelAmount( 0.0f )
 	, m_angLastBobAngle( vec3_angle )
@@ -476,12 +477,33 @@ void C_GstringPlayer::UpdateFlashlight()
 
 	if ( bDoFlashlight )
 	{
-		if (!m_pFlashlight)
+		C_BaseCombatWeapon *pWeapon = GetActiveWeapon();
+		int iFlashlightWeaponModelIndex = -1;
+		if ( pWeapon != NULL )
 		{
-			// Turned on the headlight; create it.
-			m_pFlashlight = new CFlashlightEffect(index);
+			iFlashlightWeaponModelIndex = pWeapon->GetModelIndex();
+		}
 
-			if (!m_pFlashlight)
+		if ( iFlashlightWeaponModelIndex != m_iFlashlightWeaponModelIndex )
+		{
+			m_iFlashlightWeaponModelIndex = iFlashlightWeaponModelIndex;
+			delete m_pFlashlight;
+			m_pFlashlight = NULL;
+		}
+
+		if ( !m_pFlashlight )
+		{
+			const char *pszFlashlightTexture = NULL;
+			if ( pWeapon != NULL )
+			{
+				const FileWeaponInfo_t &weaponInfo = pWeapon->GetWpnData();
+				pszFlashlightTexture = weaponInfo.szFlashlightTexture;
+			}
+
+			// Turned on the headlight; create it.
+			m_pFlashlight = new CFlashlightEffect( index, pszFlashlightTexture );
+
+			if ( !m_pFlashlight )
 				return;
 
 			m_pFlashlight->TurnOn();
@@ -503,12 +525,12 @@ void C_GstringPlayer::UpdateFlashlight()
 
 	if ( bDoMuzzleflash )
 	{
-		if (!m_pMuzzleFlashEffect)
+		if ( !m_pMuzzleFlashEffect )
 		{
 			// Turned on the headlight; create it.
 			m_pMuzzleFlashEffect = new C_MuzzleflashEffect();
 
-			if (!m_pMuzzleFlashEffect)
+			if ( !m_pMuzzleFlashEffect )
 				return;
 		}
 

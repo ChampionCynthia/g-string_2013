@@ -620,21 +620,57 @@ void DrawSkin_DX9_Internal( CBaseVSShader *pShader, IMaterialVar** params, IShad
 
 		LightState_t lightState = { 0, false, false };
 		bool bFlashlightShadows = false;
-		if( bHasFlashlight )
+		if ( bHasFlashlight )
 		{
 			Assert( info.m_nFlashlightTexture >= 0 && info.m_nFlashlightTextureFrame >= 0 );
-			DynamicCmdsOut.BindTexture( pShader, SHADER_SAMPLER6, info.m_nFlashlightTexture, info.m_nFlashlightTextureFrame );
+			//DynamicCmdsOut.BindTexture( pShader, SHADER_SAMPLER6, info.m_nFlashlightTexture, info.m_nFlashlightTextureFrame );
 			VMatrix worldToTexture;
 			ITexture *pFlashlightDepthTexture;
-			FlashlightState_t state = pShaderAPI->GetFlashlightStateEx( worldToTexture, &pFlashlightDepthTexture );
-			bFlashlightShadows = state.m_bEnableShadows;
+			const FlashlightState_t &flashlightState = pShaderAPI->GetFlashlightStateEx( worldToTexture, &pFlashlightDepthTexture );
+			bFlashlightShadows = flashlightState.m_bEnableShadows;
 
-			//SetFlashLightColorFromState( state, pShaderAPI, PSREG_FLASHLIGHT_COLOR );
-
-			if( pFlashlightDepthTexture && g_pConfig->ShadowDepthTexture() && state.m_bEnableShadows )
+			if ( pFlashlightDepthTexture && g_pConfig->ShadowDepthTexture() && flashlightState.m_bEnableShadows )
 			{
 				pShader->BindTexture( SHADER_SAMPLER4, pFlashlightDepthTexture );
 				DynamicCmdsOut.BindStandardTexture( SHADER_SAMPLER5, TEXTURE_SHADOW_NOISE_2D );
+			}
+
+			float atten[4], pos[4], tweaks[4];
+			SetFlashLightColorFromState( flashlightState, pShaderAPI, PSREG_FLASHLIGHT_COLOR );
+
+			//DynamicCmdsOut.BindTexture( pShader, SHADER_SAMPLER6, info.m_nFlashlightTexture, info.m_nFlashlightTextureFrame );
+			pShader->BindTexture( SHADER_SAMPLER6, flashlightState.m_pSpotlightTexture, flashlightState.m_nSpotlightTextureFrame );
+
+			atten[0] = flashlightState.m_fConstantAtten;		// Set the flashlight attenuation factors
+			atten[1] = flashlightState.m_fLinearAtten;
+			atten[2] = flashlightState.m_fQuadraticAtten;
+			atten[3] = flashlightState.m_FarZ;
+			DynamicCmdsOut.SetPixelShaderConstant( PSREG_FLASHLIGHT_ATTENUATION, atten, 1 );
+
+			pos[0] = flashlightState.m_vecLightOrigin[0];		// Set the flashlight origin
+			pos[1] = flashlightState.m_vecLightOrigin[1];
+			pos[2] = flashlightState.m_vecLightOrigin[2];
+			DynamicCmdsOut.SetPixelShaderConstant( PSREG_FLASHLIGHT_POSITION_RIM_BOOST, pos, 1 );	// steps on rim boost
+
+			DynamicCmdsOut.SetPixelShaderConstant( PSREG_FLASHLIGHT_TO_WORLD_TEXTURE, worldToTexture.Base(), 4 );
+
+			// Tweaks associated with a given flashlight
+			tweaks[0] = ShadowFilterFromState( flashlightState );
+			tweaks[1] = ShadowAttenFromState( flashlightState );
+			pShader->HashShadow2DJitter( flashlightState.m_flShadowJitterSeed, &tweaks[2], &tweaks[3] );
+			DynamicCmdsOut.SetPixelShaderConstant( PSREG_ENVMAP_TINT__SHADOW_TWEAKS, tweaks, 1 );
+
+			// Dimensions of screen, used for screen-space noise map sampling
+			float vScreenScale[4] = {1280.0f / 32.0f, 720.0f / 32.0f, 0, 0};
+			int nWidth, nHeight;
+			pShaderAPI->GetBackBufferDimensions( nWidth, nHeight );
+			vScreenScale[0] = (float) nWidth  / 32.0f;
+			vScreenScale[1] = (float) nHeight / 32.0f;
+			DynamicCmdsOut.SetPixelShaderConstant( PSREG_FLASHLIGHT_SCREEN_SCALE, vScreenScale, 1 );
+
+			if ( IsX360() )
+			{
+				pShaderAPI->SetBooleanPixelShaderConstant( 0, &flashlightState.m_nShadowQuality, 1 );
 			}
 		}
 		else // no flashlight
@@ -946,54 +982,13 @@ void DrawSkin_DX9_Internal( CBaseVSShader *pShader, IMaterialVar** params, IShad
 		DynamicCmdsOut.SetPixelShaderConstant( PSREG_EYEPOS_SPEC_EXPONENT, vEyePos_SpecExponent, 1 );
 		DynamicCmdsOut.SetPixelShaderConstant( PSREG_FRESNEL_SPEC_PARAMS, vFresnelRanges_SpecBoost, 1 );
 
-		DynamicCmdsOut.SetPixelShaderConstant( PSREG_FLASHLIGHT_POSITION_RIM_BOOST, vRimBoost, 1 );	// Rim boost in w on non-flashlight pass
+		if ( !bHasFlashlight )
+		{
+			DynamicCmdsOut.SetPixelShaderConstant( PSREG_FLASHLIGHT_POSITION_RIM_BOOST, vRimBoost, 1 );	// Rim boost in w on non-flashlight pass
+		}
 
 		DynamicCmdsOut.SetPixelShaderConstant( PSREG_SPEC_RIM_PARAMS, vSpecularTint, 1 );
 		DynamicCmdsOut.SetPixelShaderFogParams( PSREG_FOG_PARAMS );
-
-		// flashlightfixme: put this in common code.
-		if( bHasFlashlight )
-		{
-			VMatrix worldToTexture;
-			float atten[4], pos[4], tweaks[4];
-
-			const FlashlightState_t &flashlightState = pShaderAPI->GetFlashlightState( worldToTexture );
-			SetFlashLightColorFromState( flashlightState, pShaderAPI, PSREG_FLASHLIGHT_COLOR );
-
-			pShader->BindTexture( SHADER_SAMPLER6, flashlightState.m_pSpotlightTexture, flashlightState.m_nSpotlightTextureFrame );
-
-			atten[0] = flashlightState.m_fConstantAtten;		// Set the flashlight attenuation factors
-			atten[1] = flashlightState.m_fLinearAtten;
-			atten[2] = flashlightState.m_fQuadraticAtten;
-			atten[3] = flashlightState.m_FarZ;
-			DynamicCmdsOut.SetPixelShaderConstant( PSREG_FLASHLIGHT_ATTENUATION, atten, 1 );
-
-			pos[0] = flashlightState.m_vecLightOrigin[0];		// Set the flashlight origin
-			pos[1] = flashlightState.m_vecLightOrigin[1];
-			pos[2] = flashlightState.m_vecLightOrigin[2];
-			DynamicCmdsOut.SetPixelShaderConstant( PSREG_FLASHLIGHT_POSITION_RIM_BOOST, pos, 1 );	// steps on rim boost
-
-			DynamicCmdsOut.SetPixelShaderConstant( PSREG_FLASHLIGHT_TO_WORLD_TEXTURE, worldToTexture.Base(), 4 );
-
-			// Tweaks associated with a given flashlight
-			tweaks[0] = ShadowFilterFromState( flashlightState );
-			tweaks[1] = ShadowAttenFromState( flashlightState );
-			pShader->HashShadow2DJitter( flashlightState.m_flShadowJitterSeed, &tweaks[2], &tweaks[3] );
-			DynamicCmdsOut.SetPixelShaderConstant( PSREG_ENVMAP_TINT__SHADOW_TWEAKS, tweaks, 1 );
-
-			// Dimensions of screen, used for screen-space noise map sampling
-			float vScreenScale[4] = {1280.0f / 32.0f, 720.0f / 32.0f, 0, 0};
-			int nWidth, nHeight;
-			pShaderAPI->GetBackBufferDimensions( nWidth, nHeight );
-			vScreenScale[0] = (float) nWidth  / 32.0f;
-			vScreenScale[1] = (float) nHeight / 32.0f;
-			DynamicCmdsOut.SetPixelShaderConstant( PSREG_FLASHLIGHT_SCREEN_SCALE, vScreenScale, 1 );
-
-			if ( IsX360() )
-			{
-				pShaderAPI->SetBooleanPixelShaderConstant( 0, &flashlightState.m_nShadowQuality, 1 );
-			}
-		}
 
 		DynamicCmdsOut.End();
 		pShaderAPI->ExecuteCommandBuffer( DynamicCmdsOut.Base() );

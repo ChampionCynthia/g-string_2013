@@ -353,7 +353,13 @@ void CSoundscapeSystem::FrameUpdatePostEntityThink()
 					for ( int j = 0; j < m_soundscapesInCluster[clusterIndex].soundscapeCount; j++ )
 					{
 						int ssIndex = m_soundscapeIndexList[m_soundscapesInCluster[clusterIndex].firstSoundscape + j];
-						if ( m_soundscapeEntities[ssIndex] == update.pCurrentSoundscape )
+
+						if ( !m_soundscapeEntities.IsValidIndex( ssIndex ) )
+						{
+							Error( "Soundscape system issue" );
+						}
+
+						if ( !m_soundscapeEntities.IsValidIndex( ssIndex ) || m_soundscapeEntities[ssIndex] == update.pCurrentSoundscape )
 							continue;
 						m_soundscapeEntities[ssIndex]->UpdateForPlayer( update );
 					}

@@ -71,7 +71,7 @@ CON_COMMAND( kill_spacecraft, "" )
 static ConVar gstring_spacecraft_physics_drag( "gstring_spacecraft_physics_drag", "10.0", FCVAR_REPLICATED );
 static ConVar gstring_spacecraft_physics_angulardrag( "gstring_spacecraft_physics_angulardrag", "5000.0", FCVAR_REPLICATED );
 
-static ConVar gstring_spacecraft_move_ang_approach_speed( "gstring_spacecraft_move_ang_approach_speed", "4.5", FCVAR_REPLICATED );
+static ConVar gstring_spacecraft_move_ang_approach_speed( "gstring_spacecraft_move_ang_approach_speed", "3.5", FCVAR_REPLICATED );
 static ConVar gstring_spacecraft_move_drag_side( "gstring_spacecraft_move_drag_side", "2.0", FCVAR_REPLICATED );
 static ConVar gstring_spacecraft_move_drag_fwd( "gstring_spacecraft_move_drag_fwd", "1.0", FCVAR_REPLICATED );
 static ConVar gstring_spacecraft_move_drag_up( "gstring_spacecraft_move_drag_up", "2.0", FCVAR_REPLICATED );
@@ -336,6 +336,8 @@ void CSpacecraft::Event_Killed( const CTakeDamageInfo &info )
 		pPlayer->SetAbsVelocity( vec3_origin );
 	}
 
+	float flRumbleScale = 1.0f;
+
 	IPhysicsObject *pPhysics = VPhysicsGetObject();
 	if ( pPhysics != NULL )
 	{
@@ -361,6 +363,7 @@ void CSpacecraft::Event_Killed( const CTakeDamageInfo &info )
 		if ( ( iDamageType & DMG_DIRECT ) != 0 )
 		{
 			params.burstScale = 0.0f;
+			flRumbleScale = 6.0f;
 		}
 		else if ( ( iDamageType & DMG_BLAST ) != 0 )
 		{
@@ -387,7 +390,8 @@ void CSpacecraft::Event_Killed( const CTakeDamageInfo &info )
 	AddSolidFlags( FSOLID_NOT_SOLID );
 
 	UTIL_ScreenShake( GetAbsOrigin(), 8.0f, 8.0f, 1.2f, 96.0f, SHAKE_START_NORUMBLE, true );
-	UTIL_ScreenShake( GetAbsOrigin(), 40.0f, 5.0f, 1.2f, 96.0f, SHAKE_START_RUMBLEONLY, true );
+	UTIL_ScreenShake( GetAbsOrigin(), 40.0f * flRumbleScale, 5.0f * flRumbleScale, 1.2f,
+		96.0f * flRumbleScale, SHAKE_START_RUMBLEONLY, true );
 }
 
 CBaseEntity *CSpacecraft::GetEnemy() const
@@ -893,7 +897,7 @@ void CSpacecraft::SimulateMove( CMoveData &moveData, float flFrametime )
 	}
 
 	Vector vecFwd, vecRight, vecUp;
-	AngleVectors( moveData.m_vecViewAngles, &vecFwd, &vecRight, &vecUp );
+	//AngleVectors( moveData.m_vecViewAngles, &vecFwd, &vecRight, &vecUp );
 
 	Vector vecOldImpulse( vec3_origin );
 	AngularImpulse angOldImpulse( vec3_origin );
@@ -903,6 +907,9 @@ void CSpacecraft::SimulateMove( CMoveData &moveData, float flFrametime )
 
 	pPhysObject->GetVelocity( &vecOldImpulse, &angOldImpulse );
 	pPhysObject->GetPosition( &vecPhysPosition, &angPhysAngles );
+
+	AngleVectors( moveData.m_vecViewAngles, NULL, &vecRight, &vecUp );
+	AngleVectors( angPhysAngles, &vecFwd /*, &vecRight, &vecUp*/ );
 
 	m_AngularImpulse.SetX( angOldImpulse.x );
 	m_AngularImpulse.SetY( angOldImpulse.y );

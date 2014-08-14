@@ -86,6 +86,7 @@ private:
 	Vector m_vecFlashlightPosition;
 	Vector m_vecFlashlightForward;
 	float m_flFlashlightDot;
+	int m_iFlashlightWeaponModelIndex;
 
 	C_BobModel *m_pBobViewModel;
 	float m_flBobModelAmount;

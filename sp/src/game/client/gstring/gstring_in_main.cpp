@@ -320,7 +320,7 @@ void CGstringInput::JoyStickMove( float frametime, CUserCmd *cmd )
 			vecOffset.y = powf( vecOffset.y, flScaleOffset );
 		}
 
-		const float flMaxDistance = ScreenHeight() * 0.2f;
+		const float flMaxDistance = ScreenHeight() * 0.1f;
 		vecOffset *= flMaxDistance;
 
 		if ( vecOffset.LengthSqr() > flMaxDistance * flMaxDistance )

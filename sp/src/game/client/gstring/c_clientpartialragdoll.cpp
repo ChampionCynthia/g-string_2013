@@ -51,6 +51,8 @@ END_DATADESC()
 LINK_ENTITY_TO_CLASS( client_ragdoll_partial, C_ClientPartialRagdoll );
 
 CMaterialReference C_ClientPartialRagdoll::m_GoreMaterial;
+float C_ClientPartialRagdoll::m_flLastParticleTime = 0.0f;
+int C_ClientPartialRagdoll::m_iParticleCount = 0;
 
 C_ClientPartialRagdoll::C_ClientPartialRagdoll( bool bRestoring )
 	: BaseClass( bRestoring )
@@ -145,7 +147,10 @@ void C_ClientPartialRagdoll::ImpactTrace( trace_t *pTrace, int iDamageType, cons
 		UTIL_TraceLine( pTrace->endpos, pTrace->endpos + vecDir * 35.0f, MASK_SOLID, this, COLLISION_GROUP_NONE, &tr );
 
 		UTIL_BloodDecalTrace( &tr, BloodColor() );
-		UTIL_BloodImpact( pTrace->endpos, -vecDir, BloodColor(), 5 );
+		if ( ShouldCreateBloodParticles() )
+		{
+			UTIL_BloodImpact( pTrace->endpos, -vecDir, BloodColor(), 5 );
+		}
 	}
 
 	if ( m_bReleaseRagdoll || m_bFadingOut )
@@ -275,7 +280,8 @@ void C_ClientPartialRagdoll::ImpactTrace( trace_t *pTrace, int iDamageType, cons
 				}
 
 				if ( BloodColor() == BLOOD_COLOR_RED
-					&& ( !pRecursiveRagdoll || !pRecursiveRagdoll->m_bReleaseRagdoll ) )
+					&& ( !pRecursiveRagdoll || !pRecursiveRagdoll->m_bReleaseRagdoll )
+					&& ShouldCreateBloodParticles() )
 				{
 					Assert( pszParentSplitBone != NULL );
 
@@ -815,6 +821,25 @@ IMesh *C_ClientPartialRagdoll::CreateGoreMeshForBone( const CStudioHdr *pHdr, in
 	{
 		return NULL;
 	}
+}
+
+bool C_ClientPartialRagdoll::ShouldCreateBloodParticles()
+{
+	if ( ( m_flLastParticleTime > gpGlobals->curtime && m_flLastParticleTime < gpGlobals->curtime + 10.0f )
+		&& m_iParticleCount > 15
+		&& RandomInt( 0, 9 ) > 0 )
+	{
+		return false;
+	}
+
+	if ( m_flLastParticleTime < gpGlobals->curtime )
+	{
+		m_iParticleCount = 0;
+		m_flLastParticleTime = gpGlobals->curtime + 2.0f;
+	}
+
+	m_iParticleCount++;
+	return true;
 }
 
 void C_ClientPartialRagdoll::DestroyGore()

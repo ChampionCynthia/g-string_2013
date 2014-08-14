@@ -3136,6 +3136,8 @@ void CTriggerCamera::Enable( void )
 	Move();
 
 	DispatchUpdateTransmitState();
+
+	pPlayer->m_Local.m_iHideHUD |= HIDEHUD_HEALTH;
 }
 
 //-----------------------------------------------------------------------------
@@ -3150,16 +3152,19 @@ void CTriggerCamera::Disable( void )
 			m_hPlayer->RemoveSolidFlags( FSOLID_NOT_SOLID );
 		}
 
-		((CBasePlayer*)m_hPlayer.Get())->SetViewEntity( m_hPlayer );
-		((CBasePlayer*)m_hPlayer.Get())->EnableControl(TRUE);
+		CBasePlayer *pPlayer = assert_cast< CBasePlayer* >( m_hPlayer.Get() );
+
+		pPlayer->SetViewEntity( m_hPlayer );
+		pPlayer->EnableControl(TRUE);
 
 		// Restore the player's viewmodel
-		if ( ((CBasePlayer*)m_hPlayer.Get())->GetActiveWeapon() )
+		if ( pPlayer->GetActiveWeapon() )
 		{
-			((CBasePlayer*)m_hPlayer.Get())->GetActiveWeapon()->RemoveEffects( EF_NODRAW );
+			pPlayer->GetActiveWeapon()->RemoveEffects( EF_NODRAW );
 		}
 		//return the player to previous takedamage state
 		m_hPlayer->m_takedamage = m_nOldTakeDamage;
+		pPlayer->m_Local.m_iHideHUD &= ~HIDEHUD_HEALTH;
 	}
 
 	m_state = USE_OFF;

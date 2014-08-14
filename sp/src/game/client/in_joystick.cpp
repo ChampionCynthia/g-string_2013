@@ -448,6 +448,10 @@ static float ResponseCurveLook( int curve, float x, int axis, float otherAxis, f
 		return ResponseCurveLookAccelerated( x, axis, otherAxis, dist, frametime );
 		break;
 
+	case 2: // spacecraft curve
+		return powf( ResponseCurveLookDefault( x, axis, otherAxis, dist, frametime ), 3.0f ) * 0.65f;
+		break;
+
 	default:
 		return ResponseCurveLookDefault( x, axis, otherAxis, dist, frametime );
 		break;
@@ -848,17 +852,11 @@ void CInput::JoyStickMove( float frametime, CUserCmd *cmd )
 	float flYawAngle = 0.f;
 
 	C_GstringPlayer *pPlayer = LocalGstringPlayer();
-	//const int iResponseCurveLook = ( pPlayer && pPlayer->IsInSpacecraft() ) ? 2 : joy_response_look.GetInt();
-	const int iResponseCurveLook = joy_response_look.GetInt();
-	const float flSpacecraftPower = 5.0f;
+	const int iResponseCurveLook = ( pPlayer && pPlayer->IsInSpacecraft() ) ? 2 : joy_response_look.GetInt();
 
 	if ( JOY_ABSOLUTE_AXIS == gameAxes[GAME_AXIS_YAW].controlType )
 	{
 		float fAxisValue = ResponseCurveLook( iResponseCurveLook, m_flPreviousJoystickYaw, YAW, m_flPreviousJoystickPitch, dist, frametime );
-		if ( pPlayer && pPlayer->IsInSpacecraft() )
-		{
-			fAxisValue = powf( fAxisValue, flSpacecraftPower );
-		}
 		flYawAngle = fAxisValue * joy_yawsensitivity.GetFloat() * aspeed * cl_yawspeed.GetFloat();
 	}
 	else
@@ -871,10 +869,6 @@ void CInput::JoyStickMove( float frametime, CUserCmd *cmd )
 	if ( JOY_ABSOLUTE_AXIS == gameAxes[GAME_AXIS_PITCH].controlType )
 	{
 		float fAxisValue = ResponseCurveLook( iResponseCurveLook, m_flPreviousJoystickPitch, PITCH, m_flPreviousJoystickYaw, dist, frametime );
-		if ( pPlayer && pPlayer->IsInSpacecraft() )
-		{
-			fAxisValue = powf( fAxisValue, flSpacecraftPower );
-		}
 		flPitchAngle = fAxisValue * joy_pitchsensitivity.GetFloat() * aspeed * cl_pitchspeed.GetFloat();
 	}
 	else

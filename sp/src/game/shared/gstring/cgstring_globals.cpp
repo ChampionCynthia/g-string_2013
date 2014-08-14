@@ -50,11 +50,16 @@ CGstringGlobals::CGstringGlobals()
 	m_bUserLightSourceEnabled = true;
 #endif
 
-	Assert( g_pGstringGlobals == NULL );
-
 	if ( g_pGstringGlobals == NULL )
 	{
 		g_pGstringGlobals = this;
+	}
+	else
+	{
+		AssertMsg( 0, "Multiple gstring_globals found." );
+#ifndef DEBUG
+		Error( "Only one 'gstring_globals' entity is allowed to be placed in a map." );
+#endif
 	}
 }
 

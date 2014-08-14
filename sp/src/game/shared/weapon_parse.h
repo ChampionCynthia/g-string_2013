@@ -138,6 +138,8 @@ public:
 	float				flCameraMovementReferenceCycle;
 	QAngle				angCameraMovementOrientation;
 	QAngle				angCameraMovementOffset;
+
+	char				szFlashlightTexture[MAX_PATH];
 // END GSTRINGMIGRATION
 };
 

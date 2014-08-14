@@ -683,6 +683,7 @@ public:
 	bool m_bFadeOut;
 	bool m_bImportant;
 	float m_flEffectTime;
+	float m_flProtectTime;
 
 	// GSTRINGMIGRATION
 protected:

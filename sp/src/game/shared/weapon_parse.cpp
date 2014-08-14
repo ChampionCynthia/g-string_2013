@@ -359,6 +359,7 @@ FileWeaponInfo_t::FileWeaponInfo_t()
 	angCameraMovementOrientation = vec3_angle;
 	angCameraMovementOffset = vec3_angle;
 	flCameraMovementReferenceCycle = 0.0f;
+	*szFlashlightTexture = 0;
 	// END GSTRINGMIGRATION
 }
 
@@ -486,6 +487,8 @@ void FileWeaponInfo_t::Parse( KeyValues *pKeyValuesData, const char *szWeaponNam
 
 	UTIL_StringToVector( angCameraMovementOrientation.Base(), pKeyValuesData->GetString( "camera_orientation", "0 0 0" ) );
 	UTIL_StringToVector( angCameraMovementOffset.Base(), pKeyValuesData->GetString( "camera_offset_angle", "0 0 0" ) );
+
+	Q_strncpy( szFlashlightTexture, pKeyValuesData->GetString( "flashlight_texture" ), sizeof( szFlashlightTexture ) );
 	// END GSTRINGMIGRATION
 }
 

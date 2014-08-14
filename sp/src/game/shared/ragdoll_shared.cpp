@@ -937,8 +937,6 @@ void CRagdollLRURetirement::Update( float frametime ) // EPISODIC VERSION
 	//////////////////////////////
 	// If we get here, it means we couldn't find a suitable ragdoll to remove,
 	// so just remove the furthest one.
-	int furthestOne = m_LRU.Head();
-	float furthestDistSq = 0;
 #ifdef CLIENT_DLL
 	C_BasePlayer *pPlayer = C_BasePlayer::GetLocalPlayer();
 #else
@@ -947,8 +945,13 @@ void CRagdollLRURetirement::Update( float frametime ) // EPISODIC VERSION
 
 	if (pPlayer && m_iRagdollCount > iMaxRagdollCount) // find the furthest one algorithm
 	{
+		int furthestOne = m_LRU.Head();
+		float furthestDistSq = 0;
 		Vector PlayerOrigin = pPlayer->GetAbsOrigin();
-	
+#ifdef CLIENT_DLL
+		bool bMinLifeTimeEnded = false;
+#endif
+
 		for ( i = m_LRU.Head(); i < m_LRU.InvalidIndex(); i = next )
 		{
 			CBaseAnimating *pRagdoll = m_LRU[i].Get();
@@ -956,6 +959,19 @@ void CRagdollLRURetirement::Update( float frametime ) // EPISODIC VERSION
 
 			if ( pRagdoll )
 			{
+#ifdef CLIENT_DLL
+				C_ClientRagdoll *pClientRagdoll = dynamic_cast< C_ClientRagdoll* >( pRagdoll );
+				const bool bInMinLifeTime = pClientRagdoll && pClientRagdoll->m_flProtectTime > gpGlobals->curtime;
+				if ( !bInMinLifeTime )
+				{
+					bMinLifeTimeEnded = true;
+				}
+				else if ( bMinLifeTimeEnded )
+				{
+					continue;
+				}
+#endif
+
 				const float distToPlayer = (PlayerOrigin - pRagdoll->GetAbsOrigin()).LengthSqr();
 
 				if (distToPlayer > furthestDistSq)
