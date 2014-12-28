@@ -8,7 +8,7 @@
 #include "props.h"
 #endif
 
-#define FIRSTPERSON_BODY_MODEL "models/bioproto/myo_firstperson.mdl"
+#define FIRSTPERSON_BODY_MODEL "models/interaction/myo_firstperson.mdl"
 
 #ifdef GAME_DLL
 
@@ -24,6 +24,17 @@ BEGIN_DATADESC( CGstringInteraction )
 	DEFINE_KEYFIELD( m_strObjectSequenceName, FIELD_STRING, "object_sequence_name" ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "start_interaction", InputStartInteraction ),
+
+	DEFINE_OUTPUT( m_PlayerEvents[ 0 ], "OnPlayerEvent1" ),
+	DEFINE_OUTPUT( m_PlayerEvents[ 1 ], "OnPlayerEvent2" ),
+	DEFINE_OUTPUT( m_PlayerEvents[ 2 ], "OnPlayerEvent3" ),
+	DEFINE_OUTPUT( m_PlayerEvents[ 3 ], "OnPlayerEvent4" ),
+	DEFINE_OUTPUT( m_PlayerEvents[ 4 ], "OnPlayerEvent5" ),
+	DEFINE_OUTPUT( m_ObjectEvents[ 0 ], "OnObjectEvent1" ),
+	DEFINE_OUTPUT( m_ObjectEvents[ 1 ], "OnObjectEvent2" ),
+	DEFINE_OUTPUT( m_ObjectEvents[ 2 ], "OnObjectEvent3" ),
+	DEFINE_OUTPUT( m_ObjectEvents[ 3 ], "OnObjectEvent4" ),
+	DEFINE_OUTPUT( m_ObjectEvents[ 4 ], "OnObjectEvent5" ),
 
 END_DATADESC()
 
@@ -105,6 +116,7 @@ void CGstringInteraction::InputStartInteraction( inputdata_t &inputdata )
 
 	if ( pInteractiveObject != NULL )
 	{
+		pInteractiveObject->SetInteractionEntity( this );
 		inputdata_t data;
 		data.value.SetString( m_strObjectSequenceName );
 		pInteractiveObject->InputSetAnimation( data );
@@ -139,8 +151,26 @@ void CGstringInteraction::InputStartInteraction( inputdata_t &inputdata )
 	m_bInteractionActive = true;
 }
 
+void CGstringInteraction::OnObjectEvent( int iEventIndex )
+{
+	Assert( iEventIndex >= 0 && iEventIndex < 5 );
+	m_ObjectEvents[ iEventIndex ].FireOutput( this, this );
+}
+
+void CGstringInteraction::OnBodyEvent( int iEventIndex )
+{
+	Assert( iEventIndex >= 0 && iEventIndex < 5 );
+	m_PlayerEvents[ iEventIndex ].FireOutput( this, this );
+}
+
 void CGstringInteraction::OnBodyAnimationFinished()
 {
+	CDynamicProp *pInteractiveObject = dynamic_cast< CDynamicProp* >( m_hInteractiveObject.Get() );
+	if ( pInteractiveObject != NULL )
+	{
+		pInteractiveObject->ClearInteractionEntity();
+	}
+
 	CGstringPlayer *pPlayer = m_hPlayer;
 	if ( pPlayer != NULL )
 	{

@@ -205,6 +205,9 @@ public:
 	COutputEvent m_OnHurtPlayer;
 
 	CUtlVector<EHANDLE>	m_hurtEntities;
+
+private:
+	bool m_bTraceDamage;
 };
 
 #endif // TRIGGERS_H

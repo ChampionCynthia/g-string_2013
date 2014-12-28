@@ -4,6 +4,8 @@
 #include "gstring_player_shared.h"
 
 #ifdef GAME_DLL
+#include "npcevent.h"
+#include "eventlist.h"
 #include "cgstring_interaction.h"
 
 #include "props.h"
@@ -67,6 +69,31 @@ void CGstringInteractionBody::Activate()
 int CGstringInteractionBody::UpdateTransmitState()
 {
 	return SetTransmitState( FL_EDICT_ALWAYS );
+}
+
+void CGstringInteractionBody::HandleAnimEvent( animevent_t *pEvent )
+{
+	switch ( pEvent->event )
+	{
+	case AE_SV_GSTRING_INTERACTION_PLAYER_1:
+	case AE_SV_GSTRING_INTERACTION_PLAYER_2:
+	case AE_SV_GSTRING_INTERACTION_PLAYER_3:
+	case AE_SV_GSTRING_INTERACTION_PLAYER_4:
+	case AE_SV_GSTRING_INTERACTION_PLAYER_5:
+		{
+			if ( m_hInteraction.Get() != NULL )
+			{
+				m_hInteraction->OnBodyEvent( pEvent->event - AE_SV_GSTRING_INTERACTION_PLAYER_1 );
+			}
+		}
+		break;
+
+	default:
+		{
+			BaseClass::HandleAnimEvent( pEvent );
+		}
+		break;
+	}
 }
 
 void CGstringInteractionBody::SetInteractionEntity( CGstringInteraction *pInteractionEntity )

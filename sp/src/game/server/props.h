@@ -16,6 +16,10 @@
 #include "player_pickup.h"
 #include "positionwatcher.h"
 
+// GSTRINGMIGRATION
+class CGstringInteraction;
+// END GSTRINGMIGRATION
+
 //=============================================================================================================
 // PROP TYPES
 //=============================================================================================================
@@ -295,6 +299,11 @@ public:
 	void InputEnableCollision( inputdata_t &inputdata );
 	void InputSetPlaybackRate( inputdata_t &inputdata );
 
+	// GSTRINGMIGRATION
+	void SetInteractionEntity( CGstringInteraction *pInteractionEntity );
+	void ClearInteractionEntity();
+	// END GSTRINGMIGRATION
+
 	COutputEvent		m_pOutputAnimBegun;
 	COutputEvent		m_pOutputAnimOver;
 
@@ -322,6 +331,11 @@ protected:
 
 	// Contained Bone Follower manager
 	CBoneFollowerManager	m_BoneFollowerManager;
+
+	// GSTRINGMIGRATION
+private:
+	CHandle< CGstringInteraction > m_hInteraction;
+	// END GSTRINGMIGRATION
 };
 
 //-----------------------------------------------------------------------------

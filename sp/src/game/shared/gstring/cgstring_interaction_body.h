@@ -27,6 +27,7 @@ public:
 	};
 
 	virtual int UpdateTransmitState();
+	virtual void HandleAnimEvent( animevent_t *pEvent );
 
 	void SetInteractionEntity( CGstringInteraction *pInteractionEntity );
 #else

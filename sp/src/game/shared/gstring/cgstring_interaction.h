@@ -30,6 +30,8 @@ public:
 
 	void InputStartInteraction( inputdata_t &inputdata );
 
+	void OnObjectEvent( int iEventIndex );
+	void OnBodyEvent( int iEventIndex );
 	void OnBodyAnimationFinished();
 #else
 	//virtual void OnDataChanged( DataUpdateType_t type );
@@ -46,6 +48,9 @@ private:
 	CHandle< CGstringPlayer > m_hPlayer;
 
 	bool m_bInteractionActive;
+
+	COutputEvent m_PlayerEvents[ 5 ];
+	COutputEvent m_ObjectEvents[ 5 ];
 #endif
 
 	CNetworkHandle( CBaseAnimating, m_hInteractiveObject );

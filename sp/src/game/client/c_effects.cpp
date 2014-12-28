@@ -185,6 +185,9 @@ private:
 	float			m_flDensity;
 
 	bool				m_bEnabled; // GSTRINGMIGRATION
+	int					m_iServerDensity;
+	int					m_iServerSize;
+	CNetworkColor32( m_ServerColor );
 
 	// Some state used in rendering and simulation
 	// Used to modify the rain density and wind from the console
@@ -222,6 +225,10 @@ private:
 IMPLEMENT_CLIENTCLASS_DT(CClient_Precipitation, DT_Precipitation, CPrecipitation)
 	RecvPropInt( RECVINFO( m_nPrecipType ) ),
 	RecvPropBool( RECVINFO( m_bEnabled ) ), // GSTRINGMIGRATION
+
+	RecvPropInt( RECVINFO( m_iServerDensity ) ),
+	RecvPropInt( RECVINFO( m_iServerSize ) ),
+	RecvPropInt( RECVINFO( m_ServerColor ) ),
 END_RECV_TABLE()
 
 static ConVar r_SnowEnable( "r_SnowEnable", "1", FCVAR_CHEAT, "Snow Enable" );
@@ -535,6 +542,9 @@ inline void CClient_Precipitation::RenderParticle( CPrecipitationParticle* pPart
 		scale = GetLength() * pParticle->m_Ramp;
 	else
 		scale = lifetimeRemaining * pParticle->m_Ramp;
+
+	const float flServerSize = m_iServerSize / 100.0f;
+	scale *= flServerSize;
 	
 	// NOTE: We need to do everything in screen space
 	Vector3DMultiplyPosition( CurrentWorldToViewMatrix(), pParticle->m_Pos, start );
@@ -576,7 +586,7 @@ inline void CClient_Precipitation::RenderParticle( CPrecipitationParticle* pPart
 
 	// See c_tracer.* for this method
 	float flAlpha = 0.1f; // r_rainalpha.GetFloat(); GSTRINGMIGRATION
-	float flWidth = GetWidth();
+	float flWidth = GetWidth() * flServerSize;
 
 	float flScreenSpaceWidth = flWidth * m_flHalfScreenWidth / -start.z;
 	flScreenSpaceWidth = max( flScreenSpaceWidth, 0.0f ); // GSTRINGMIGRATION
@@ -589,10 +599,10 @@ inline void CClient_Precipitation::RenderParticle( CPrecipitationParticle* pPart
 	}
 	flAlpha = pow( flAlpha, r_rainalphapow.GetFloat() );
 
-	float flColor[4] = { 1, 1, 1, flAlpha };
+	float flColor[4] = { m_ServerColor.GetR() / 255.0f, m_ServerColor.GetG() / 255.0f,
+		m_ServerColor.GetB() / 255.0f, m_ServerColor.GetA() / 255.0f * flAlpha };
 	Tracer_Draw( &mb, start - delta, delta, flWidth * 10, flColor, 0.0f, 1.0f ); // GSTRINGMIGRATION
 }
-
 
 void CClient_Precipitation::CreateWaterSplashes()
 {
@@ -1111,7 +1121,7 @@ void CClient_Precipitation::EmitParticles( float fTimeDelta )
 			fTimeDelta = 0.075f;
 
 		// FIXME: Compute the precipitation density based on computational power
-	float density = m_flDensity;
+	float density = m_flDensity * ( m_iServerDensity / 100.0f );
 
 		if (density > 0.01f) 
 			density = 0.01f;

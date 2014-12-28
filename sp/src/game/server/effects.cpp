@@ -1493,6 +1493,9 @@ public:
 	bool IsEnabled();
 
 	CNetworkVar( bool, m_bEnabled );
+	CNetworkVar( int, m_iServerDensity );
+	CNetworkVar( int, m_iServerSize );
+	CNetworkColor32( m_ServerColor );
 	// END GSTRINGMIGRATION
 
 	CNetworkVar( PrecipitationType_t, m_nPrecipType );
@@ -1502,6 +1505,9 @@ LINK_ENTITY_TO_CLASS( func_precipitation, CPrecipitation );
 
 BEGIN_DATADESC( CPrecipitation )
 	DEFINE_KEYFIELD( m_nPrecipType, FIELD_INTEGER, "preciptype" ),
+	DEFINE_KEYFIELD( m_iServerDensity, FIELD_INTEGER, "density" ),
+	DEFINE_KEYFIELD( m_iServerSize, FIELD_INTEGER, "size" ),
+	DEFINE_KEYFIELD( m_ServerColor, FIELD_COLOR32, "color" ),
 
 	// GSTRINGMIGRATION
 	DEFINE_FIELD( m_bEnabled, FIELD_BOOLEAN ),
@@ -1514,7 +1520,12 @@ END_DATADESC()
 // Just send the normal entity crap
 IMPLEMENT_SERVERCLASS_ST( CPrecipitation, DT_Precipitation)
 	SendPropInt( SENDINFO( m_nPrecipType ), Q_log2( NUM_PRECIPITATION_TYPES ) + 1, SPROP_UNSIGNED ),
-	SendPropBool( SENDINFO( m_bEnabled ) ), // GSTRINGMIGRATION
+	// GSTRINGMIGRATION
+	SendPropBool( SENDINFO( m_bEnabled ) ),
+	SendPropInt( SENDINFO( m_iServerDensity ) ),
+	SendPropInt( SENDINFO( m_iServerSize ) ),
+	SendPropInt( SENDINFO( m_ServerColor ), 32, SPROP_UNSIGNED ),
+	// END GSTRINGMIGRATION
 END_SEND_TABLE()
 
 
@@ -1529,6 +1540,24 @@ void CPrecipitation::Spawn( void )
 	PrecacheMaterial( "effects/fleck_ash2" );
 	PrecacheMaterial( "effects/fleck_ash3" );
 	PrecacheMaterial( "effects/ember_swirling001" );
+
+	if ( m_iServerDensity <= 0 )
+	{
+		m_iServerDensity = 100;
+	}
+
+	if ( m_iServerSize <= 0 )
+	{
+		m_iServerSize = 100;
+	}
+
+	if ( m_ServerColor.GetA() == 0 )
+	{
+		m_ServerColor.SetR( 255 );
+		m_ServerColor.SetG( 255 );
+		m_ServerColor.SetB( 255 );
+		m_ServerColor.SetA( 255 );
+	}
 
 	Precache();
 	SetSolid( SOLID_NONE );							// Remove model & collisions

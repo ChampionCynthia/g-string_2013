@@ -43,6 +43,10 @@
 #include "vehicle_base.h"
 #include "particle_parse.h"
 
+// GSTRINGMIGRATION
+#include "cgstring_interaction.h"
+// END GSTRINGMIGRATION
+
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -1826,7 +1830,11 @@ BEGIN_DATADESC( CDynamicProp )
 	DEFINE_KEYFIELD( m_bDisableBoneFollowers, FIELD_BOOLEAN, "DisableBoneFollowers" ),
 	DEFINE_FIELD(	 m_bUseHitboxesForRenderBox, FIELD_BOOLEAN ),
 	DEFINE_FIELD(	m_nPendingSequence, FIELD_SHORT ),
-		
+
+	// GSTRINGMIGRATION
+	DEFINE_FIELD( m_hInteraction, FIELD_EHANDLE ),
+	// END GSTRINGMIGRATION
+
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_STRING,	"SetAnimation",	InputSetAnimation ),
 	DEFINE_INPUTFUNC( FIELD_STRING,	"SetDefaultAnimation",	InputSetDefaultAnimation ),
@@ -2132,7 +2140,20 @@ void CDynamicProp::HandleAnimEvent( animevent_t *pEvent )
 			EmitSound( pEvent->options );
 			break;
 		}
-		
+
+		case AE_SV_GSTRING_INTERACTION_OBJECT_1:
+		case AE_SV_GSTRING_INTERACTION_OBJECT_2:
+		case AE_SV_GSTRING_INTERACTION_OBJECT_3:
+		case AE_SV_GSTRING_INTERACTION_OBJECT_4:
+		case AE_SV_GSTRING_INTERACTION_OBJECT_5:
+			{
+				if ( m_hInteraction.Get() != NULL )
+				{
+					m_hInteraction->OnObjectEvent( pEvent->event - AE_SV_GSTRING_INTERACTION_OBJECT_1 );
+				}
+			}
+			return;
+
 		default:
 		{
 			break;
@@ -2261,6 +2282,18 @@ void CDynamicProp::InputSetPlaybackRate( inputdata_t &inputdata )
 {
 	SetPlaybackRate( inputdata.value.Float() );
 }
+
+// GSTRINGMIGRATION
+void CDynamicProp::SetInteractionEntity( CGstringInteraction *pInteractionEntity )
+{
+	m_hInteraction.Set( pInteractionEntity );
+}
+
+void CDynamicProp::ClearInteractionEntity()
+{
+	m_hInteraction.Term();
+}
+// END GSTRINGMIGRATION
 
 //-----------------------------------------------------------------------------
 // Purpose: Helper in case we have to async load the sequence

@@ -50,7 +50,6 @@ END_DATADESC()
 
 LINK_ENTITY_TO_CLASS( client_ragdoll_partial, C_ClientPartialRagdoll );
 
-CMaterialReference C_ClientPartialRagdoll::m_GoreMaterial;
 float C_ClientPartialRagdoll::m_flLastParticleTime = 0.0f;
 int C_ClientPartialRagdoll::m_iParticleCount = 0;
 
@@ -257,18 +256,18 @@ void C_ClientPartialRagdoll::ImpactTrace( trace_t *pTrace, int iDamageType, cons
 					pRecursiveRagdoll->SetBloodColor( BloodColor() );
 					pRecursiveRagdoll->m_jointBones.Or( m_jointBones, &pRecursiveRagdoll->m_jointBones );
 
-					FOR_EACH_VEC( m_Gore, i )
-					{
-						const int iBone = m_Gore[ i ].m_iBone;
+					//FOR_EACH_VEC( m_Gore, i )
+					//{
+					//	const int iBone = m_Gore[ i ].m_iBone;
 
-						if ( iBone >= 0 && iBone == m_iBranchRootBone )
-						{
+					//	if ( iBone >= 0 && iBone == m_iBranchRootBone )
+					//	{
 
-						}
-						//pRecursiveRagdoll->m_Gore.AddToTail( m_Gore[ i ] );
-						//m_Gore.Remove( i );
-						//i--;
-					}
+					//	}
+					//	pRecursiveRagdoll->m_Gore.AddToTail( m_Gore[ i ] );
+					//	m_Gore.Remove( i );
+					//	i--;
+					//}
 				}
 
 				pGib->InitAsClientRagdoll( boneDelta0, boneDelta1, currentBones, boneDt, false, &partial );

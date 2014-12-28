@@ -660,6 +660,7 @@ END_DATADESC()
 
 LINK_ENTITY_TO_CLASS( trigger_hurt, CTriggerHurt );
 
+#define TRIGGERHURT_TRACE_DAMAGE 0x2000
 
 //-----------------------------------------------------------------------------
 // Purpose: Called when spawning, after keyvalues have been handled.
@@ -667,6 +668,8 @@ LINK_ENTITY_TO_CLASS( trigger_hurt, CTriggerHurt );
 void CTriggerHurt::Spawn( void )
 {
 	BaseClass::Spawn();
+
+	m_bTraceDamage = HasSpawnFlags( TRIGGERHURT_TRACE_DAMAGE );
 
 	InitTrigger();
 
@@ -777,7 +780,7 @@ void CTriggerHurt::HurtThink()
 
 void CTriggerHurt::EndTouch( CBaseEntity *pOther )
 {
-	if (PassesTriggerFilters(pOther))
+	if (!m_bTraceDamage && PassesTriggerFilters(pOther))
 	{
 		EHANDLE hOther;
 		hOther = pOther;
@@ -798,6 +801,30 @@ void CTriggerHurt::EndTouch( CBaseEntity *pOther )
 // Input  : dt - time since last call
 // Output : int - number of entities actually hurt
 //-----------------------------------------------------------------------------
+class CBulletsTraceFilter : public CTraceFilterSimpleList
+{
+public:
+	CBulletsTraceFilter( int collisionGroup ) : CTraceFilterSimpleList( collisionGroup ) {}
+
+	bool ShouldHitEntity( IHandleEntity *pHandleEntity, int contentsMask )
+	{
+		if ( m_PassEntities.Count() )
+		{
+			CBaseEntity *pEntity = EntityFromEntityHandle( pHandleEntity );
+			CBaseEntity *pPassEntity = EntityFromEntityHandle( m_PassEntities[0] );
+			if ( pEntity && pPassEntity && pEntity->GetOwnerEntity() == pPassEntity && 
+				pPassEntity->IsSolidFlagSet(FSOLID_NOT_SOLID) && pPassEntity->IsSolidFlagSet( FSOLID_CUSTOMBOXTEST ) && 
+				pPassEntity->IsSolidFlagSet( FSOLID_CUSTOMRAYTEST ) )
+			{
+				// It's a bone follower of the entity to ignore (toml 8/3/2007)
+				return false;
+			}
+		}
+		return CTraceFilterSimpleList::ShouldHitEntity( pHandleEntity, contentsMask );
+	}
+
+};
+
 #define TRIGGER_HURT_FORGIVE_TIME	3.0f	// time in seconds
 int CTriggerHurt::HurtAllTouchers( float dt )
 {
@@ -811,12 +838,37 @@ int CTriggerHurt::HurtAllTouchers( float dt )
 	touchlink_t *root = ( touchlink_t * )GetDataObject( TOUCHLINK );
 	if ( root )
 	{
+		Vector vecSurroundMins, vecSurroundMaxs;
+		CollisionProp()->WorldSpaceSurroundingBounds( &vecSurroundMins, &vecSurroundMaxs );
+
 		for ( touchlink_t *link = root->nextLink; link != root; link = link->nextLink )
 		{
 			CBaseEntity *pTouch = link->entityTouched;
 			if ( pTouch )
 			{
-				if ( HurtEntity( pTouch, fldmg ) )
+				bool bShouldHit = true;
+				if ( m_bTraceDamage )
+				{
+					trace_t tr;
+					Vector vecStart( pTouch->GetAbsOrigin() );
+					if ( vecStart.x <= vecSurroundMins.x || vecStart.y < vecSurroundMins.y ||
+						vecStart.x >= vecSurroundMaxs.x || vecStart.y >= vecSurroundMaxs.y )
+					{
+						bShouldHit = false;
+					}
+					else
+					{
+						vecStart.z = vecSurroundMaxs.z - 1.0f;
+						Vector vecEnd( vecStart );
+						vecEnd.z = vecSurroundMins.z;
+						CBulletsTraceFilter filter( COLLISION_GROUP_NONE );
+						filter.AddEntityToIgnore( this );
+						UTIL_TraceHull( vecStart, vecEnd, -Vector( 1, 1, 1 ), Vector( 1, 1, 1 ), MASK_SHOT, &filter, &tr );
+						bShouldHit = tr.DidHit() && tr.m_pEnt == pTouch;
+					}
+				}
+
+				if ( bShouldHit && HurtEntity( pTouch, fldmg ) )
 				{
 					hurtCount++;
 				}

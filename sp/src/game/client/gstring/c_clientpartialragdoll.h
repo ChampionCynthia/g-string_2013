@@ -71,7 +71,7 @@ private:
 	int m_iBoneFlagStorage[ 12 ];
 
 	CUtlVector< PartialRagdollGore_t > m_Gore;
-	static CMaterialReference m_GoreMaterial;
+	CMaterialReference m_GoreMaterial;
 };
 
 
