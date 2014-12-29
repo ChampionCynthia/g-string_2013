@@ -132,7 +132,7 @@ void CVGUIMenuLayer::PerformLayout()
 	BaseClass::PerformLayout();
 
 	int w, t;
-	engine->GetScreenSize( w, t );
+	vgui::surface()->GetScreenSize( w, t );
 
 	if ( m_bAutoSize )
 	{
@@ -230,7 +230,7 @@ void CVGUIMenuLayer::Paint()
 	{
 		CViewSetup setup;
 		setup.x = setup.y = 0;
-		engine->GetScreenSize( setup.width, setup.height );
+		vgui::surface()->GetScreenSize( setup.width, setup.height );
 		//setup.context = 0;
 		setup.origin.Init();
 		setup.angles.Init();

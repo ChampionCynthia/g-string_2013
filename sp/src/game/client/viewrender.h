@@ -474,6 +474,7 @@ private:
 
 	// GSTRINGMIGRATION
 	void			UpdateCascadedShadow( const CViewSetup &view );
+	void			DrawVGUILayer( CHud::HUDRENDERSTAGE_t stage, const CViewSetup &view, ITexture *pSaveRenderTarget );
 	// END GSTRINGMIGRATION
 
 

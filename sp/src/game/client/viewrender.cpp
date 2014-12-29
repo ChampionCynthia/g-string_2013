@@ -1359,10 +1359,9 @@ void CViewRender::ViewDrawScene( bool bDrew3dSkybox, SkyboxVisibility_t nSkyboxV
 	g_pClientShadowMgr->PreRender();
 
 	// Shadowed flashlights supported on ps_2_b and up...
-	if ( r_flashlightdepthtexture.GetBool() && ( viewID == VIEW_MAIN ) )
+	if ( r_flashlightdepthtexture.GetBool() && ( viewID == VIEW_MAIN ) && view.m_eStereoEye < STEREO_EYE_RIGHT )
 	{
 		g_pClientShadowMgr->ComputeShadowDepthTextures( view );
-
 		CMatRenderContextPtr pRenderContext( materials );
 
 		// GSTRINGMIGRATION
@@ -2119,6 +2118,158 @@ void CViewRender::FreezeFrame( float flFreezeTime )
 const char *COM_GetModDirectory();
 
 // GSTRINGMIGRATION
+#if 1
+void CViewRender::DrawVGUILayer( CHud::HUDRENDERSTAGE_t stage, const CViewSetup &view, ITexture *pSaveRenderTarget )
+{
+	const bool bMainPass = stage == CHud::HUDRENDERSTAGE_DEFAULT_HUD;
+	gHUD.SetRenderingStage( stage );
+
+	VPROF_BUDGET( "VGui_DrawHud", VPROF_BUDGETGROUP_OTHER_VGUI );
+	int viewWidth = view.m_nUnscaledWidth;
+	int viewHeight = view.m_nUnscaledHeight;
+	int viewActualWidth = view.m_nUnscaledWidth;
+	int viewActualHeight = view.m_nUnscaledHeight;
+	int viewX = view.m_nUnscaledX;
+	int viewY = view.m_nUnscaledY;
+	int viewFramebufferX = 0;
+	int viewFramebufferY = 0;
+	int viewFramebufferWidth = viewWidth;
+	int viewFramebufferHeight = viewHeight;
+	bool bClear = false;
+	bool bPaintMainMenu = false;
+	ITexture *pTexture = NULL;
+	if( UseVR() )
+	{
+		if( g_ClientVirtualReality.ShouldRenderHUDInWorld() )
+		{
+			pTexture = materials->FindTexture( "_rt_gui", NULL, false );
+			if( pTexture )
+			{
+				bPaintMainMenu = bMainPass;
+				bClear = true;
+				viewX = 0;
+				viewY = 0;
+				viewActualWidth = pTexture->GetActualWidth();
+				viewActualHeight = pTexture->GetActualHeight();
+
+				vgui::surface()->GetScreenSize( viewWidth, viewHeight );
+
+				viewFramebufferX = 0;
+				if( view.m_eStereoEye == STEREO_EYE_RIGHT && !pSaveRenderTarget )
+					viewFramebufferX = viewFramebufferWidth;
+				viewFramebufferY = 0;
+			}
+		}
+		else
+		{
+			viewFramebufferX = view.m_eStereoEye == STEREO_EYE_RIGHT ? viewWidth : 0;
+			viewFramebufferY = 0;
+		}
+	}
+
+	CMatRenderContextPtr pRenderContext( materials );
+	// Get the render context out of materials to avoid some debug stuff.
+	// WARNING THIS REQUIRES THE .SafeRelease below or it'll never release the ref
+	//pRenderContext = materials->GetRenderContext();
+
+	// clear depth in the backbuffer before we push the render target
+	if( bClear )
+	{
+		pRenderContext->ClearBuffers( false, true, true );
+	}
+
+	// constrain where VGUI can render to the view
+	pRenderContext->PushRenderTargetAndViewport( pTexture, NULL, viewX, viewY, viewActualWidth, viewActualHeight );
+	// If drawing off-screen, force alpha for that pass
+	if (pTexture)
+	{
+		pRenderContext->OverrideAlphaWriteEnable( true, true );
+	}
+
+	// let vgui know where to render stuff for the forced-to-framebuffer panels
+	if( UseVR() )
+	{
+		g_pMatSystemSurface->SetFullscreenViewportAndRenderTarget( viewFramebufferX, viewFramebufferY, viewFramebufferWidth, viewFramebufferHeight, pSaveRenderTarget );
+	}
+
+	// clear the render target if we need to
+	if( bClear )
+	{
+		pRenderContext->ClearColor4ub( 0, 0, 0, 0 );
+		pRenderContext->ClearBuffers( true, false );
+	}
+	pRenderContext.SafeRelease();
+
+	tmZone( TELEMETRY_LEVEL0, TMZF_NONE, "VGui_DrawHud", __FUNCTION__ );
+
+	// paint the vgui screen
+	if ( bMainPass )
+	{
+		VGui_PreRender();
+	}
+
+	// Make sure the client .dll root panel is at the proper point before doing the "SolveTraverse" calls
+	vgui::VPANEL root = enginevgui->GetPanel( PANEL_CLIENTDLL );
+	if ( root != 0 )
+	{
+		vgui::ipanel()->SetSize( root, viewWidth, viewHeight );
+	}
+	// Same for client .dll tools
+	root = enginevgui->GetPanel( PANEL_CLIENTDLL_TOOLS );
+	if ( root != 0 )
+	{
+		vgui::ipanel()->SetSize( root, viewWidth, viewHeight );
+	}
+
+	// The crosshair, etc. needs to get at the current setup stuff
+	AllowCurrentViewAccess( true );
+
+	// Draw the in-game stuff based on the actual viewport being used
+	render->VGui_Paint( PAINT_INGAMEPANELS );
+
+	// maybe paint the main menu and cursor too if we're in stereo hud mode
+	if( bPaintMainMenu )
+		render->VGui_Paint( PAINT_UIPANELS | PAINT_CURSOR );
+
+	AllowCurrentViewAccess( false );
+
+	if ( bMainPass )
+	{
+		VGui_PostRender();
+
+		g_pClientMode->PostRenderVGui();
+	}
+
+	pRenderContext = materials->GetRenderContext();
+	if (pTexture)
+	{
+		pRenderContext->OverrideAlphaWriteEnable( false, true );
+	}
+	pRenderContext->PopRenderTargetAndViewport();
+
+	if ( UseVR() )
+	{
+		// figure out if we really want to draw the HUD based on freeze cam
+		C_BasePlayer *pPlayer = C_BasePlayer::GetLocalPlayer();
+		bool bInFreezeCam = ( pPlayer && pPlayer->GetObserverMode() == OBS_MODE_FREEZECAM );
+
+		// draw the HUD after the view model so its "I'm closer" depth queues work right.
+		if( !bInFreezeCam && g_ClientVirtualReality.ShouldRenderHUDInWorld() )
+		{
+			// Now we've rendered the HUD to its texture, actually get it on the screen.
+			// Since we're drawing it as a 3D object, we need correctly set up frustum, etc.
+			int ClearFlags = 0;
+			SetupMain3DView( view, ClearFlags );
+
+			// TODO - a bit of a shonky test - basically trying to catch the main menu, the briefing screen, the loadout screen, etc.
+			bool bTranslucent = !g_pMatSystemSurface->IsCursorVisible();
+			g_ClientVirtualReality.RenderHUDQuad( g_pClientMode->ShouldBlackoutAroundHUD(), bTranslucent );
+			CleanupMain3DView( view );
+		}
+	}
+	pRenderContext.SafeRelease();
+}
+#else
 static void DrawVGUILayer( CHud::HUDRENDERSTAGE_t stage, const CViewSetup &view, ITexture *pSaveRenderTarget )
 {
 	const bool bMainPass = stage == CHud::HUDRENDERSTAGE_DEFAULT_HUD;
@@ -2309,12 +2460,8 @@ static void DrawVGUILayer( CHud::HUDRENDERSTAGE_t stage, const CViewSetup &view,
 	//}
 
 	//renderContext->Flush();
-
-
-
-
-
 }
+#endif
 // END GSTRINGMIGRATION
 
 //-----------------------------------------------------------------------------
@@ -2412,7 +2559,7 @@ void CViewRender::RenderView( const CViewSetup &view, int nClearFlags, int whatT
 
 			// GSTRINGMIGRATION
 			if ( bShouldUpdateSkymask )
-				g_ShaderEditorSystem->UpdateSkymask();
+				g_ShaderEditorSystem->UpdateSkymask( false, view.x, view.y, view.width, view.height );
 			// END GSTRINGMIGRATION
 		}
 		SafeRelease( pSkyView );
@@ -2484,7 +2631,7 @@ void CViewRender::RenderView( const CViewSetup &view, int nClearFlags, int whatT
 
 		// GSTRINGMIGRATION
 		if ( bShouldUpdateSkymask )
-			g_ShaderEditorSystem->UpdateSkymask( bDrew3dSkybox );
+			g_ShaderEditorSystem->UpdateSkymask( bDrew3dSkybox, view.x, view.y, view.width, view.height );
 		// END GSTRINGMIGRATION
 
 		DrawUnderwaterOverlay();
@@ -2515,7 +2662,7 @@ void CViewRender::RenderView( const CViewSetup &view, int nClearFlags, int whatT
 		{
 			DrawScreenGaussianBlur();
 
-			DrawDreamBlur();
+			DrawDreamBlur( view.x, view.y, view.width, view.height, view.m_eStereoEye );
 		}
 		// END GSTRINGMIGRATION
 
@@ -2547,14 +2694,14 @@ void CViewRender::RenderView( const CViewSetup &view, int nClearFlags, int whatT
 
 			DrawExplosionBlur();
 
-			DrawGodrays();
+			DrawGodrays( view.x, view.y, view.width, view.height );
 
 			if ( view.m_bDoBloomAndToneMapping )
 				DrawBloomFlare();
 
 			DrawNightvision();
 
-			DrawHurtFX();
+			DrawHurtFX( view.x, view.y, view.width, view.height );
 		}
 
 		g_ShaderEditorSystem->CustomPostRender();
@@ -6357,7 +6504,7 @@ void CAboveWaterView::CReflectionView::Setup( bool bReflectEntities )
 	// NOTE: Clearing the color is unnecessary since we're drawing the skybox
 	// and dest-alpha is never used in the reflection
 	m_DrawFlags = DF_RENDER_REFLECTION | DF_CLIP_Z | DF_CLIP_BELOW | 
-		DF_RENDER_UNDERWATER | // GSTRINGMIGRATION draw partial underwater to fix ugly water edge
+		//DF_RENDER_UNDERWATER | // GSTRINGMIGRATION draw partial underwater to fix ugly water edge
 		DF_RENDER_ABOVEWATER;
 
 	// NOTE: This will cause us to draw the 2d skybox in the reflection 
@@ -6421,8 +6568,8 @@ void CAboveWaterView::CRefractionView::Setup()
 	m_DrawFlags = DF_RENDER_REFRACTION | DF_CLIP_Z | 
 		// GSTRINGMIGRATION draw stuff above water to get rid of that ugly edge
 		// let z clipping do the rest
-		DF_RENDER_UNDERWATER | DF_FUDGE_UP | DF_RENDER_ABOVEWATER |
-		DF_DRAW_ENTITITES ;
+		DF_RENDER_UNDERWATER | DF_FUDGE_UP | //DF_RENDER_ABOVEWATER |
+		DF_DRAW_ENTITITES;
 }
 
 

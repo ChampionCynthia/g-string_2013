@@ -3,6 +3,8 @@
 #include "view.h"
 #include "view_scene.h"
 #include "glow_overlay.h"
+#include "vgui_controls/Controls.h"
+#include "vgui/ISurface.h"
 
 #include "gstring/vgui/vparticle.h"
 #include "gstring/vgui/vparticleoperatorslensflare.h"
@@ -97,8 +99,8 @@ vParticleOperator_Lensflare_Transformation::vParticleOperator_Lensflare_Transfor
 }
 void vParticleOperator_Lensflare_Transformation::Simulate( vParticle *parent )
 {
-	int w, t;
-	engine->GetScreenSize( w, t );
+	int vx, vy, w, t;
+	vgui::surface()->GetFullscreenViewport( vx, vy, w, t );
 
 	Vector worldOrigin = MainViewOrigin() + GetSourceEntity()->GetGlowDirection() * 100;
 	Vector screen;

@@ -166,11 +166,15 @@ void vParticleOperator_Gravity::Simulate( vParticle *parent )
 vParticleOperator_GravityWorld::vParticleOperator_GravityWorld( float gravityAmount )
 {
 	amt = gravityAmount;
+
 }
 void vParticleOperator_GravityWorld::Simulate( vParticle *parent )
 {
 	float dot_z = DotProduct( MainViewForward(), Vector( 0, 0, -1 ) );
 	float rotation_dir = Sign( dot_z );
+
+	int vx, vy, w, t;
+	vgui::surface()->GetFullscreenViewport( vx, vy, w, t );
 
 	Vector screen;
 	if ( ScreenTransform( MainViewOrigin() + Vector( 0, 0, 100 ), screen ) )
@@ -178,9 +182,6 @@ void vParticleOperator_GravityWorld::Simulate( vParticle *parent )
 
 	screen *= Vector( 0.5f, -0.5f, 0 );
 	screen += Vector( 0.5f, 0.5f, 0 );
-
-	int w, t;
-	engine->GetScreenSize( w, t );
 
 	Vector2D gravity_center( w * screen.x, t * screen.y );
 	Vector2D delta = parent->vecPos - gravity_center;
@@ -210,8 +211,8 @@ vParticleOperator_GravityRotational::vParticleOperator_GravityRotational( float 
 }
 void vParticleOperator_GravityRotational::Simulate( vParticle *parent )
 {
-	int w, t;
-	engine->GetScreenSize( w, t );
+	int vx, vy, w, t;
+	vgui::surface()->GetFullscreenViewport( vx, vy, w, t );
 
 	Vector2D gravity_center( w * centerN.x, t * centerN.y );
 	Vector2D delta = parent->vecPos - gravity_center;

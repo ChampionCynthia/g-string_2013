@@ -62,7 +62,7 @@ ConVar vr_debug_remote_cam_target_x( "vr_debug_remote_cam_target_x", "0.0" );
 ConVar vr_debug_remote_cam_target_y( "vr_debug_remote_cam_target_y", "0.0" );
 ConVar vr_debug_remote_cam_target_z( "vr_debug_remote_cam_target_z", "-50.0" );
 
-ConVar vr_translation_limit( "vr_translation_limit", "10.0", 0, "How far the in-game head will translate before being clamped." );
+ConVar vr_translation_limit( "vr_translation_limit", "0.0", 0, "How far the in-game head will translate before being clamped." );
 
 // HUD config values
 ConVar vr_render_hud_in_world( "vr_render_hud_in_world", "1" );
@@ -86,10 +86,12 @@ ConVar vr_zoom_scope_scale ( "vr_zoom_scope_scale", "6.0", 0, "Something to do w
 
 ConVar vr_viewmodel_offset_forward( "vr_viewmodel_offset_forward", "-8", 0 );
 ConVar vr_viewmodel_offset_forward_large( "vr_viewmodel_offset_forward_large", "-15", 0 );
+ConVar vr_viewmodel_offset_right( "vr_viewmodel_offset_right",  "0", 0 ); //"5", 0 );
+ConVar vr_viewmodel_offset_up( "vr_viewmodel_offset_up", "0", 0 );
 
 ConVar vr_force_windowed ( "vr_force_windowed", "0", FCVAR_ARCHIVE );
 
-ConVar vr_first_person_uses_world_model ( "vr_first_person_uses_world_model", "1", 0, "Causes the third person model to be drawn instead of the view model" );
+ConVar vr_first_person_uses_world_model ( "vr_first_person_uses_world_model", "0", 0, "Causes the third person model to be drawn instead of the view model" );
 
 // --------------------------------------------------------------------
 // Purpose: Cycle through the aim & move modes.
@@ -481,7 +483,7 @@ bool CClientVirtualReality::OverrideView ( CViewSetup *pViewMiddle, Vector *pVie
 	float limit = vr_translation_limit.GetFloat();
 	VMatrix matMideyeZeroFromMideyeCurrent = g_pSourceVR->GetMideyePose();
 	Vector viewTranslation = matMideyeZeroFromMideyeCurrent.GetTranslation();
-	if ( viewTranslation.IsLengthGreaterThan ( limit ) )
+	if ( limit > 0.0f && viewTranslation.IsLengthGreaterThan ( limit ) )
 	{
 		viewTranslation.NormalizeInPlace();
 		viewTranslation *= limit;
@@ -1283,7 +1285,9 @@ void CClientVirtualReality::OverrideViewModelTransform( Vector & vmorigin, QAngl
 
 	float fForward = bUseLargeOverride ? vr_viewmodel_offset_forward_large.GetFloat() : vr_viewmodel_offset_forward.GetFloat();
 
-	vmorigin += vForward * fForward;
+	vmorigin += vForward * fForward +
+		vRight * vr_viewmodel_offset_right.GetFloat() +
+		vUp * vr_viewmodel_offset_up.GetFloat();
 	MatrixAngles( m_WorldFromWeapon.As3x4(), vmangles );
 }
 

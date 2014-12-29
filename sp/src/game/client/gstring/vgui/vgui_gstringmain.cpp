@@ -94,7 +94,7 @@ void CVGUIGstringMain::PerformLayout()
 	BaseClass::PerformLayout();
 
 	int w, t;
-	engine->GetScreenSize( w, t );
+	vgui::surface()->GetScreenSize( w, t );
 	SetBounds( 0, 0, w, t );
 
 	UpdateLayoutVisibility();
@@ -190,7 +190,7 @@ void CVGUIGstringMain::InitializeLayout()
 void CVGUIGstringMain::UpdateLayoutVisibility()
 {
 	int w, t;
-	engine->GetScreenSize( w, t );
+	vgui::surface()->GetScreenSize( w, t );
 
 	int menuHeight = t * 0.7f;
 	int menuWidth = menuHeight * 0.85f;
@@ -331,7 +331,7 @@ pFnLayerRoutine( _scanner_00 )
 	//static vParticle *pParticle_lightshaft = NULL;
 
 	int sw, st;
-	engine->GetScreenSize( sw, st );
+	vgui::surface()->GetScreenSize( sw, st );
 
 	int w, t;
 	l->GetSize( w, t );

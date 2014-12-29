@@ -71,10 +71,11 @@ void CHudLensflareEffects::ApplySchemeSettings(vgui::IScheme *pScheme)
 {
 	BaseClass::ApplySchemeSettings(pScheme);
 	SetPaintBackgroundEnabled(false);
+	SetForceStereoRenderToFrameBuffer( true );
 
-	int wide, tall;
-	GetHudSize(wide, tall);
-	SetSize(wide, tall);
+	int vx, vy, w, t;
+	vgui::surface()->GetFullscreenViewport( vx, vy, w, t );
+	SetSize( w, t );
 
 	for ( int i = 0; i < m_hLensflares.Count(); i++ )
 		m_hLensflares[i]->ResizePanel();

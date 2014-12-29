@@ -112,9 +112,9 @@ void vLensflare_Collection::Destroy()
 void vLensflare_Collection::ResizePanel()
 {
 	Assert( m_pContainer != NULL );
-
-	int w, t;
-	GetHudSize( w, t );
+	
+	int vx, vy, w, t;
+	vgui::surface()->GetFullscreenViewport( vx, vy, w, t );
 	m_pContainer->SetSize( w, t );
 }
 

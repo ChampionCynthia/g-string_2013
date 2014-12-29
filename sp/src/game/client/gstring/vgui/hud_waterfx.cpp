@@ -123,9 +123,15 @@ void CHudWaterEffects::OnThink()
 void CHudWaterEffects::Paint()
 {
 	if ( m_bSubmerged_Last ||
+		m_flRainOverlay_Alpha > 0.0f ||
 		m_pParticleParent_Emerge->GetNumParticles() > 0 ||
 		m_pParticleParent_Drops->GetNumParticles() > 0 )
-		UpdateScreenEffectTexture();
+	{
+		CMatRenderContextPtr pRenderContext( materials );
+		int x, y, w, h;
+		pRenderContext->GetViewport( x, y, w, h );
+		UpdateScreenEffectTexture( 0, x, y, w, h, true );
+	}
 
 	if ( !cvar_gstring_drawwatereffects.GetBool() )
 		return;
@@ -151,9 +157,14 @@ void CHudWaterEffects::ApplySchemeSettings(vgui::IScheme *pScheme)
 {
 	BaseClass::ApplySchemeSettings(pScheme);
 	SetPaintBackgroundEnabled(false);
+	SetForceStereoRenderToFrameBuffer( true );
+	
+	int vx, vy, wide, tall;
+	vgui::surface()->GetFullscreenViewport( vx, vy, wide, tall );
 
-	int wide, tall;
-	GetHudSize(wide, tall);
+	//int wide, tall;
+	//GetHudSize(wide, tall);
+
 	SetSize(wide, tall);
 
 	m_pParticleParent_Emerge->SetSize( wide, tall );

@@ -490,7 +490,7 @@ void CHudDamageIndicator::ApplySchemeSettings(vgui::IScheme *pScheme)
 		m_flDmgWide = 0.1f * (float)vw;
 	}
 
-	SetSize(vw, vh);
+	SetSize( vw, vh );
 
 	m_pParticleParent->SetBounds( 0, 0,
 		vw, vh ); // GSTRINGMIGRATION
@@ -510,7 +510,7 @@ void CHudDamageIndicator::AddBloodParticle( int health, int dmg )
 	if ( m_pParticleParent->GetNumParticles() > 6 )
 		return;
 
-	int w,t;
+	int w, t;
 	GetSize( w, t );
 
 	float alphaStart = RemapValClamped( health, 0, 100, 1, 0.65f );

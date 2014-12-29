@@ -2,7 +2,8 @@
 #include "cbase.h"
 #include "gstring/vgui/vparticle.h"
 #include "gstring/cframetimehelper.h"
-
+#include "vgui_controls/Controls.h"
+#include "vgui/ISurface.h"
 
 vParticle::vParticle()
 {
@@ -37,7 +38,7 @@ vParticle::~vParticle()
 float vParticle::GetRelativeScale()
 {
 	int w, t;
-	engine->GetScreenSize( w, t );
+	vgui::surface()->GetScreenSize( w, t );
 	return t / 640.0f;
 }
 

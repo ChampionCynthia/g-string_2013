@@ -14,6 +14,8 @@
 
 #include "materialsystem/imaterialvar.h"
 
+#define DBG_SKYMASK_EDITOR_NAME "dbg_ppe_skymask"
+
 #define GODRAYS_EDITOR_NAME "ppe_sunrays"
 #define EXPLOSION_EDITOR_NAME "ppe_explosionlayer"
 #define MOTIONBLUR_EDITOR_NAME "ppe_motionblur"
@@ -111,7 +113,7 @@ void DrawBarsAndGrain( int x, int y, int w, int h )
 
 			pVar_Filmgrain_Strength->SetFloatValue( cvar_gstring_filmgrain_strength.GetFloat() * flNightvisionStrengthInv );
 
-			shaderEdit->DrawPPEOnDemand( iFilmgrainIndex );
+			shaderEdit->DrawPPEOnDemand( iFilmgrainIndex, x, y, w, h );
 		}
 	}
 
@@ -128,7 +130,7 @@ void DrawBarsAndGrain( int x, int y, int w, int h )
 			pVar_Vignette_Ranges->SetVecValue( cvar_gstring_vignette_range_max.GetFloat(),
 				cvar_gstring_vignette_range_min.GetFloat() );
 
-			shaderEdit->DrawPPEOnDemand( iVignetteIndex );
+			shaderEdit->DrawPPEOnDemand( iVignetteIndex, x, y, w, h );
 		}
 	}
 
@@ -198,7 +200,7 @@ bool ShouldDrawGodrays()
 	return true;
 }
 
-void DrawGodrays()
+void DrawGodrays( int x, int y, int w, int h )
 {
 	if ( !ShouldDrawGodrays() )
 		return;
@@ -217,7 +219,7 @@ void DrawGodrays()
 
 	pVar_GodRays_Intensity->SetVecValue( g_flGodRaysIntensity * GetSceneFadeScalar(), 0, 0, 0 );
 
-	shaderEdit->DrawPPEOnDemand( iGodrayIndex );
+	shaderEdit->DrawPPEOnDemand( iGodrayIndex, x, y, w, h );
 }
 
 
@@ -508,7 +510,7 @@ void DrawScreenGaussianBlur()
 /**
  * DREAM BLUR
  */
-void DrawDreamBlur()
+void DrawDreamBlur( int x, int y, int w, int h, StereoEye_t stereoEye )
 {
 	if ( !ShouldDrawCommon() )
 		return;
@@ -526,13 +528,13 @@ void DrawDreamBlur()
 	}
 
 	DEFINE_SHADEREDITOR_MATERIALVAR( DREAMBLUR_EDITOR_NAME, "dream", "$MUTABLE_01", pVar_DreamBlur_Strength );
+	DEFINE_SHADEREDITOR_MATERIALVAR( DREAMBLUR_EDITOR_NAME, "dream", "$MUTABLE_02", pVar_DreamBlur_StereoConfig );
 
-	if ( pVar_DreamBlur_Strength == NULL )
+	if ( pVar_DreamBlur_Strength == NULL || pVar_DreamBlur_StereoConfig == NULL )
 	{
 		Assert( 0 );
 		return;
 	}
-
 
 	float intensity = g_pPPCtrl ? g_pPPCtrl->GetDreamStrength() : 0;
 	if ( intensity <= 0.001f )
@@ -547,25 +549,51 @@ void DrawDreamBlur()
 
 		if ( !IsErrorTexture( pDreamBuffer ) )
 		{
+			Rect_t rect;
+			rect.x = x;
+			rect.y = y;
+			rect.width = w;
+			rect.height = h;
 			CMatRenderContextPtr renderContext( materials );
 			renderContext->PushRenderTargetAndViewport();
-			renderContext->CopyRenderTargetToTexture( pDreamBuffer );
+			renderContext->CopyRenderTargetToTextureEx( pDreamBuffer, 0, &rect, &rect );
 			renderContext->PopRenderTargetAndViewport();
 		}
 	}
 
-	bDrewLastFrame = true;
+	bDrewLastFrame = bDrewLastFrame || stereoEye != STEREO_EYE_LEFT;
 
 	intensity = clamp( intensity, 0, 1 );
 
-	float flintensityCorrect = RemapValClamped( gpGlobals->frametime,
+	float flIntensityCorrect = RemapValClamped( gpGlobals->frametime,
 		(1.0f/10.0f), (1.0f/300.0f),
 		0.7f, 1.15f );
 
-	intensity *= flintensityCorrect;
+	intensity *= flIntensityCorrect;
 
 	pVar_DreamBlur_Strength->SetFloatValue( intensity );
-	shaderEdit->DrawPPEOnDemand( iDreamBlur );
+
+	float stereoValues[ 2 ] = { 1.0f };
+	if ( stereoEye != STEREO_EYE_MONO )
+	{
+		stereoValues[ 0 ] = 0.5f;
+		if ( stereoEye == STEREO_EYE_RIGHT )
+		{
+			stereoValues[ 1 ] = 0.5f;
+		}
+	}
+	pVar_DreamBlur_StereoConfig->SetVecValue( stereoValues, 2 );
+
+	shaderEdit->DrawPPEOnDemand( iDreamBlur, x, y, w, h );
+
+	static ITexture* pDreamBuffer = materials->FindTexture( "_rt_dream_cache", TEXTURE_GROUP_OTHER, false );
+	Rect_t rect;
+	rect.x = x;
+	rect.y = y;
+	rect.width = w;
+	rect.height = h;
+	CMatRenderContextPtr renderContext( materials );
+	renderContext->CopyRenderTargetToTextureEx( pDreamBuffer, 0, &rect, &rect );
 } 
 
 /**
@@ -687,7 +715,7 @@ static float flDecayTime = 0.0f;
 static float flHealthAnimationTime = 0.0f;
 static Vector vecLastParams = vec3_origin;
 
-void DrawHurtFX()
+void DrawHurtFX( int x, int y, int w, int h )
 {
 	if ( !ShouldDrawCommon() )
 		return;
@@ -777,10 +805,9 @@ void DrawHurtFX()
 		vecLastParams = params;
 	}
 
-
 	pVar_HurtFX_Params->SetVecValue( params.x, params.y * flHurtFXEnable, params.z * flHurtFXEnable );
 
-	shaderEdit->DrawPPEOnDemand( iHurtFXIndex );
+	shaderEdit->DrawPPEOnDemand( iHurtFXIndex, x, y, w, h );
 }
 
 void ResetEffects()
