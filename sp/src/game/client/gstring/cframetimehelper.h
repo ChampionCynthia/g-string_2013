@@ -9,6 +9,7 @@ public:
 	CFrameTimeHelper();
 
 	void Update( float frametime );
+	virtual void LevelInitPostEntity();
 
 	static double GetFrameTime();
 	static double GetCurrentTime();

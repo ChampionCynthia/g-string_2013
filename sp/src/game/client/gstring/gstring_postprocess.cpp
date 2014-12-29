@@ -13,6 +13,7 @@
 #include "gstring/c_gstring_player.h"
 
 #include "materialsystem/imaterialvar.h"
+#include "sourcevr/isourcevirtualreality.h"
 
 #define DBG_SKYMASK_EDITOR_NAME "dbg_ppe_skymask"
 
@@ -134,7 +135,7 @@ void DrawBarsAndGrain( int x, int y, int w, int h )
 		}
 	}
 
-	const float flBarScale = cvar_gstring_bars_scale.GetFloat();
+	const float flBarScale = UseVR() ? 0.0f : cvar_gstring_bars_scale.GetFloat();
 
 	if ( /*cvar_gstring_drawbars.GetBool()
 		&&*/ flBarScale > 0.0f )
@@ -253,7 +254,7 @@ void QueueExplosionBlur( Vector origin, float lifetime )
 	g_hExplosionBlurQueue.AddToTail( e );
 }
 
-void DrawExplosionBlur()
+void DrawExplosionBlur( int x, int y, int w, int h )
 {
 	if ( g_hExplosionBlurQueue.Count() < 1 )
 		return;
@@ -323,7 +324,7 @@ void DrawExplosionBlur()
 		pVar_Strength->SetVecValue( strength, 0, 0, 0 );
 		pVar_LinearAmt->SetVecValue( 1.0f - dot, 0, 0, 0 );
 
-		shaderEdit->DrawPPEOnDemand( iExplosionIndex );
+		shaderEdit->DrawPPEOnDemand( iExplosionIndex, x, y, w, h );
 	}
 }
 
@@ -332,7 +333,7 @@ void DrawExplosionBlur()
 /**
  * MOTION BLUR
  */
-void DrawMotionBlur()
+void DrawMotionBlur( int x, int y, int w, int h )
 {
 	if ( !ShouldDrawCommon() )
 		return;
@@ -466,7 +467,7 @@ void DrawMotionBlur()
 			amount_forward > 0.01f ||
 			rotation_scale > 0.01f )
 		{
-			shaderEdit->DrawPPEOnDemand( iMotionBlur );
+			shaderEdit->DrawPPEOnDemand( iMotionBlur, x, y, w, h );
 		}
 	}
 
@@ -478,7 +479,7 @@ void DrawMotionBlur()
 /**
  * SCREEN BLUR
  */
-void DrawScreenGaussianBlur()
+void DrawScreenGaussianBlur( int x, int y, int w, int h )
 {
 	if ( !ShouldDrawCommon() )
 		return;
@@ -503,13 +504,34 @@ void DrawScreenGaussianBlur()
 		return;
 
 	pVar_ScreenBlur_Strength->SetFloatValue( clamp( intensity, 0, 1 ) );
-	shaderEdit->DrawPPEOnDemand( iScreenBlur );
+	CMatRenderContextPtr renderContext( materials );
+	renderContext->OverrideDepthEnable( true, false );
+	shaderEdit->DrawPPEOnDemand( iScreenBlur, x, y, w, h );
+	renderContext->OverrideDepthEnable( false, false );
 }
 
 
 /**
  * DREAM BLUR
  */
+inline void UpdateDreamBuffer( int x, int y, int w, int h )
+{
+	static ITexture* pDreamBuffer = materials->FindTexture( "_rt_dream_cache", TEXTURE_GROUP_OTHER, false );
+
+	if ( !IsErrorTexture( pDreamBuffer ) )
+	{
+		Rect_t rect;
+		rect.x = x;
+		rect.y = y;
+		rect.width = w;
+		rect.height = h;
+		CMatRenderContextPtr renderContext( materials );
+		renderContext->PushRenderTargetAndViewport();
+		renderContext->CopyRenderTargetToTextureEx( pDreamBuffer, 0, &rect, &rect );
+		renderContext->PopRenderTargetAndViewport();
+	}
+}
+
 void DrawDreamBlur( int x, int y, int w, int h, StereoEye_t stereoEye )
 {
 	if ( !ShouldDrawCommon() )
@@ -545,20 +567,7 @@ void DrawDreamBlur( int x, int y, int w, int h, StereoEye_t stereoEye )
 
 	if ( !bDrewLastFrame )
 	{
-		static ITexture* pDreamBuffer = materials->FindTexture( "_rt_dream_cache", TEXTURE_GROUP_OTHER, false );
-
-		if ( !IsErrorTexture( pDreamBuffer ) )
-		{
-			Rect_t rect;
-			rect.x = x;
-			rect.y = y;
-			rect.width = w;
-			rect.height = h;
-			CMatRenderContextPtr renderContext( materials );
-			renderContext->PushRenderTargetAndViewport();
-			renderContext->CopyRenderTargetToTextureEx( pDreamBuffer, 0, &rect, &rect );
-			renderContext->PopRenderTargetAndViewport();
-		}
+		UpdateDreamBuffer( x, y, w, h );
 	}
 
 	bDrewLastFrame = bDrewLastFrame || stereoEye != STEREO_EYE_LEFT;
@@ -586,20 +595,13 @@ void DrawDreamBlur( int x, int y, int w, int h, StereoEye_t stereoEye )
 
 	shaderEdit->DrawPPEOnDemand( iDreamBlur, x, y, w, h );
 
-	static ITexture* pDreamBuffer = materials->FindTexture( "_rt_dream_cache", TEXTURE_GROUP_OTHER, false );
-	Rect_t rect;
-	rect.x = x;
-	rect.y = y;
-	rect.width = w;
-	rect.height = h;
-	CMatRenderContextPtr renderContext( materials );
-	renderContext->CopyRenderTargetToTextureEx( pDreamBuffer, 0, &rect, &rect );
+	UpdateDreamBuffer( x, y, w, h );
 } 
 
 /**
  * BLOOM FLARE
  */
-void DrawBloomFlare()
+void DrawBloomFlare( int w, int h )
 {
 	if ( !ShouldDrawCommon() )
 		return;
@@ -613,6 +615,7 @@ void DrawBloomFlare()
 		return;
 
 	DEFINE_SHADEREDITOR_MATERIALVAR( BLOOMFLARE_EDITOR_NAME, "bloomflare", "$MUTABLE_01", pVar_BloomFlare_Strength );
+	DEFINE_SHADEREDITOR_MATERIALVAR( BLOOMFLARE_EDITOR_NAME, "bloomflare", "$MUTABLE_02", pVar_BloomFlare_Scale );
 
 	if ( cvar_gstring_bloomflare_strength.GetFloat() <= 0.0f )
 		return;
@@ -621,14 +624,25 @@ void DrawBloomFlare()
 		iBloomFlareMode == 1 && !g_pPPCtrl->IsBloomflareEnabled() )
 		return;
 
+	if ( pVar_BloomFlare_Strength == NULL ||
+		pVar_BloomFlare_Scale == NULL )
+		return;
+
 	pVar_BloomFlare_Strength->SetVecValue( cvar_gstring_bloomflare_strength.GetFloat() * GetSceneFadeScalar(), 0, 0, 0 );
+
+	float scale[ 2 ];
+	scale[ 0 ] = (w / (float)h) / (16.0f / 9.0f);
+	scale[ 0 ] = MIN( 1.0f, scale[ 0 ] );
+	scale[ 1 ] = ( 1.0f - scale[ 0 ] ) * 0.5f;
+	pVar_BloomFlare_Scale->SetVecValue( scale, 2 );
+
 	shaderEdit->DrawPPEOnDemand( iBloomFlare );
 }
 
 /**
  * DESATURATION
  */
-void DrawDesaturation()
+void DrawDesaturation( int x, int y, int w, int h )
 {
 	const float flDesaturationStrength = cvar_gstring_desaturation_strength.GetFloat();
 
@@ -650,7 +664,7 @@ void DrawDesaturation()
 
 	pVar_Desaturation_Strength->SetFloatValue( flDesaturationStrength );
 
-	shaderEdit->DrawPPEOnDemand( iDesaturationIndex );
+	shaderEdit->DrawPPEOnDemand( iDesaturationIndex, x, y, w, h );
 }
 
 /**
@@ -675,7 +689,7 @@ float GetNightvisionMinLighting()
 	return max( 0.0f, flAmt );
 }
 
-void DrawNightvision()
+void DrawNightvision( int x, int y, int w, int h )
 {
 	if ( !ShouldDrawCommon() )
 		return;
@@ -702,7 +716,7 @@ void DrawNightvision()
 		g_flNightvisionOverbright,
 		0 );
 
-	shaderEdit->DrawPPEOnDemand( iNightvisionIndex );
+	shaderEdit->DrawPPEOnDemand( iNightvisionIndex, x, y, w, h );
 }
 
 /**

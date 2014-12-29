@@ -2620,7 +2620,7 @@ void CViewRender::RenderView( const CViewSetup &view, int nClearFlags, int whatT
 
 			PerformScenePostProcessHack();
 
-			DrawMotionBlur();
+			DrawMotionBlur( view.x, view.y, view.width, view.height );
 		}
 		// END GSTRINGMIGRATION
 
@@ -2660,7 +2660,7 @@ void CViewRender::RenderView( const CViewSetup &view, int nClearFlags, int whatT
 
 		if ( !bBuildingCubemaps )
 		{
-			DrawScreenGaussianBlur();
+			DrawScreenGaussianBlur( view.x, view.y, view.width, view.height );
 
 			DrawDreamBlur( view.x, view.y, view.width, view.height, view.m_eStereoEye );
 		}
@@ -2692,14 +2692,14 @@ void CViewRender::RenderView( const CViewSetup &view, int nClearFlags, int whatT
 			DrawOverlaysForMode( CScreenoverlayMulti::RENDERMODE_POST_HDR,
 				view.x, view.y, view.width, view.height );
 
-			DrawExplosionBlur();
+			DrawExplosionBlur( view.x, view.y, view.width, view.height );
 
 			DrawGodrays( view.x, view.y, view.width, view.height );
 
 			if ( view.m_bDoBloomAndToneMapping )
-				DrawBloomFlare();
+				DrawBloomFlare( view.width, view.height );
 
-			DrawNightvision();
+			DrawNightvision( view.x, view.y, view.width, view.height );
 
 			DrawHurtFX( view.x, view.y, view.width, view.height );
 		}
@@ -2843,7 +2843,7 @@ void CViewRender::RenderView( const CViewSetup &view, int nClearFlags, int whatT
 
 	Render2DEffectsPostHUD( view );
 
-	DrawDesaturation(); // GSTRINGMIGRATION
+	DrawDesaturation( view.x, view.y, view.width, view.height ); // GSTRINGMIGRATION
 
 	g_bRenderingView = false;
 

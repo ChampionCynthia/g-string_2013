@@ -15,20 +15,20 @@ bool ShouldDrawGodrays();
 void DrawGodrays( int x, int y, int w, int h );
 
 void QueueExplosionBlur( Vector origin, float lifetime = 2.0f );
-void DrawExplosionBlur();
+void DrawExplosionBlur( int x, int y, int w, int h );
 
-void DrawMotionBlur();
+void DrawMotionBlur( int x, int y, int w, int h );
 
-void DrawScreenGaussianBlur();
+void DrawScreenGaussianBlur( int x, int y, int w, int h );
 
 void DrawDreamBlur( int x, int y, int w, int h, StereoEye_t stereoEye );
 
-void DrawBloomFlare();
+void DrawBloomFlare( int w, int h );
 
-void DrawDesaturation();
+void DrawDesaturation( int x, int y, int w, int h );
 
 void SetNightvisionParams( float flBlackFade, float flNightvisionAmount, float flOverbright );
-void DrawNightvision();
+void DrawNightvision( int x, int y, int w, int h );
 float GetNightvisionMinLighting();
 
 void DrawHurtFX( int x, int y, int w, int h );

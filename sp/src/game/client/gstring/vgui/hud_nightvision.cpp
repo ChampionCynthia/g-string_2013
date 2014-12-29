@@ -61,9 +61,11 @@ void CHudNightvision::ApplySchemeSettings( vgui::IScheme *pScheme )
 {
 	BaseClass::ApplySchemeSettings( pScheme );
 
-	int w, t;
-	GetHudSize( w, t );
-	SetSize( w, t );
+	SetForceStereoRenderToFrameBuffer( true );
+
+	int vx, vy, wide, tall;
+	vgui::surface()->GetFullscreenViewport( vx, vy, wide, tall );
+	SetSize( wide, tall );
 }
 
 void CHudNightvision::OnThink()

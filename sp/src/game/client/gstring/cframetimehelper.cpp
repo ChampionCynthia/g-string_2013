@@ -3,6 +3,7 @@
 #include "gstring/cframetimehelper.h"
 #include "vgui_controls/Controls.h"
 #include "vgui/ISystem.h"
+#include "sourcevr/isourcevirtualreality.h"
 
 static CFrameTimeHelper g_FrameTimeHelper;
 
@@ -17,6 +18,14 @@ void CFrameTimeHelper::Update( float frametime )
 	double curframetime = vgui::system()->GetCurrentTime();
 	m_flFrameTime = min( 1.0f, curframetime - m_flFrameTimeLast );
 	m_flFrameTimeLast = curframetime;
+}
+
+void CFrameTimeHelper::LevelInitPostEntity()
+{
+	if ( UseVR() )
+	{
+		engine->ClientCmd( "vr_reset_home_pos" );
+	}
 }
 
 double CFrameTimeHelper::GetFrameTime()

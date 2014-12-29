@@ -2658,14 +2658,14 @@ Vector CNPC_BaseZombie::BodyTarget( const Vector &posSrc, bool bNoisy )
 //-----------------------------------------------------------------------------
 Vector CNPC_BaseZombie::HeadTarget( const Vector &posSrc )
 {
-	int iCrabAttachment = LookupAttachment( "headcrab" );
-	Assert( iCrabAttachment > 0 );
+	//int iCrabAttachment = LookupAttachment( "headcrab" );
+	//Assert( iCrabAttachment > 0 );
 
-	Vector vecPosition;
+	//Vector vecPosition;
 
-	GetAttachment( iCrabAttachment, vecPosition );
+	//GetAttachment( iCrabAttachment, vecPosition );
 
-	return vecPosition;
+	return BaseClass::HeadTarget( posSrc );
 }
 
 //-----------------------------------------------------------------------------

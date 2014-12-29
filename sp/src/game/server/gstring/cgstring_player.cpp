@@ -128,6 +128,7 @@ void CGstringPlayer::ToggleNightvision()
 {
 	if ( g_pGstringGlobals != NULL
 		&& !g_pGstringGlobals->IsNightvisionEnabled()
+		&& !gstring_nightvision_override.GetBool()
 		|| !IsSuitEquipped() )
 	{
 		EmitSound( "nightvision.unavailable" );
