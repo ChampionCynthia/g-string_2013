@@ -425,6 +425,7 @@ public:
 	{
 		m_UnderWaterOverlayMaterial.Init( pMaterial );
 	}
+	void			DrawRenderablesInList( CUtlVector< IClientRenderable * > &list, int flags = 0 );
 private:
 	int				m_BuildWorldListsNumber;
 
@@ -466,7 +467,6 @@ private:
 	void			DetermineWaterRenderInfo( const VisibleFogVolumeInfo_t &fogVolumeInfo, WaterRenderInfo_t &info );
 
 	bool			UpdateRefractIfNeededByList( CUtlVector< IClientRenderable * > &list );
-	void			DrawRenderablesInList( CUtlVector< IClientRenderable * > &list, int flags = 0 );
 
 	// Sets up, cleans up the main 3D view
 	void			SetupMain3DView( const CViewSetup &view, int &nClearFlags );

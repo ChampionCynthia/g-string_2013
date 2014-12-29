@@ -35,6 +35,8 @@ extern ConVar cvar_gstring_nightvision_minlighting;
 
 extern ConVar cvar_gstring_drawhurtfx;
 extern ConVar cvar_gstring_chromatic_aberration;
+
+extern ConVar gstring_spacecraft_firstperson;
 #endif
 
 

@@ -27,6 +27,7 @@ public:
 	virtual void OverrideView( CViewSetup *pSetup );
 	virtual const Vector &GetViewOffset() const;
 	virtual int DrawModel( int flags );
+	float GetVRScale() const;
 
 	virtual void ProcessMuzzleFlashEvent();
 	virtual void UpdateFlashlight();
@@ -66,7 +67,8 @@ protected:
 private:
 	void UpdateBodyModel();
 	void UpdateCustomStepSound();
-	void GetSpacecraftCamera( Vector &origin, QAngle &angles, float &flFov );
+	void GetSpacecraftCameraThirdPerson( Vector &origin, QAngle &angles, float &flFov );
+	void GetSpacecraftCameraFirstPerson( Vector &origin, QAngle &angles, float &flFov );
 	void GetDeathSpacecraftCamera( Vector &origin, QAngle &angles );
 	void UpdateInteraction();
 	void GetInteractionCamera( Vector &origin, QAngle &angles );

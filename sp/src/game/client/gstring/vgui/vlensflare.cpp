@@ -4,6 +4,9 @@
 #include "gstring/vgui/vutil.h"
 #include "gstring/vgui/vlensflare.h"
 #include "gstring/vgui/vparticleoperatorslensflare.h"
+#include "sourcevr/isourcevirtualreality.h"
+
+ConVar gstring_lensflare_vr_scale( "gstring_lensflare_vr_scale", "2.5" );
 
 vLensflare_Collection *vLensflare_Collection::InitFromScript( vgui::Panel *parent,
 		CGlowOverlay *pSource,
@@ -44,6 +47,11 @@ vLensflare_Collection *vLensflare_Collection::InitFromScript( vgui::Panel *paren
 
 		pConfig->deleteThis();
 		pConfig = NULL;
+	}
+
+	if ( UseVR() )
+	{
+		flGlobalScale *= gstring_lensflare_vr_scale.GetFloat();
 	}
 
 	for ( KeyValues *pSub = pData->GetFirstTrueSubKey(); pSub; pSub = pSub->GetNextTrueSubKey() )

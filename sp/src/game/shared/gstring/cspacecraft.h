@@ -45,7 +45,7 @@ public:
 	CSpacecraft();
 	virtual ~CSpacecraft();
 
-	bool IsPlayerControlled();
+	bool IsPlayerControlled() const;
 
 #ifdef GAME_DLL
 	void SetAI( ISpacecraftAI *pSpacecraftAI );
@@ -70,9 +70,10 @@ public:
 
 	//virtual bool IsTransparent() { return false; }
 	virtual bool IsTwoPass() { return true; }
-	virtual RenderGroup_t GetRenderGroup() { return RENDER_GROUP_TWOPASS; }
 	virtual ShadowType_t ShadowCastType() { return SHADOWS_SIMPLE; }
 	virtual bool ShouldReceiveProjectedTextures( int flags ) { return true; }
+	virtual RenderGroup_t GetRenderGroup();
+	//virtual int DrawModel( int flags );
 
 	virtual void OnDataChanged( DataUpdateType_t t );
 	virtual void UpdateOnRemove();

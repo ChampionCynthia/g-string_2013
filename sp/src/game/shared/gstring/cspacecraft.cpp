@@ -13,6 +13,7 @@
 #include "hud_crosshair.h"
 #include "engine/IEngineSound.h"
 #include "ivieweffects.h"
+#include "gstring_cvars.h"
 #else
 #include "cspacecraftprojectile.h"
 #include "datacache/imdlcache.h"
@@ -176,7 +177,7 @@ CSpacecraft::~CSpacecraft()
 #endif
 }
 
-bool CSpacecraft::IsPlayerControlled()
+bool CSpacecraft::IsPlayerControlled() const
 {
 	return GetOwnerEntity() && GetOwnerEntity()->IsPlayer();
 }
@@ -533,6 +534,17 @@ void CSpacecraft::SimulateFire( CMoveData &moveData, float flFrametime )
 	}
 }
 #else
+RenderGroup_t CSpacecraft::GetRenderGroup()
+{
+	if ( GetOwnerEntity() == C_BasePlayer::GetLocalPlayer() &&
+		gstring_spacecraft_firstperson.GetBool() )
+	{
+		return RENDER_GROUP_VIEW_MODEL_TRANSLUCENT;
+	}
+
+	return RENDER_GROUP_TWOPASS;
+}
+
 void CSpacecraft::OnDataChanged( DataUpdateType_t t )
 {
 	BaseClass::OnDataChanged( t );
@@ -544,6 +556,10 @@ void CSpacecraft::OnDataChanged( DataUpdateType_t t )
 		m_Settings = pConfig->GetSettings( m_iSettingsIndex );
 
 		SetNextClientThink( CLIENT_THINK_ALWAYS );
+	}
+	else if ( GetOwnerEntity() == C_BasePlayer::GetLocalPlayer() )
+	{
+		m_nSkin = gstring_spacecraft_firstperson.GetBool() ? 2 : 0;
 	}
 }
 
@@ -945,13 +961,7 @@ void CSpacecraft::SimulateMove( CMoveData &moveData, float flFrametime )
 				bBoostEffects = bBoosting;
 			}
 
-			if ( vecMove.x < 0.0f )
-			{
-				vecImpulse += vecMove.x * vecUp * m_Settings.m_flAccelerationSide;
-				bAccelerationEffects = true;
-			}
-
-			if ( vecMove.x > 0.0f )
+			if ( vecMove.x != 0.0f )
 			{
 				vecImpulse += vecMove.x * vecUp * m_Settings.m_flAccelerationSide;
 				bAccelerationEffects = true;
@@ -976,13 +986,7 @@ void CSpacecraft::SimulateMove( CMoveData &moveData, float flFrametime )
 
 		//if ( ( moveData.m_nButtons & IN_DUCK ) == 0 )
 		{
-			if ( vecMove.y < 0.0f )
-			{
-				vecImpulse += vecMove.y * vecRight * m_Settings.m_flAccelerationSide;
-				bAccelerationEffects = true;
-			}
-
-			if ( vecMove.y > 0.0f )
+			if ( vecMove.y != 0.0f )
 			{
 				vecImpulse += vecMove.y * vecRight * m_Settings.m_flAccelerationSide;
 				bAccelerationEffects = true;

@@ -485,14 +485,18 @@ bool CClientVirtualReality::OverrideView ( CViewSetup *pViewMiddle, Vector *pVie
 	//// Scale translation e.g. to allow big in-game leans with only a small head movement.
 	//// Clamp HMD movement to a reasonable amount to avoid wallhacks, vis problems, etc.
 	float limit = vr_translation_limit.GetFloat();
+	C_GstringPlayer *pPlayer = LocalGstringPlayer();
+	const float flScale = pPlayer ? pPlayer->GetVRScale() : 1.0f;
 	VMatrix matMideyeZeroFromMideyeCurrent = g_pSourceVR->GetMideyePose();
+
 	Vector viewTranslation = matMideyeZeroFromMideyeCurrent.GetTranslation();
-	if ( limit > 0.0f && viewTranslation.IsLengthGreaterThan ( limit ) )
+	float length = viewTranslation.NormalizeInPlace();
+	if ( limit > 0.0f && length > limit )
 	{
-		viewTranslation.NormalizeInPlace();
-		viewTranslation *= limit;
-		matMideyeZeroFromMideyeCurrent.SetTranslation( viewTranslation );
+		length = limit;
 	}
+	viewTranslation *= length * flScale;
+	matMideyeZeroFromMideyeCurrent.SetTranslation( viewTranslation );
 
 	// Now figure out the three principal matrices: m_TorsoFromMideye, m_WorldFromMidEye, m_WorldFromWeapon
 	// m_TorsoFromMideye is done so that OverridePlayerMotion knows what to do with WASD.
@@ -517,12 +521,13 @@ bool CClientVirtualReality::OverrideView ( CViewSetup *pViewMiddle, Vector *pVie
 			m_WorldFromMidEye = worldFromTorso * matMideyeZeroFromMideyeCurrent;
 
 			// GSTRINGMIGRATION
-			C_GstringPlayer *pPlayer = LocalGstringPlayer();
 			if ( pPlayer && pPlayer->IsStereoViewAligned() )
 			{
+				const bool bIsInSpaceCraft = pPlayer->IsInSpacecraft();
 				m_WorldFromMidEye.SetupMatrixOrgAngles( originalMiddleOrigin, originalMiddleAngles );
 				m_WorldFromMidEye = m_WorldFromMidEye * matMideyeZeroFromMideyeCurrent;
-				m_WorldFromMidEye.SetTranslation( m_WorldFromMidEye.GetTranslation() + m_WorldFromMidEye.GetForward() * 5.0f );
+				Vector vecOffset = bIsInSpaceCraft ? vec3_origin : m_WorldFromMidEye.GetForward() * 5.0f;
+				m_WorldFromMidEye.SetTranslation( m_WorldFromMidEye.GetTranslation() + vecOffset );
 			}
 			// END GSTRINGMIGRATION
 
@@ -626,6 +631,11 @@ bool CClientVirtualReality::OverrideStereoView( CViewSetup *pViewMiddle, CViewSe
 
 	VMatrix matOffsetLeft = g_pSourceVR->GetMidEyeFromEye( ISourceVirtualReality::VREye_Left );
 	VMatrix matOffsetRight = g_pSourceVR->GetMidEyeFromEye( ISourceVirtualReality::VREye_Right );
+	
+	C_GstringPlayer *pPlayer = LocalGstringPlayer();
+	const float flScale = pPlayer ? pPlayer->GetVRScale() : 1.0f;
+	matOffsetLeft.SetTranslation( matOffsetLeft.GetTranslation() * flScale );
+	matOffsetRight.SetTranslation( matOffsetRight.GetTranslation() * flScale );
 
 	// Move eyes to IPD positions.
 	VMatrix worldFromLeftEye  = m_WorldFromMidEye * matOffsetLeft;
@@ -885,11 +895,14 @@ bool CClientVirtualReality::OverridePlayerMotion( float flInputSampleFrametime, 
 				}
 			}
 
-			if ( fReticlePitchLimit >= 0.0f )
+			// GSTRINGMIGRATION
+			C_GstringPlayer *pPlayer = LocalGstringPlayer();
+			if ( fReticlePitchLimit >= 0.0f && ( !pPlayer || !pPlayer->IsInSpacecraft() ) )
 			{
 				// Clamp pitch to within the limits.
 				(*pNewAngles)[PITCH] = Clamp ( curAngles[PITCH], m_PlayerViewAngle[PITCH] - fReticlePitchLimit, m_PlayerViewAngle[PITCH] + fReticlePitchLimit );
 			}
+			// END GSTRINGMIGRATION
 
 			// For yaw the concept here is the torso stays within a set number of degrees of the weapon in yaw.
 			// However, with drifty tracking systems (e.g. IMUs) the concept of "torso" is hazy.

@@ -1075,6 +1075,7 @@ void CViewRender::DrawViewModels( const CViewSetup &view, bool drawViewmodel )
 
 	bool bShouldDrawPlayerViewModel = ShouldDrawViewModel( drawViewmodel );
 	bool bShouldDrawToolViewModels = ToolsEnabled();
+	const bool bSpaceMap = g_pGstringGlobals != NULL && g_pGstringGlobals->IsSpaceMap();
 
 	CMatRenderContextPtr pRenderContext( materials );
 
@@ -1085,8 +1086,8 @@ void CViewRender::DrawViewModels( const CViewSetup &view, bool drawViewmodel )
 	pRenderContext->PushMatrix();
 
 	CViewSetup viewModelSetup( view );
-	viewModelSetup.zNear = view.zNearViewmodel;
-	viewModelSetup.zFar = view.zFarViewmodel;
+	viewModelSetup.zNear = bSpaceMap ? 0.1f : view.zNearViewmodel;
+	viewModelSetup.zFar = bSpaceMap ? 500.0f : view.zFarViewmodel;
 	viewModelSetup.fov = view.fovViewmodel;
 	viewModelSetup.m_flAspectRatio = engine->GetScreenAspectRatio();
 
@@ -1121,7 +1122,6 @@ void CViewRender::DrawViewModels( const CViewSetup &view, bool drawViewmodel )
 	
 	if ( bShouldDrawPlayerViewModel || bShouldDrawToolViewModels )
 	{
-
 		CUtlVector< IClientRenderable * > opaqueViewModelList( 32 );
 		CUtlVector< IClientRenderable * > translucentViewModelList( 32 );
 
@@ -1929,8 +1929,6 @@ void CViewRender::UpdateCascadedShadow( const CViewSetup &view )
 	CMatRenderContextPtr pRenderContext( materials );
 	pRenderContext->SetIntRenderingParameter( INT_CASCADED_DEPTHTEXTURE, int(pDepthTexture) );
 
-	C_BasePlayer *pPlayer = C_BasePlayer::GetLocalPlayer();
-
 	QAngle angCascadedAngles;
 	Vector vecLight, vecAmbient;
 	g_pCSMEnvLight->GetShadowMappingConstants( angCascadedAngles, vecLight, vecAmbient );
@@ -1985,12 +1983,14 @@ void CViewRender::UpdateCascadedShadow( const CViewSetup &view )
 		float flOrthoSize;
 		float flForwardOffset;
 		float flUVOffsetX;
+		float flViewDepthBiasHack;
 	} shadowConfigs[] = {
-		{ 64.0f, 0.0f, 0.25f },
-		{ 384.0f, 256.0f, 0.75f }
+		{ 64.0f, 0.0f, 0.25f, 0.0f },
+		{ 384.0f, 256.0f, 0.75f, 0.0f }
 	};
 	const int iCascadedShadowCount = ARRAYSIZE( shadowConfigs );
-	const bool bSpaceMap =  g_pGstringGlobals != NULL && g_pGstringGlobals->IsSpaceMap();
+	const bool bSpaceMap = g_pGstringGlobals != NULL && g_pGstringGlobals->IsSpaceMap();
+	const bool bFirstPersonSpace = bSpaceMap && gstring_spacecraft_firstperson.GetBool();
 
 	if ( !bSpaceMap )
 	{
@@ -2004,16 +2004,41 @@ void CViewRender::UpdateCascadedShadow( const CViewSetup &view )
 		vecMainViewFwd.z = 0.0f;
 		vecMainViewFwd.NormalizeInPlace();
 	}
+	else if ( bFirstPersonSpace )
+	{
+		ShadowConfig_t &closeShadow = shadowConfigs[ 0 ];
+		ShadowConfig_t &farShadow = shadowConfigs[ 1 ];
+		closeShadow.flOrthoSize = 4.0f;
+		closeShadow.flForwardOffset = 2.0f;
+		closeShadow.flUVOffsetX = 0.25f;
+		farShadow.flViewDepthBiasHack = 1.5f;
+	}
 
 	vecMainViewFwd -= vecFwd * DotProduct( vecMainViewFwd, vecFwd );
 	
 	static VMatrix s_CSMSwapMatrix[2];
 	static int s_iCSMSwapIndex = 0;
-	const Vector vecCascadeOrigin( pPlayer ? pPlayer->GetRenderOrigin() - vecFwd * 1024.0f : vec3_origin );
+
+	C_BasePlayer *pPlayer = C_BasePlayer::GetLocalPlayer();
+
+	Vector vecCascadeOrigin( bFirstPersonSpace ? view.origin :
+		pPlayer ? pPlayer->GetRenderOrigin() : vec3_origin );
+	vecCascadeOrigin -= vecFwd * 1024.0f;
+
+	// This can only be set once per frame, not per shadow view. Fuckers.
+	if ( bFirstPersonSpace )
+	{
+		pRenderContext->SetShadowDepthBiasFactors( 1.0f, 0.000005f );
+	}
+	else
+	{
+		pRenderContext->SetShadowDepthBiasFactors( 8.0f, 0.0005f );
+	}
 
 	for ( int i = 0; i < iCascadedShadowCount; i++ )
 	{
 		const ShadowConfig_t &shadowConfig = shadowConfigs[ i ];
+
 		cascadedShadowView.m_OrthoTop = -shadowConfig.flOrthoSize;
 		cascadedShadowView.m_OrthoRight = shadowConfig.flOrthoSize;
 		cascadedShadowView.m_OrthoBottom = shadowConfig.flOrthoSize;
@@ -2063,8 +2088,7 @@ void CViewRender::UpdateCascadedShadow( const CViewSetup &view )
 			pRenderContext->SetIntRenderingParameter( INT_CASCADED_MATRIX_ADDRESS_0, (int)&currentSwapMatrix );
 		}
 
-		//pRenderContext->SetShadowDepthBiasFactors( 16.0f, 0.0005f );
-		pRenderContext->SetShadowDepthBiasFactors( 8.0f, 0.0005f );
+		cascadedShadowView.origin -= vecFwd * shadowConfig.flViewDepthBiasHack;
 		UpdateShadowDepthTexture( s_CascadedShadowColorTexture, s_CascadedShadowDepthTexture, cascadedShadowView );
 	}
 
@@ -5670,12 +5694,25 @@ void CShadowDepthView::Draw()
 
 	// Draw opaque and translucent renderables with appropriate override materials
 	// OVERRIDE_DEPTH_WRITE is OK with a NULL material pointer
-	modelrender->ForcedMaterialOverride( NULL, OVERRIDE_DEPTH_WRITE );	
+	modelrender->ForcedMaterialOverride( NULL, OVERRIDE_DEPTH_WRITE );
 
 	{
 		VPROF_BUDGET( "DrawOpaqueRenderables", VPROF_BUDGETGROUP_SHADOW_DEPTH_TEXTURING );
 		DrawOpaqueRenderables( DEPTH_MODE_SHADOW );
 	}
+
+	// GSTRINGMIGRATION
+	const bool bSpaceMap =  g_pGstringGlobals != NULL && g_pGstringGlobals->IsSpaceMap();
+	if ( bSpaceMap )
+	{
+		CUtlVector< IClientRenderable * > opaqueViewModelList( 8 );
+		CUtlVector< IClientRenderable * > translucentViewModelList( 8 );
+		ClientLeafSystem()->CollateViewModelRenderables( opaqueViewModelList, translucentViewModelList );
+
+		m_pMainView->DrawRenderablesInList( opaqueViewModelList, STUDIO_SHADOWDEPTHTEXTURE );
+		m_pMainView->DrawRenderablesInList( translucentViewModelList, STUDIO_TRANSPARENCY | STUDIO_SHADOWDEPTHTEXTURE );
+	}
+	// END GSTRINGMIGRATION
 
 	modelrender->ForcedMaterialOverride( 0 );
 

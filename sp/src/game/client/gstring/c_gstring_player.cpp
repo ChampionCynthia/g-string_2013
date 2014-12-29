@@ -23,6 +23,8 @@ static ConVar gstring_viewbob_walk_dist( "gstring_viewbob_walk_dist", "2.5" );
 static ConVar gstring_viewbob_walk_scale( "gstring_viewbob_walk_scale", "1.5" );
 static ConVar gstring_viewbob_model_scale( "gstring_viewbob_model_scale", "1" );
 
+ConVar gstring_spacecraft_firstperson( "gstring_spacecraft_firstperson", "1", FCVAR_REPLICATED );
+
 IMPLEMENT_CLIENTCLASS_DT( C_GstringPlayer, DT_CGstringPlayer, CGstringPlayer )
 
 	RecvPropBool( RECVINFO( m_bNightvisionActive ) ),
@@ -219,7 +221,14 @@ void C_GstringPlayer::OverrideView( CViewSetup *pSetup )
 	}
 	else if ( IsInSpacecraft() )
 	{
-		GetSpacecraftCamera( pSetup->origin, pSetup->angles, pSetup->fov );
+		if ( gstring_spacecraft_firstperson.GetBool() )
+		{
+			GetSpacecraftCameraFirstPerson( pSetup->origin, pSetup->angles, pSetup->fov );
+		}
+		else
+		{
+			GetSpacecraftCameraThirdPerson( pSetup->origin, pSetup->angles, pSetup->fov );
+		}
 		m_angSpacecraftDeathAngle = pSetup->angles;
 		m_vecSpacecraftDeathOrigin = pSetup->origin;
 		m_vecSpacecraftDeathVelocity = GetSpacecraft()->GetPhysVelocity();
@@ -392,6 +401,11 @@ int C_GstringPlayer::DrawModel( int flags )
 	}
 
 	return BaseClass::DrawModel( flags );
+}
+
+float C_GstringPlayer::GetVRScale() const
+{
+	return IsInSpacecraft() && gstring_spacecraft_firstperson.GetBool() ? 1.0f / 16.0f : 1.0f;
 }
 
 void C_GstringPlayer::ProcessMuzzleFlashEvent()
@@ -1021,7 +1035,18 @@ CSpacecraft *C_GstringPlayer::GetSpacecraft()
 	return m_hSpacecraft;
 }
 
-void C_GstringPlayer::GetSpacecraftCamera( Vector &origin, QAngle &angles, float &flFov )
+void C_GstringPlayer::GetSpacecraftCameraFirstPerson( Vector &origin, QAngle &angles, float &flFov )
+{
+	CSpacecraft *pSpacecraft = GetSpacecraft();
+	Assert( pSpacecraft );
+
+	pSpacecraft->GetAttachment( "eyes", origin, angles );
+
+	vieweffects->CalcShake();
+	vieweffects->ApplyShake( origin, angles, 0.05f );
+}
+
+void C_GstringPlayer::GetSpacecraftCameraThirdPerson( Vector &origin, QAngle &angles, float &flFov )
 {
 	CSpacecraft *pSpacecraft = GetSpacecraft();
 	Assert( pSpacecraft );
