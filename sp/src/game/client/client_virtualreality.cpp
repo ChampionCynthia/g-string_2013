@@ -23,6 +23,10 @@
 #include <time.h>
 #include "steam/steam_api.h"
 
+// GSTRINGMIGRATION
+#include "gstring/c_gstring_player.h"
+// END GSTRINGMIGRATION
+
 const char *COM_GetModDirectory(); // return the mod dir (rather than the complete -game param, which can be a path)
 
 CClientVirtualReality g_ClientVirtualReality;
@@ -507,10 +511,23 @@ bool CClientVirtualReality::OverrideView ( CViewSetup *pViewMiddle, Vector *pVie
 	case HMM_SHOOTBOUNDEDMOUSE_LOOKFACE_MOVEMOUSE:
 	case HMM_SHOOTMOUSE_MOVEFACE:
 	case HMM_SHOOTMOVEMOUSE_LOOKFACE:
-		// Aim point is independent of view - leave it as it was, just copy it into m_WorldFromWeapon for our use.
-		m_TorsoFromMideye = matMideyeZeroFromMideyeCurrent;
-		m_WorldFromMidEye = worldFromTorso * matMideyeZeroFromMideyeCurrent;
-		m_WorldFromWeapon.SetupMatrixOrgAngles( originalMiddleOrigin, originalMiddleAngles );
+		{
+			// Aim point is independent of view - leave it as it was, just copy it into m_WorldFromWeapon for our use.
+			m_TorsoFromMideye = matMideyeZeroFromMideyeCurrent;
+			m_WorldFromMidEye = worldFromTorso * matMideyeZeroFromMideyeCurrent;
+
+			// GSTRINGMIGRATION
+			C_GstringPlayer *pPlayer = LocalGstringPlayer();
+			if ( pPlayer && pPlayer->IsStereoViewAligned() )
+			{
+				m_WorldFromMidEye.SetupMatrixOrgAngles( originalMiddleOrigin, originalMiddleAngles );
+				m_WorldFromMidEye = m_WorldFromMidEye * matMideyeZeroFromMideyeCurrent;
+				m_WorldFromMidEye.SetTranslation( m_WorldFromMidEye.GetTranslation() + m_WorldFromMidEye.GetForward() * 5.0f );
+			}
+			// END GSTRINGMIGRATION
+
+			m_WorldFromWeapon.SetupMatrixOrgAngles( originalMiddleOrigin, originalMiddleAngles );
+		}
 		break;
 
 	case HMM_SHOOTMOVELOOKMOUSE:

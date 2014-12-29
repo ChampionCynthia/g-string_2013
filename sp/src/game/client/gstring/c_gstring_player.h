@@ -59,6 +59,8 @@ public:
 	virtual bool IsOverridingViewmodel();
 	virtual int DrawOverriddenViewmodel( C_BaseViewModel *pViewmodel, int flags ) { return 0; };
 
+	bool IsStereoViewAligned() const;
+
 protected:
 
 private:

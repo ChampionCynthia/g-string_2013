@@ -130,6 +130,13 @@ bool C_GstringPlayer::IsOverridingViewmodel()
 	return IsInInteraction();
 }
 
+bool C_GstringPlayer::IsStereoViewAligned() const
+{
+	return IsInInteraction() ||
+		IsInSpacecraft() ||
+		m_pRagdollEntity.Get() != NULL;
+}
+
 void C_GstringPlayer::ClientThink()
 {
 	BaseClass::ClientThink();
