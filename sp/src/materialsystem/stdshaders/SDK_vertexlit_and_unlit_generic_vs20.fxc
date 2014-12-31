@@ -9,6 +9,7 @@
 //  STATIC: "SEPARATE_DETAIL_UVS"   "0..1"
 //  STATIC: "DECAL"					"0..1" [vs30]
 //  STATIC: "SM30_VERTEXID"			"0..1" [vs30]
+//  STATIC: "TWO_SIDED_LIGHTING"	"0..1" [vs30]
 
 //  DYNAMIC: "COMPRESSED_VERTS"		"0..1"
 //	DYNAMIC: "DYNAMIC_LIGHT"		"0..1"
@@ -27,6 +28,7 @@
 // SKIP: ($CASCADED_SHADOW) && ($FLASHLIGHT)
 // SKIP: ($CASCADED_SHADOW) && ($SEAMLESS_BASE)
 // SKIP: ($CASCADED_SHADOW) && ($SEAMLESS_DETAIL)
+// SKIP: $CASCADED_SHADOW && $VERTEXCOLOR
 
 #if CASCADED_SHADOW
 #define USE_SEPARATE_DIRECTIONAL_LIGHT
@@ -204,6 +206,13 @@ VS_OUTPUT main( const VS_INPUT v )
 #if CASCADED_SHADOW
 	float3 directionalLight;
 	o.color.xyz = DoLighting( worldPos, worldNormal, v.vSpecular, bStaticLight, bDynamicLight, g_bHalfLambert, directionalLight );
+
+#if TWO_SIDED_LIGHTING
+	float3 directionalLight2;
+	o.color.xyz += DoLighting( worldPos, -worldNormal, v.vSpecular, bStaticLight, bDynamicLight, g_bHalfLambert, directionalLight2 );
+	directionalLight += directionalLight2;
+#endif
+
 	o.detailTexCoord.zw = directionalLight.xy;
 	o.worldVertToEyeVector.w = directionalLight.z;
 #elif !defined (_X360) && FLASHLIGHT

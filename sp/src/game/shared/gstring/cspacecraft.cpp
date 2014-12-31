@@ -539,7 +539,7 @@ RenderGroup_t CSpacecraft::GetRenderGroup()
 	if ( GetOwnerEntity() == C_BasePlayer::GetLocalPlayer() &&
 		gstring_spacecraft_firstperson.GetBool() )
 	{
-		return RENDER_GROUP_VIEW_MODEL_TRANSLUCENT;
+		return RENDER_GROUP_VIEW_MODEL_OPAQUE;
 	}
 
 	return RENDER_GROUP_TWOPASS;

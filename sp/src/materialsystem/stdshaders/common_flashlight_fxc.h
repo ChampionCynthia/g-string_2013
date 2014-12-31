@@ -852,10 +852,10 @@ float3 DoFlashlight( float3 flashlightPos, float3 worldPos, float4 flashlightSpa
 #ifdef NEW_SHADOW_FILTERS
 float DoCascadedShadow( sampler depthSampler, sampler randomSampler, float3 worldNormal, float3 lightDirection,
 	float3 closePosition, float3 worldPosition, int nShadowLevel, float3 cascadedStepData,
-	float2 vScreenPos, float4 vShadowTweaks )
+	float2 vScreenPos, float4 vShadowTweaks, const bool bCheckDot = true )
 {
 	float shadow = 0.0;
-	float cascadedDot = dot( -lightDirection, worldNormal );
+	float cascadedDot = bCheckDot ? dot( -lightDirection, worldNormal ) : abs( dot( -lightDirection, worldNormal ) );
 	if ( cascadedDot >= 0.0f )
 	{
 		cascadedDot = saturate( cascadedDot * 12.0 );

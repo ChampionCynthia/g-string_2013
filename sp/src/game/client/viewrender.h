@@ -428,11 +428,18 @@ public:
 	void			DrawRenderablesInList( CUtlVector< IClientRenderable * > &list, int flags = 0 );
 private:
 	int				m_BuildWorldListsNumber;
-
+	
+	enum CascadedConfigMode
+	{
+		CASCADEDCONFIG_NONE = 0,
+		CASCADEDCONFIG_NORMAL,
+		CASCADEDCONFIG_CLOSE,
+		CASCADEDCONFIG_FAR
+	};
 
 	// General draw methods
 	// baseDrawFlags is a combination of DF_ defines. DF_MONITOR is passed into here while drawing a monitor.
-	void			ViewDrawScene( bool bDrew3dSkybox, SkyboxVisibility_t nSkyboxVisible, const CViewSetup &view, int nClearFlags, view_id_t viewID, bool bDrawViewModel = false, int baseDrawFlags = 0, ViewCustomVisibility_t *pCustomVisibility = NULL );
+	void			ViewDrawScene( CascadedConfigMode cascadedMode, bool bDrew3dSkybox, SkyboxVisibility_t nSkyboxVisible, const CViewSetup &view, int nClearFlags, view_id_t viewID, bool bDrawViewModel = false, int baseDrawFlags = 0, ViewCustomVisibility_t *pCustomVisibility = NULL );
 
 	void			DrawMonitors( const CViewSetup &cameraView );
 
@@ -473,7 +480,7 @@ private:
 	void			CleanupMain3DView( const CViewSetup &view );
 
 	// GSTRINGMIGRATION
-	void			UpdateCascadedShadow( const CViewSetup &view );
+	void			UpdateCascadedShadow( const CViewSetup &view, CascadedConfigMode mode );
 	void			DrawVGUILayer( CHud::HUDRENDERSTAGE_t stage, const CViewSetup &view, ITexture *pSaveRenderTarget );
 	// END GSTRINGMIGRATION
 

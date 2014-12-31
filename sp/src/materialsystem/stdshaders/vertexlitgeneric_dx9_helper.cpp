@@ -829,6 +829,7 @@ static void DrawVertexLitGeneric_DX9_Internal( CBaseVSShader *pShader, IMaterial
 				else
 				{
 					const bool bFastVertexTextures = g_pHardwareConfig->HasFastVertexTextures();
+					const bool bTwoSidedLighting = info.m_nTwoSidedLighting >= 0 && params[ info.m_nTwoSidedLighting ]->GetIntValue() > 0;
 
 					// The vertex shader uses the vertex id stream
 					if ( bFastVertexTextures )
@@ -844,6 +845,9 @@ static void DrawVertexLitGeneric_DX9_Internal( CBaseVSShader *pShader, IMaterial
 					SET_STATIC_VERTEX_SHADER_COMBO( SEPARATE_DETAIL_UVS, IsBoolSet( info.m_nSeparateDetailUVs, params ) );
 					SET_STATIC_VERTEX_SHADER_COMBO( DECAL, bIsDecal );
 					SET_STATIC_VERTEX_SHADER_COMBO( SM30_VERTEXID, bFastVertexTextures );
+					// GSTRINGMIGRATION
+					SET_STATIC_VERTEX_SHADER_COMBO( TWO_SIDED_LIGHTING, bTwoSidedLighting );
+					// END GSTRINGMIGRATION
 					SET_STATIC_VERTEX_SHADER( sdk_vertexlit_and_unlit_generic_vs30 );
 
 					DECLARE_STATIC_PIXEL_SHADER( sdk_vertexlit_and_unlit_generic_ps30 );
@@ -868,6 +872,7 @@ static void DrawVertexLitGeneric_DX9_Internal( CBaseVSShader *pShader, IMaterial
 					SET_STATIC_PIXEL_SHADER_COMBO( DEPTHBLEND, IsBoolSet( info.m_nDepthBlend, params ) );
 					// GSTRINGMIGRATION
 					SET_STATIC_PIXEL_SHADER_COMBO( SELFILLUM_TWOTEXTURE_BLEND, bHasSelfIllum && bHasSelfIllumTwoTexture );
+					SET_STATIC_PIXEL_SHADER_COMBO( TWO_SIDED_LIGHTING, bTwoSidedLighting );
 					// END GSTRINGMIGRATION
 					SET_STATIC_PIXEL_SHADER( sdk_vertexlit_and_unlit_generic_ps30 );
 				}

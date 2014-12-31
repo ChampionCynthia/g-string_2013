@@ -1346,7 +1346,7 @@ bool CViewRender::UpdateShadowDepthTexture( ITexture *pRenderTarget, ITexture *p
 //-----------------------------------------------------------------------------
 // Purpose: Renders world and all entities, etc.
 //-----------------------------------------------------------------------------
-void CViewRender::ViewDrawScene( bool bDrew3dSkybox, SkyboxVisibility_t nSkyboxVisible, const CViewSetup &view, 
+void CViewRender::ViewDrawScene( CascadedConfigMode cascadedMode, bool bDrew3dSkybox, SkyboxVisibility_t nSkyboxVisible, const CViewSetup &view, 
 								int nClearFlags, view_id_t viewID, bool bDrawViewModel, int baseDrawFlags, ViewCustomVisibility_t *pCustomVisibility )
 {
 	VPROF( "CViewRender::ViewDrawScene" );
@@ -1366,9 +1366,9 @@ void CViewRender::ViewDrawScene( bool bDrew3dSkybox, SkyboxVisibility_t nSkyboxV
 
 		// GSTRINGMIGRATION
 		if ( g_pCSMEnvLight != NULL && g_pCSMEnvLight->IsCascadedShadowMappingEnabled() &&
-			SupportsCascadedShadows() )
+			SupportsCascadedShadows() && cascadedMode != CASCADEDCONFIG_NONE )
 		{
-			UpdateCascadedShadow( view );
+			UpdateCascadedShadow( view, cascadedMode );
 		}
 		else
 		{
@@ -1428,6 +1428,11 @@ void CViewRender::ViewDrawScene( bool bDrew3dSkybox, SkyboxVisibility_t nSkyboxV
 	// issue the pixel visibility tests
 	if ( IsMainView( CurrentViewID() ) )
 	{
+		if ( bDrawViewModel )
+		{
+			DrawViewModels( view, true );
+		}
+
 		PixelVisibility_EndCurrentView();
 	}
 
@@ -1911,7 +1916,7 @@ void CViewRender::CleanupMain3DView( const CViewSetup &view )
 	render->PopView( GetFrustum() );
 }
 
-void CViewRender::UpdateCascadedShadow( const CViewSetup &view )
+void CViewRender::UpdateCascadedShadow( const CViewSetup &view, CascadedConfigMode mode )
 {
 	static CTextureReference s_CascadedShadowDepthTexture;
 	static CTextureReference s_CascadedShadowColorTexture;
@@ -1989,29 +1994,33 @@ void CViewRender::UpdateCascadedShadow( const CViewSetup &view )
 		{ 384.0f, 256.0f, 0.75f, 0.0f }
 	};
 	const int iCascadedShadowCount = ARRAYSIZE( shadowConfigs );
-	const bool bSpaceMap = g_pGstringGlobals != NULL && g_pGstringGlobals->IsSpaceMap();
-	const bool bFirstPersonSpace = bSpaceMap && gstring_spacecraft_firstperson.GetBool();
 
-	if ( !bSpaceMap )
+	switch ( mode )
 	{
-		ShadowConfig_t &closeShadow = shadowConfigs[ 0 ];
-		ShadowConfig_t &farShadow = shadowConfigs[ 1 ];
-		closeShadow.flOrthoSize = 164.0f;
-		closeShadow.flForwardOffset = 102.0f;
-		farShadow.flOrthoSize = 786.0f;
-		farShadow.flForwardOffset = 384.0f;
+	case CASCADEDCONFIG_FAR: // !bSpaceMap
+		{
+			ShadowConfig_t &closeShadow = shadowConfigs[ 0 ];
+			ShadowConfig_t &farShadow = shadowConfigs[ 1 ];
+			closeShadow.flOrthoSize = 164.0f;
+			closeShadow.flForwardOffset = 102.0f;
+			farShadow.flOrthoSize = 786.0f;
+			farShadow.flForwardOffset = 384.0f;
 
-		vecMainViewFwd.z = 0.0f;
-		vecMainViewFwd.NormalizeInPlace();
-	}
-	else if ( bFirstPersonSpace )
-	{
-		ShadowConfig_t &closeShadow = shadowConfigs[ 0 ];
-		ShadowConfig_t &farShadow = shadowConfigs[ 1 ];
-		closeShadow.flOrthoSize = 4.0f;
-		closeShadow.flForwardOffset = 2.0f;
-		closeShadow.flUVOffsetX = 0.25f;
-		farShadow.flViewDepthBiasHack = 1.5f;
+			vecMainViewFwd.z = 0.0f;
+			vecMainViewFwd.NormalizeInPlace();
+		}
+		break;
+
+	case CASCADEDCONFIG_CLOSE: // bFirstPersonSpace
+		{
+			ShadowConfig_t &closeShadow = shadowConfigs[ 0 ];
+			ShadowConfig_t &farShadow = shadowConfigs[ 1 ];
+			closeShadow.flOrthoSize = 4.0f;
+			closeShadow.flForwardOffset = 2.0f;
+			closeShadow.flUVOffsetX = 0.25f;
+			farShadow.flViewDepthBiasHack = 1.5f;
+		}
+		break;
 	}
 
 	vecMainViewFwd -= vecFwd * DotProduct( vecMainViewFwd, vecFwd );
@@ -2021,12 +2030,12 @@ void CViewRender::UpdateCascadedShadow( const CViewSetup &view )
 
 	C_BasePlayer *pPlayer = C_BasePlayer::GetLocalPlayer();
 
-	Vector vecCascadeOrigin( bFirstPersonSpace ? view.origin :
+	Vector vecCascadeOrigin( ( mode == CASCADEDCONFIG_CLOSE ) ? view.origin :
 		pPlayer ? pPlayer->GetRenderOrigin() : vec3_origin );
 	vecCascadeOrigin -= vecFwd * 1024.0f;
 
 	// This can only be set once per frame, not per shadow view. Fuckers.
-	if ( bFirstPersonSpace )
+	if ( mode == CASCADEDCONFIG_CLOSE )
 	{
 		pRenderContext->SetShadowDepthBiasFactors( 1.0f, 0.000005f );
 	}
@@ -2531,6 +2540,10 @@ void CViewRender::RenderView( const CViewSetup &view, int nClearFlags, int whatT
 	pRenderContext->SetFloatRenderingParameter( FLOAT_RENDERPARM_MINIMUMLIGHTING,
 		bBuildingCubemaps ?
 		0.0f : GetNightvisionMinLighting() );
+	
+	const bool bSpaceMap = g_pGstringGlobals != NULL && g_pGstringGlobals->IsSpaceMap();
+	const bool bFirstPersonSpace = bSpaceMap && gstring_spacecraft_firstperson.GetBool();
+	CascadedConfigMode cascadedMode = bSpaceMap ? bFirstPersonSpace ? CASCADEDCONFIG_CLOSE : CASCADEDCONFIG_NORMAL : CASCADEDCONFIG_FAR;
 	// END GSTRINGMIGRATION
 
 	pRenderContext.SafeRelease(); // don't want to hold for long periods in case in a locking active share thread mode // GSTRINGMIGRATION
@@ -2600,7 +2613,8 @@ void CViewRender::RenderView( const CViewSetup &view, int nClearFlags, int whatT
 		// Render world and all entities, particles, etc.
 		if( !g_pIntroData )
 		{
-			ViewDrawScene( bDrew3dSkybox, nSkyboxVisible, view, nClearFlags, VIEW_MAIN, whatToDraw & RENDERVIEW_DRAWVIEWMODEL );
+			ViewDrawScene( cascadedMode, bDrew3dSkybox, nSkyboxVisible, view, nClearFlags, VIEW_MAIN,
+				( whatToDraw & RENDERVIEW_DRAWVIEWMODEL ) != 0 && bFirstPersonSpace );
 		}
 		else
 		{
@@ -2651,7 +2665,10 @@ void CViewRender::RenderView( const CViewSetup &view, int nClearFlags, int whatT
 		GetClientModeNormal()->DoPostScreenSpaceEffects( &view );
 
 		// Now actually draw the viewmodel
-		DrawViewModels( view, whatToDraw & RENDERVIEW_DRAWVIEWMODEL );
+		if ( !bFirstPersonSpace )
+		{
+			DrawViewModels( view, whatToDraw & RENDERVIEW_DRAWVIEWMODEL );
+		}
 
 		// GSTRINGMIGRATION
 		if ( bShouldUpdateSkymask )
@@ -3644,7 +3661,7 @@ bool CViewRender::DrawOneMonitor( ITexture *pRenderTarget, int cameraNum, C_Poin
 	// @MULTICORE (toml 8/11/2006): this should be a renderer....
 	Frustum frustum;
  	render->Push3DView( monitorView, VIEW_CLEAR_DEPTH | VIEW_CLEAR_COLOR, pRenderTarget, (VPlane *)frustum );
-	ViewDrawScene( false, SKYBOX_2DSKYBOX_VISIBLE, monitorView, 0, VIEW_MONITOR );
+	ViewDrawScene( CASCADEDCONFIG_NONE, false, SKYBOX_2DSKYBOX_VISIBLE, monitorView, 0, VIEW_MONITOR );
  	render->PopView( frustum );
 
 	// Reset the world fog parameters.

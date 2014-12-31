@@ -131,6 +131,8 @@ struct VertexLitGeneric_DX9_Vars_t
 	int m_nSelfIllumTwoTexture;
 	int m_nSelfIllumTwoTexture_Amount;
 	int m_nSelfIllumTwoTexture_Texture;
+
+	int m_nTwoSidedLighting;
 };
 
 void InitParamsVertexLitGeneric_DX9( CBaseVSShader *pShader, IMaterialVar** params, const char *pMaterialName, bool bVertexLitGeneric, VertexLitGeneric_DX9_Vars_t &info );

@@ -59,6 +59,7 @@
 
 // GSTRINGMIGRATION
 // STATIC: "SELFILLUM_TWOTEXTURE_BLEND" "0..1"
+// STATIC: "TWO_SIDED_LIGHTING"			"0..1" [ps30]
 // DYNAMIC: "CASCADED_SHADOW"			"0..1"  [ps30]
 
 // SKIP: $SELFILLUM_TWOTEXTURE_BLEND && ( $SELFILLUM == 0 )
@@ -71,6 +72,8 @@
 // SKIP: ($CASCADED_SHADOW) && ($SEAMLESS_BASE)
 // SKIP: ($CASCADED_SHADOW) && ($SEAMLESS_DETAIL)
 // SKIP: ($CASCADED_SHADOW) && (!$DIFFUSELIGHTING)
+// SKIP: ($CASCADED_SHADOW) && (!$DIFFUSELIGHTING)
+// SKIP: ($CASCADED_SHADOW) && ($VERTEXCOLOR)
 // END GSTRINGMIGRATION
 
 #include "common_flashlight_fxc.h"
@@ -352,7 +355,7 @@ float4 main( PS_INPUT i ) : COLOR
 
 		float flShadow = DoCascadedShadow( ShadowDepthSampler, RandRotSampler, i.worldSpaceNormal,
 			g_CascadedForward, i.flashlightSpacePos, i.worldPos_projPosZ.xyz, FLASHLIGHTDEPTHFILTERMODE, g_CascadedStepData,
-			i.projPos.xy / i.projPos.z, float4( 0.0005, 0.0, 0.0, 0.0 ) );
+			i.projPos.xy / i.projPos.z, float4( 0.0005, 0.0, 0.0, 0.0 ), TWO_SIDED_LIGHTING ? false : true );
 
 		diffuseLighting += directionalLighting * flShadow;
 #endif
