@@ -51,6 +51,7 @@ public:
 	C_FirstpersonBody *GetBodyModel() { return m_pBodyModel; }
 
 	bool IsInSpacecraft() const;
+	bool IsInSpacecraftFirstperson() const;
 	CSpacecraft *GetSpacecraft();
 
 	bool IsInInteraction() const;

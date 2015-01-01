@@ -42,6 +42,12 @@ $Project
 			$File	"$SRCDIR\game\shared\gstring\cgstring_interaction.h"
 			$File	"$SRCDIR\game\shared\gstring\cgstring_interaction_body.cpp"
 			$File	"$SRCDIR\game\shared\gstring\cgstring_interaction_body.h"
+			
+			$Folder "Holo GUI"
+			{
+				$File	"$SRCDIR\game\shared\gstring\hologui\env_holo_system.cpp"
+				$File	"$SRCDIR\game\shared\gstring\hologui\env_holo_system.h"
+			}
 		}
 	}
 }

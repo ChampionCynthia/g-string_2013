@@ -8,6 +8,7 @@ void PerformScenePostProcessHack();
 float GetSceneFadeScalar();
 
 void DrawBarsAndGrain( int x, int y, int w, int h );
+void DrawVignette( int x, int y, int w, int h );
 
 void SetGodraysColor( Vector col = Vector( 1, 1, 1 ) );
 void SetGodraysIntensity( float i = 1.0f );

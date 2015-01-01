@@ -100,12 +100,12 @@ void DrawBarsAndGrain( int x, int y, int w, int h )
 	if ( g_pPPCtrl != NULL && !g_pPPCtrl->IsBarsEnabled() )
 		return;
 
-	C_GstringPlayer *pPlayer = LocalGstringPlayer();
-	float flNightvisionStrengthInv = 1.0f - (pPlayer ? pPlayer->GetNightvisionFraction() : 0.0f);
-
 	if ( /*cvar_gstring_drawfilmgrain.GetBool()
 		&&*/ cvar_gstring_filmgrain_strength.GetFloat() > 0.0f )
 	{
+		C_GstringPlayer *pPlayer = LocalGstringPlayer();
+		float flNightvisionStrengthInv = 1.0f - (pPlayer ? pPlayer->GetNightvisionFraction() : 0.0f);
+
 		static int iFilmgrainIndex = shaderEdit->GetPPEIndex( FILMGRAIN_EDITOR_NAME );
 
 		if ( iFilmgrainIndex >= 0 )
@@ -115,23 +115,6 @@ void DrawBarsAndGrain( int x, int y, int w, int h )
 			pVar_Filmgrain_Strength->SetFloatValue( cvar_gstring_filmgrain_strength.GetFloat() * flNightvisionStrengthInv );
 
 			shaderEdit->DrawPPEOnDemand( iFilmgrainIndex, x, y, w, h );
-		}
-	}
-
-	if ( cvar_gstring_drawvignette.GetBool() )
-	{
-		static int iVignetteIndex = shaderEdit->GetPPEIndex( VIGNETTE_EDITOR_NAME );
-
-		if ( iVignetteIndex >= 0 )
-		{
-			DEFINE_SHADEREDITOR_MATERIALVAR( VIGNETTE_EDITOR_NAME, "vignette", "$MUTABLE_01", pVar_Vignette_Strength );
-			DEFINE_SHADEREDITOR_MATERIALVAR( VIGNETTE_EDITOR_NAME, "vignette", "$MUTABLE_02", pVar_Vignette_Ranges );
-
-			pVar_Vignette_Strength->SetFloatValue( cvar_gstring_vignette_strength.GetFloat() * flNightvisionStrengthInv );
-			pVar_Vignette_Ranges->SetVecValue( cvar_gstring_vignette_range_max.GetFloat(),
-				cvar_gstring_vignette_range_min.GetFloat() );
-
-			shaderEdit->DrawPPEOnDemand( iVignetteIndex, x, y, w, h );
 		}
 	}
 
@@ -158,6 +141,31 @@ void DrawBarsAndGrain( int x, int y, int w, int h )
 	}
 }
 
+void DrawVignette( int x, int y, int w, int h )
+{
+	if ( !ShouldDrawCommon() )
+		return;
+
+	if ( cvar_gstring_drawvignette.GetBool() )
+	{
+		C_GstringPlayer *pPlayer = LocalGstringPlayer();
+		float flNightvisionStrengthInv = 1.0f - (pPlayer ? pPlayer->GetNightvisionFraction() : 0.0f);
+
+		static int iVignetteIndex = shaderEdit->GetPPEIndex( VIGNETTE_EDITOR_NAME );
+
+		if ( iVignetteIndex >= 0 )
+		{
+			DEFINE_SHADEREDITOR_MATERIALVAR( VIGNETTE_EDITOR_NAME, "vignette", "$MUTABLE_01", pVar_Vignette_Strength );
+			DEFINE_SHADEREDITOR_MATERIALVAR( VIGNETTE_EDITOR_NAME, "vignette", "$MUTABLE_02", pVar_Vignette_Ranges );
+
+			pVar_Vignette_Strength->SetFloatValue( cvar_gstring_vignette_strength.GetFloat() * flNightvisionStrengthInv );
+			pVar_Vignette_Ranges->SetVecValue( cvar_gstring_vignette_range_max.GetFloat(),
+				cvar_gstring_vignette_range_min.GetFloat() );
+
+			shaderEdit->DrawPPEOnDemand( iVignetteIndex, x, y, w, h );
+		}
+	}
+}
 
 /**
  * GODRAYS

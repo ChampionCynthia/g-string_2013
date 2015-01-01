@@ -12,6 +12,7 @@
 #include "gstring_player_shared_forward.h"
 #include "cspacecraft_config.h"
 
+class CEnvHoloSystem;
 #ifdef CLIENT_DLL
 class CHudCrosshair;
 #else
@@ -24,7 +25,22 @@ public:
 };
 #endif
 
-class CSpacecraft : public CBaseAnimating
+class ISpacecraftData
+{
+public:
+	virtual ~ISpacecraftData() {}
+
+	virtual int GetShield() const = 0;
+	virtual int GetMaxShield() const = 0;
+	virtual int GetHull() const = 0;
+	virtual int GetMaxHull() const = 0;
+
+	virtual const model_t *GetModel() const = 0;
+
+	virtual const QAngle &GetAngularImpulse() const = 0;
+};
+
+class CSpacecraft : public CBaseAnimating, public ISpacecraftData
 {
 	DECLARE_CLASS( CSpacecraft, CBaseAnimating );
 	DECLARE_NETWORKCLASS();
@@ -47,11 +63,19 @@ public:
 
 	bool IsPlayerControlled() const;
 
+	virtual int GetShield() const { return m_iShield; }
+	virtual int GetMaxShield() const { return m_iMaxShield; }
+	virtual int GetHull() const { return GetHealth(); }
+	virtual int GetMaxHull() const { return GetMaxHealth(); }
+	virtual const model_t *GetModel() const { return ((BaseClass*)this)->BaseClass::GetModel(); }
+	virtual const QAngle &GetAngularImpulse() const { return m_AngularImpulse.Get(); }
+
 #ifdef GAME_DLL
 	void SetAI( ISpacecraftAI *pSpacecraftAI );
 
 	virtual void Precache();
 	virtual void Activate();
+	void OnPlayerEntered( CGstringPlayer *pPlayer );
 
 	void InputEnterVehicle( inputdata_t &inputdata );
 	virtual void PhysicsSimulate();
@@ -73,6 +97,7 @@ public:
 	virtual ShadowType_t ShadowCastType() { return SHADOWS_SIMPLE; }
 	virtual bool ShouldReceiveProjectedTextures( int flags ) { return true; }
 	virtual RenderGroup_t GetRenderGroup();
+	virtual bool IsViewModel() const;
 	//virtual int DrawModel( int flags );
 
 	virtual void OnDataChanged( DataUpdateType_t t );
@@ -112,8 +137,10 @@ private:
 
 	IMPLEMENT_NETWORK_VAR_FOR_DERIVED( m_iMaxHealth );
 	float m_flCollisionDamageProtection;
-	float m_flRegenerationTimer;
-	float m_flRegeneratedHealth;
+	float m_flShieldRegenerationTimer;
+	float m_flShieldRegeneratedTimeStamp;
+	float m_flHealthRegenerationTimer;
+	float m_flHealthRegeneratedTimeStamp;
 #else
 	CUtlVector< int > m_ThrusterAttachments;
 	CUtlVector< int > m_ThrusterSounds;
@@ -139,6 +166,8 @@ private:
 
 	CUtlVector< int > m_WeaponAttachments;
 
+	CNetworkVar( int, m_iShield );
+	CNetworkVar( int, m_iMaxShield );
 	CNetworkQAngle( m_AngularImpulse );
 	CNetworkVector( m_PhysVelocity );
 	CNetworkVar( int, m_iEngineLevel );
@@ -148,6 +177,8 @@ private:
 
 	CNetworkVar( UtlSymId_t, m_iSettingsIndex );
 	SpacecraftSettings_t m_Settings;
+
+	CNetworkHandle( CEnvHoloSystem, m_hHoloSystem );
 };
 
 

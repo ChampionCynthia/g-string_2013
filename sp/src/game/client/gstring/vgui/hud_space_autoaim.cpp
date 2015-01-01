@@ -30,6 +30,8 @@ CHudSpaceAutoAim::CHudSpaceAutoAim( const char *pElementName )
 
 	vgui::Panel *pParent = g_pClientMode->GetViewport();
 	SetParent( pParent );
+
+	SetHiddenBits( HIDEHUD_SPACECRAFT );
 }
 
 CHudSpaceAutoAim::~CHudSpaceAutoAim()
@@ -57,7 +59,7 @@ void CHudSpaceAutoAim::Reset()
 bool CHudSpaceAutoAim::ShouldDraw()
 {
 	const C_GstringPlayer *pPlayer = LocalGstringPlayer();
-	return CHudElement::ShouldDraw() && pPlayer && pPlayer->IsInSpacecraft();
+	return CHudElement::ShouldDraw() && pPlayer && !pPlayer->IsInSpacecraftFirstperson();
 }
 
 void CHudSpaceAutoAim::ApplySchemeSettings( vgui::IScheme *pScheme )

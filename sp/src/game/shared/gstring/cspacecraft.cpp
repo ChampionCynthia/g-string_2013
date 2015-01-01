@@ -4,6 +4,7 @@
 #include "gstring/cspacecraft.h"
 #include "gstring/gstring_player_shared.h"
 #include "gstring/gstring_util.h"
+#include "gstring/hologui/env_holo_system.h"
 #include "props_shared.h"
 #include "particle_parse.h"
 
@@ -81,6 +82,8 @@ ConVar gstring_spacecraft_move_mode( "gstring_spacecraft_move_mode", "1", FCVAR_
 #ifdef GAME_DLL
 BEGIN_DATADESC( CSpacecraft )
 
+	DEFINE_FIELD( m_iShield, FIELD_INTEGER ),
+	DEFINE_FIELD( m_iMaxShield, FIELD_INTEGER ),
 	DEFINE_KEYFIELD( m_strSettingsName, FIELD_STRING, "settingsname" ),
 
 	// AI
@@ -106,6 +109,8 @@ IMPLEMENT_NETWORKCLASS_DT( CSpacecraft, CSpacecraft_DT )
 #ifdef GAME_DLL
 	SendPropInt( SENDINFO( m_iHealth ), -1, SPROP_VARINT | SPROP_CHANGES_OFTEN ),
 	SendPropInt( SENDINFO( m_iMaxHealth ) ),
+	SendPropInt( SENDINFO( m_iShield ), 16, SPROP_VARINT | SPROP_CHANGES_OFTEN ),
+	SendPropInt( SENDINFO( m_iMaxShield ), 16 ),
 
 	SendPropInt( SENDINFO( m_iEngineLevel ), 2, SPROP_UNSIGNED ),
 	SendPropInt( SENDINFO( m_iProjectileParity ), 8, SPROP_UNSIGNED ),
@@ -119,6 +124,8 @@ IMPLEMENT_NETWORKCLASS_DT( CSpacecraft, CSpacecraft_DT )
 #else
 	RecvPropInt( RECVINFO( m_iHealth ) ),
 	RecvPropInt( RECVINFO( m_iMaxHealth ) ),
+	RecvPropInt( RECVINFO( m_iShield ) ),
+	RecvPropInt( RECVINFO( m_iMaxShield ) ),
 
 	RecvPropInt( RECVINFO( m_iEngineLevel ) ),
 	RecvPropInt( RECVINFO( m_iProjectileParity ) ),
@@ -144,8 +151,10 @@ CSpacecraft::CSpacecraft()
 	, m_iAIAttackState( 0 )
 	, m_iAITeam( 0 )
 	, m_flCollisionDamageProtection( 0.0f )
-	, m_flRegenerationTimer( 0.0f )
-	, m_flRegeneratedHealth( 0.0f )
+	, m_flShieldRegenerationTimer( 0.0f )
+	, m_flShieldRegeneratedTimeStamp( 0.0f )
+	, m_flHealthRegenerationTimer( 0.0f )
+	, m_flHealthRegeneratedTimeStamp( 0.0f )
 #else
 	: m_iMaxHealth( 0 )
 	, m_iEngineLevelLast( 0 )
@@ -228,6 +237,25 @@ void CSpacecraft::Activate()
 	m_takedamage = DAMAGE_YES;
 	SetMaxHealth( m_Settings.m_iHealth );
 	SetHealth( GetMaxHealth() );
+
+	m_iMaxShield = m_Settings.m_iShield;
+	m_iShield = m_iMaxShield;
+}
+
+void CSpacecraft::OnPlayerEntered( CGstringPlayer *pPlayer )
+{
+	SetOwnerEntity( pPlayer );
+
+	if ( !m_hHoloSystem )
+	{
+		CEnvHoloSystem *pHoloSystem = assert_cast< CEnvHoloSystem* >( CreateEntityByName( "env_holo_system" ) );
+		Assert( pHoloSystem );
+		pHoloSystem->SetOwnerEntity( this );
+		pHoloSystem->KeyValue( "Attachment", "gui" );
+		DispatchSpawn( pHoloSystem );
+		pHoloSystem->Activate();
+		m_hHoloSystem = pHoloSystem;
+	}
 }
 
 void CSpacecraft::InputEnterVehicle( inputdata_t &inputdata )
@@ -248,19 +276,39 @@ void CSpacecraft::PhysicsSimulate()
 			m_pAI->Run( gpGlobals->frametime );
 		}
 
+		if ( GetShield() < GetMaxShield() )
+		{
+			if ( m_flShieldRegenerationTimer > 0.0f )
+			{
+				m_flShieldRegenerationTimer -= gpGlobals->frametime;
+				m_flShieldRegeneratedTimeStamp = gpGlobals->curtime;
+			}
+			else if ( m_flShieldRegeneratedTimeStamp < gpGlobals->curtime )
+			{
+				int iAddedShield = ( gpGlobals->curtime - m_flShieldRegeneratedTimeStamp ) * m_Settings.m_flShieldRegenerationRate;
+				if ( iAddedShield > 0 )
+				{
+					m_flShieldRegeneratedTimeStamp = gpGlobals->curtime;
+					//TakeHealth( iAddedHealth, DMG_GENERIC );
+					iAddedShield = MIN( iAddedShield, GetMaxShield() - GetShield() );
+					m_iShield += iAddedShield;
+				}
+			}
+		}
+
 		if ( GetHealth() < GetMaxHealth() )
 		{
-			if ( m_flRegenerationTimer > 0.0f )
+			if ( m_flHealthRegenerationTimer > 0.0f )
 			{
-				m_flRegenerationTimer -= gpGlobals->frametime;
-				m_flRegeneratedHealth = gpGlobals->curtime;
+				m_flHealthRegenerationTimer -= gpGlobals->frametime;
+				m_flHealthRegeneratedTimeStamp = gpGlobals->curtime;
 			}
-			else if ( m_flRegeneratedHealth < gpGlobals->curtime )
+			else if ( m_flHealthRegeneratedTimeStamp < gpGlobals->curtime )
 			{
-				const int iAddedHealth = ( gpGlobals->curtime - m_flRegeneratedHealth ) * m_Settings.m_flRegenerationRate;
+				int iAddedHealth = ( gpGlobals->curtime - m_flHealthRegeneratedTimeStamp ) * m_Settings.m_flHealthRegenerationRate;
 				if ( iAddedHealth > 0 )
 				{
-					m_flRegeneratedHealth = gpGlobals->curtime;
+					m_flHealthRegeneratedTimeStamp = gpGlobals->curtime;
 					TakeHealth( iAddedHealth, DMG_GENERIC );
 				}
 			}
@@ -305,13 +353,26 @@ void CSpacecraft::VPhysicsCollision( int index, gamevcollisionevent_t *pEvent )
 
 int CSpacecraft::OnTakeDamage( const CTakeDamageInfo &info )
 {
-	int ret = BaseClass::OnTakeDamage( info );
+	CTakeDamageInfo newDamage( info );
 
-	DispatchParticleEffect( m_Settings.m_strParticleDamage, info.GetDamagePosition(), GetAbsAngles() );
+	if ( GetShield() > 0.0f )
+	{
+		float flAbsorbed = ceil( newDamage.GetDamage() );
+		flAbsorbed = MIN( GetShield(), flAbsorbed );
+
+		newDamage.SetDamage( MAX( 0.0f, newDamage.GetDamage() - flAbsorbed ) );
+		m_iShield = MAX( 0, GetShield() - flAbsorbed );
+	}
+
+	int ret = BaseClass::OnTakeDamage( newDamage );
+
+	DispatchParticleEffect( m_Settings.m_strParticleDamage, newDamage.GetDamagePosition(), GetAbsAngles() );
 	EmitSoundIfSet( this, m_Settings.m_strSoundDamage );
 
-	m_flRegenerationTimer = m_Settings.m_flRegenerationDelay;
-	m_flRegeneratedHealth = gpGlobals->curtime;
+	m_flShieldRegenerationTimer = m_Settings.m_flShieldRegenerationDelay;
+	m_flShieldRegeneratedTimeStamp = gpGlobals->curtime;
+	m_flHealthRegenerationTimer = m_Settings.m_flHealthRegenerationDelay;
+	m_flHealthRegeneratedTimeStamp = gpGlobals->curtime;
 
 	if ( GetOwnerEntity() && GetOwnerEntity()->IsPlayer() )
 	{
@@ -536,13 +597,18 @@ void CSpacecraft::SimulateFire( CMoveData &moveData, float flFrametime )
 #else
 RenderGroup_t CSpacecraft::GetRenderGroup()
 {
-	if ( GetOwnerEntity() == C_BasePlayer::GetLocalPlayer() &&
-		gstring_spacecraft_firstperson.GetBool() )
+	if ( IsViewModel() )
 	{
 		return RENDER_GROUP_VIEW_MODEL_OPAQUE;
 	}
 
 	return RENDER_GROUP_TWOPASS;
+}
+
+bool CSpacecraft::IsViewModel() const
+{
+	return GetOwnerEntity() == C_BasePlayer::GetLocalPlayer() &&
+		gstring_spacecraft_firstperson.GetBool();
 }
 
 void CSpacecraft::OnDataChanged( DataUpdateType_t t )

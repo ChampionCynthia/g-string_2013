@@ -490,8 +490,8 @@ void CViewRender::DriftPitch (void)
 }
 
 
-
-StereoEye_t		CViewRender::GetFirstEye() const
+// GSTRINGMIGRATION
+StereoEye_t GetFirstEye()
 {
 	if( UseVR() )
 		return STEREO_EYE_LEFT;
@@ -499,14 +499,14 @@ StereoEye_t		CViewRender::GetFirstEye() const
 		return STEREO_EYE_MONO;
 }
 
-StereoEye_t		CViewRender::GetLastEye() const
+StereoEye_t GetLastEye()
 {
 	if( UseVR() )
 		return STEREO_EYE_RIGHT;
 	else
 		return STEREO_EYE_MONO;
 }
-
+// END GSTRINGMIGRATION
 
 
 

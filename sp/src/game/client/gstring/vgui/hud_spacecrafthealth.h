@@ -19,6 +19,7 @@ public:
 
 	virtual void Init();
 	virtual void Reset();
+	virtual bool ShouldDraw();
 
 protected:
 	virtual void ApplySchemeSettings( vgui::IScheme *pScheme );

@@ -83,6 +83,8 @@ enum view_id_t
 view_id_t CurrentViewID();
 
 bool IsCurrentViewIdAccessAllowed(); // GSTRINGMIGRATION
+StereoEye_t GetFirstEye();
+StereoEye_t GetLastEye();
 
 //-----------------------------------------------------------------------------
 // Purpose: Stored pitch drifting variables
@@ -335,8 +337,6 @@ protected:
 	virtual void	WriteReplayScreenshot( WriteReplayScreenshotParams_t &params );
 	virtual void	UpdateReplayScreenshotCache();
 
-    StereoEye_t		GetFirstEye() const;
-    StereoEye_t		GetLastEye() const;
     CViewSetup &    GetView(StereoEye_t eEye);
     const CViewSetup &    GetView(StereoEye_t eEye) const ;
 
@@ -448,7 +448,7 @@ private:
 
 	// Drawing primitives
 	bool			ShouldDrawViewModel( bool drawViewmodel );
-	void			DrawViewModels( const CViewSetup &view, bool drawViewmodel );
+	void			DrawViewModels( const CViewSetup &view, bool drawViewmodel, bool bDrawVignette );
 
 	void			PerformScreenSpaceEffects( int x, int y, int w, int h );
 

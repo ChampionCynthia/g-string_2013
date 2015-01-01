@@ -64,7 +64,9 @@ $Project	"Shaders (G-String)"
 		$File	"unlitgeneric_dx9.cpp"
 		$File	"vertexlitgeneric_dx9.cpp"
 		$File	"vertexlitgeneric_dx9_helper.cpp"
+		
 		$File	"gstring_light_volumetrics.cpp"
+		$File	"gstring_holo_model.cpp"
 	}
 
 	$Folder	"Header Files"

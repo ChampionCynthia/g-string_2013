@@ -142,8 +142,11 @@ void CSpacecraftConfig::ReloadConfig()
 			settings.m_flAccelerationBoost = pChild->GetFloat( "acceleration_boost", settings.m_flAccelerationBoost );
 
 			settings.m_iHealth = pChild->GetInt( "health", settings.m_iHealth );
-			settings.m_flRegenerationDelay = pChild->GetFloat( "regeneration_delay", settings.m_flRegenerationDelay );
-			settings.m_flRegenerationRate = pChild->GetFloat( "regeneration_rate", settings.m_flRegenerationRate );
+			settings.m_iShield = pChild->GetInt( "shield", settings.m_iShield );
+			settings.m_flShieldRegenerationDelay = pChild->GetFloat( "shield_regeneration_delay", settings.m_flShieldRegenerationDelay );
+			settings.m_flShieldRegenerationRate = pChild->GetFloat( "shield_regeneration_rate", settings.m_flShieldRegenerationRate );
+			settings.m_flHealthRegenerationDelay = pChild->GetFloat( "health_regeneration_delay", settings.m_flHealthRegenerationDelay );
+			settings.m_flHealthRegenerationRate = pChild->GetFloat( "health_regeneration_rate", settings.m_flHealthRegenerationRate );
 
 			settings.m_flCollisionDamageScale = pChild->GetFloat( "collision_damage_scale", settings.m_flCollisionDamageScale );
 			settings.m_flCollisionDamageMin = pChild->GetFloat( "collision_damage_min", settings.m_flCollisionDamageMin );

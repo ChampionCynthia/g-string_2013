@@ -1,0 +1,45 @@
+// DYNAMIC: "COMPRESSED_VERTS"		"0..1"
+// DYNAMIC: "SKINNING"				"0..1"
+
+#include "common_vs_fxc.h"
+
+static const bool g_bSkinning		= SKINNING ? true : false;
+
+struct VS_INPUT
+{
+	float4 vPos			: POSITION;
+	float4 vBoneWeights	: BLENDWEIGHT;
+	float4 vBoneIndices	: BLENDINDICES;
+	float4 vNormal		: NORMAL;
+	float4 vUserData	: TANGENT;
+};
+
+struct VS_OUTPUT
+{
+	float4 vProjPos		: POSITION;
+	float3 vWorldNormal	: TEXCOORD0;
+	float3 vWorldPos	: TEXCOORD1;
+
+	float4 vColor		: COLOR0;
+};
+
+VS_OUTPUT main( const VS_INPUT v )
+{
+	VS_OUTPUT o;
+
+	float3 worldPos;
+	float3 worldNormal;
+
+	float3 vNormal;
+	DecompressVertex_Normal( v.vNormal, vNormal );
+	
+	SkinPositionAndNormal( g_bSkinning, v.vPos, vNormal, v.vBoneWeights, v.vBoneIndices, worldPos, worldNormal );
+
+	o.vProjPos = mul( float4( worldPos, 1 ), cViewProj );
+	o.vWorldNormal = worldNormal;
+	o.vWorldPos = worldPos;
+
+	o.vColor = cModulationColor;
+
+	return o;
+}

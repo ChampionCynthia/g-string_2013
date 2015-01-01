@@ -1024,6 +1024,11 @@ bool C_GstringPlayer::IsInSpacecraft() const
 	return m_hSpacecraft != NULL;
 }
 
+bool C_GstringPlayer::IsInSpacecraftFirstperson() const
+{
+	return IsInSpacecraft() && gstring_spacecraft_firstperson.GetBool();
+}
+
 CSpacecraft *C_GstringPlayer::GetSpacecraft()
 {
 	return m_hSpacecraft;
@@ -1035,6 +1040,9 @@ void C_GstringPlayer::GetSpacecraftCameraFirstPerson( Vector &origin, QAngle &an
 	Assert( pSpacecraft );
 
 	pSpacecraft->GetAttachment( "eyes", origin, angles );
+
+	//angles.y += sin( gpGlobals->curtime ) * 10;
+	//origin.y += sin( gpGlobals->curtime ) * 1;
 
 	vieweffects->CalcShake();
 	vieweffects->ApplyShake( origin, angles, 0.05f );

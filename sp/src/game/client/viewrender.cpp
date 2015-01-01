@@ -1064,7 +1064,7 @@ void CViewRender::DrawRenderablesInList( CUtlVector< IClientRenderable * > &list
 // Purpose: Actually draw the view model
 // Input  : drawViewModel - 
 //-----------------------------------------------------------------------------
-void CViewRender::DrawViewModels( const CViewSetup &view, bool drawViewmodel )
+void CViewRender::DrawViewModels( const CViewSetup &view, bool drawViewmodel, bool bDrawVignette )
 {
 	VPROF( "CViewRender::DrawViewModel" );
 	tmZone( TELEMETRY_LEVEL0, TMZF_NONE, "%s", __FUNCTION__ );
@@ -1158,6 +1158,14 @@ void CViewRender::DrawViewModels( const CViewSetup &view, bool drawViewmodel )
 		}
 
 		DrawRenderablesInList( opaqueViewModelList );
+
+		// GSTRINGMIGRATION
+		if ( bDrawVignette )
+		{
+			DrawVignette( view.x, view.y, view.width, view.height );
+		}
+		// END GSTRINGMIGRATION
+
 		DrawRenderablesInList( translucentViewModelList, STUDIO_TRANSPARENCY );
 	}
 
@@ -1359,7 +1367,7 @@ void CViewRender::ViewDrawScene( CascadedConfigMode cascadedMode, bool bDrew3dSk
 	g_pClientShadowMgr->PreRender();
 
 	// Shadowed flashlights supported on ps_2_b and up...
-	if ( r_flashlightdepthtexture.GetBool() && ( viewID == VIEW_MAIN ) && view.m_eStereoEye < STEREO_EYE_RIGHT )
+	if ( r_flashlightdepthtexture.GetBool() && ( viewID == VIEW_MAIN ) && view.m_eStereoEye == GetFirstEye() )
 	{
 		g_pClientShadowMgr->ComputeShadowDepthTextures( view );
 		CMatRenderContextPtr pRenderContext( materials );
@@ -1428,9 +1436,10 @@ void CViewRender::ViewDrawScene( CascadedConfigMode cascadedMode, bool bDrew3dSk
 	// issue the pixel visibility tests
 	if ( IsMainView( CurrentViewID() ) )
 	{
+		// First person space view model
 		if ( bDrawViewModel )
 		{
-			DrawViewModels( view, true );
+			DrawViewModels( view, true, true );
 		}
 
 		PixelVisibility_EndCurrentView();
@@ -2665,12 +2674,12 @@ void CViewRender::RenderView( const CViewSetup &view, int nClearFlags, int whatT
 		GetClientModeNormal()->DoPostScreenSpaceEffects( &view );
 
 		// Now actually draw the viewmodel
+		// GSTRINGMIGRATION
 		if ( !bFirstPersonSpace )
 		{
-			DrawViewModels( view, whatToDraw & RENDERVIEW_DRAWVIEWMODEL );
+			DrawViewModels( view, whatToDraw & RENDERVIEW_DRAWVIEWMODEL, false );
 		}
 
-		// GSTRINGMIGRATION
 		if ( bShouldUpdateSkymask )
 			g_ShaderEditorSystem->UpdateSkymask( bDrew3dSkybox, view.x, view.y, view.width, view.height );
 		// END GSTRINGMIGRATION
@@ -2787,7 +2796,14 @@ void CViewRender::RenderView( const CViewSetup &view, int nClearFlags, int whatT
 			//PerformScreenOverlay( view.x, view.y, view.width, view.height );
 
 			if ( whatToDraw & RENDERVIEW_DRAWHUD )
+			{
 				DrawBarsAndGrain( view.x, view.y, view.width, view.height );
+
+				if ( !bFirstPersonSpace )
+				{
+					DrawVignette( view.x, view.y, view.width, view.height );
+				}
+			}
 		}
 		// END GSTRINGMIGRATION
 
@@ -5727,7 +5743,7 @@ void CShadowDepthView::Draw()
 		ClientLeafSystem()->CollateViewModelRenderables( opaqueViewModelList, translucentViewModelList );
 
 		m_pMainView->DrawRenderablesInList( opaqueViewModelList, STUDIO_SHADOWDEPTHTEXTURE );
-		m_pMainView->DrawRenderablesInList( translucentViewModelList, STUDIO_TRANSPARENCY | STUDIO_SHADOWDEPTHTEXTURE );
+		//m_pMainView->DrawRenderablesInList( translucentViewModelList, STUDIO_TRANSPARENCY | STUDIO_SHADOWDEPTHTEXTURE );
 	}
 	// END GSTRINGMIGRATION
 

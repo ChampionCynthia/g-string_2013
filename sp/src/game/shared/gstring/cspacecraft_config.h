@@ -11,8 +11,11 @@ struct SpacecraftSettings_t
 		m_flAccelerationSide( 1.0f ),
 		m_flAccelerationBoost( 1.0f ),
 		m_iHealth( 100 ),
-		m_flRegenerationDelay( 1.0f ),
-		m_flRegenerationRate( 1.0f ),
+		m_iShield( 100 ),
+		m_flShieldRegenerationDelay( 1.0f ),
+		m_flShieldRegenerationRate( 1.0f ),
+		m_flHealthRegenerationDelay( 1.0f ),
+		m_flHealthRegenerationRate( 1.0f ),
 		m_flCollisionDamageScale( 0.0f ),
 		m_flCollisionDamageMin( 0.0f ),
 		m_flCollisionDamageMax( FLT_MAX )
@@ -39,8 +42,11 @@ struct SpacecraftSettings_t
 	float m_flAccelerationBoost;
 
 	int m_iHealth;
-	float m_flRegenerationDelay;
-	float m_flRegenerationRate;
+	int m_iShield;
+	float m_flShieldRegenerationDelay;
+	float m_flShieldRegenerationRate;
+	float m_flHealthRegenerationDelay;
+	float m_flHealthRegenerationRate;
 
 	float m_flCollisionDamageScale;
 	float m_flCollisionDamageMin;

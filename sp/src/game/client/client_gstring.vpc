@@ -63,6 +63,8 @@ $Project "Client (G-String)"
 			$File	"gstring\c_gstring_util.h"
 			$File	"gstring\gstring_in_main.cpp"
 			$File	"gstring\gstring_in_main.h"
+			$File	"gstring\gstring_rendertargets.cpp"
+			$File	"gstring\gstring_rendertargets.h"
 			$File	"gstring\c_lights.cpp"
 			$File	"gstring\c_lights.h"
 			$File	"gstring\cgore_generator.cpp"
@@ -93,6 +95,22 @@ $Project "Client (G-String)"
 			$Folder "material proxies"
 			{
 				$File	"gstring\proxies\gstring_spaceship_proxies.cpp"
+			}
+			
+			$Folder "Holo GUI"
+			{
+				$File	"gstring\hologui\holo_utilities.h"
+				$File	"gstring\hologui\holo_panel.cpp"
+				$File	"gstring\hologui\holo_panel.h"
+				$File	"gstring\hologui\holo_panel_vgui.cpp"
+				$File	"gstring\hologui\holo_panel_vgui.h"
+				$File	"gstring\hologui\holo_ship_health_graphic.cpp"
+				$File	"gstring\hologui\holo_ship_health_graphic.h"
+				$File	"gstring\hologui\holo_ship_health_text.cpp"
+				$File	"gstring\hologui\holo_ship_health_text.h"
+				$File	"gstring\hologui\holo_ship_model.cpp"
+				$File	"gstring\hologui\holo_ship_model.h"
+				
 			}
 		}
 	

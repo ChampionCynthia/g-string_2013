@@ -42,6 +42,12 @@ CHudSpacecraftHealth::~CHudSpacecraftHealth()
 {
 }
 
+bool CHudSpacecraftHealth::ShouldDraw()
+{
+	C_GstringPlayer *pPlayer = LocalGstringPlayer();
+	return CHudElement::ShouldDraw() && pPlayer && !pPlayer->IsInSpacecraftFirstperson() && pPlayer->IsAlive();
+}
+
 //void CHudSpacecraftHealth::MsgFunc_Fireball( bf_read &msg )
 //{
 //	const float flDuration = msg.ReadFloat();

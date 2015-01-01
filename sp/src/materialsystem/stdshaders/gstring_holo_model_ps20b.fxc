@@ -1,0 +1,28 @@
+
+// STATIC: "DEPTH_ONLY"				"0..1"
+
+#include "common_ps_fxc.h"
+#include "common_vertexlitgeneric_dx9.h"
+
+const float3 g_EyePos : register( c0 );
+const float3 g_FresnelRanges : register( c1 );
+
+struct PS_INPUT
+{
+	float3 vWorldNormal	: TEXCOORD0;
+	float3 vWorldPos	: TEXCOORD1;
+	float4 vColor		: COLOR0;
+};
+
+float4 main( PS_INPUT i ) : COLOR
+{
+#if DEPTH_ONLY
+	return float4(1,1,1,1);
+#else
+	float3 normal = normalize( i.vWorldNormal );
+	float3 delta = normalize( g_EyePos - i.vWorldPos );
+	float fresnel = Fresnel(normal, delta, g_FresnelRanges);
+	
+	return i.vColor * fresnel;
+#endif
+}

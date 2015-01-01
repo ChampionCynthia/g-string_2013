@@ -96,7 +96,7 @@ bool CHudCrosshair::ShouldDraw( void )
 		return false;
 
 	if ( pPlayer->IsInSpacecraft() )
-		return true;
+		return !pPlayer->IsInSpacecraftFirstperson();
 	// END BBMIGRATION
 
 	C_BaseCombatWeapon *pWeapon = pPlayer->GetActiveWeapon();

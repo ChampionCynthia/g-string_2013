@@ -273,7 +273,7 @@ void CGstringPlayer::EnterSpacecraft( CSpacecraft *pSpacecraft )
 	SetSolid( SOLID_NONE );
 	AddSolidFlags( FSOLID_NOT_SOLID );
 	m_hSpacecraft.Set( pSpacecraft );
-	pSpacecraft->SetOwnerEntity( this );
+	pSpacecraft->OnPlayerEntered( this );
 
 	m_Local.m_iHideHUD |= HIDEHUD_HEALTH;
 	m_Local.m_iHideHUD &= ~HIDEHUD_SPACECRAFT;
