@@ -18,20 +18,21 @@ CHoloShipHealthText::CHoloShipHealthText( ISpacecraftData *pSpacecraftData ) :
 	m_pLabelShieldValue = new Label( this, "", "" );
 	m_pLabelHullValue = new Label( this, "", "" );
 
+	m_flScale = 0.02f;
+
 	SetAngles( QAngle( 0, 200, 0 ) );
-	SetOrigin( Vector( 0, 17, -8 ) );
+	//SetOrigin( Vector( -4.5f, 14, -8.5f ) );
+	SetOrigin( Vector( -4.5f, 14.5f, -7.0f ) );
 }
 
 void CHoloShipHealthText::PerformLayout()
 {
 	BaseClass::PerformLayout();
 
-	m_flScale = 0.022f;
-
 	m_pLabelShieldText->SetFgColor( Color( HOLO_COLOR255_HIGHLIGHT, 255 ) );
-	m_pLabelHullText->SetFgColor( Color( HOLO_COLOR255_DEFAULT, 255 ) );
+	m_pLabelHullText->SetFgColor( Color( HOLO_COLOR255_DEFAULT, 127 ) );
 	m_pLabelShieldValue->SetFgColor( Color( HOLO_COLOR255_HIGHLIGHT, 255 ) );
-	m_pLabelHullValue->SetFgColor( Color( HOLO_COLOR255_DEFAULT, 255 ) );
+	m_pLabelHullValue->SetFgColor( Color( HOLO_COLOR255_DEFAULT, 127 ) );
 
 	const int iFontTall = surface()->GetFontTall( m_FontLarge );
 	m_pLabelShieldText->SetFont( m_FontLarge );

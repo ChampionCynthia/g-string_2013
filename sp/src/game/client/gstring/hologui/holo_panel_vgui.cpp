@@ -11,13 +11,15 @@ using namespace vgui;
 
 CHoloPanelVGUI::CHoloPanelVGUI() :
 	m_FontLarge( 0 ),
+	m_FontSmall( 0 ),
+	m_FontSmallMono( 0 ),
 	m_flWidth( 1.0f ),
 	m_flHeight( 1.0f ),
-	m_flScale( 0.01f )
+	m_flScale( 0.022f )
 {
 	m_vecUVs[ 0 ].Init();
 	m_vecUVs[ 1 ].Init();
-	m_MaterialWhite.Init( materials->FindMaterial( "engine/hologui_vgui", TEXTURE_GROUP_OTHER ) );
+	m_MaterialVGUI.Init( materials->FindMaterial( "engine/hologui_vgui", TEXTURE_GROUP_OTHER ) );
 }
 
 void CHoloPanelVGUI::Setup()
@@ -47,12 +49,14 @@ void CHoloPanelVGUI::ApplySchemeSettings( IScheme *pScheme )
 	Panel::ApplySchemeSettings( pScheme );
 
 	m_FontLarge = pScheme->GetFont( "HoloGUILarge", false );
+	m_FontSmall = pScheme->GetFont( "HoloGUISmall", false );
+	m_FontSmallMono = pScheme->GetFont( "HoloGUISmallMonoSpaced", false );
 }
 
 void CHoloPanelVGUI::PreRender( IMatRenderContext *pRenderContext, Rect_t &position, int maxWidth, int maxHeight )
 {
-	const int desiredWidth = GetWide();
-	const int desiredHeight = GetTall();
+	int desiredWidth = GetWide() + 2;
+	int desiredHeight = GetTall() + 2;
 
 	Assert( desiredWidth > 0 && desiredWidth <= maxWidth );
 	Assert( desiredHeight > 0 && desiredHeight <= maxHeight );
@@ -69,6 +73,11 @@ void CHoloPanelVGUI::PreRender( IMatRenderContext *pRenderContext, Rect_t &posit
 
 	position.width = desiredWidth;
 	position.height = desiredHeight;
+
+	desiredWidth -= 2;
+	desiredHeight -= 2;
+	++position.x;
+	++position.y;
 
 	CViewSetup setup;
 	setup.x = position.x;
@@ -104,7 +113,7 @@ void CHoloPanelVGUI::PreRender( IMatRenderContext *pRenderContext, Rect_t &posit
 
 void CHoloPanelVGUI::Draw( IMatRenderContext *pRenderContext )
 {
-	IMesh *pMesh = pRenderContext->GetDynamicMesh( true, 0, 0, m_MaterialWhite );
+	IMesh *pMesh = pRenderContext->GetDynamicMesh( true, 0, 0, m_MaterialVGUI );
 	CMeshBuilder builder;
 	builder.Begin( pMesh, MATERIAL_QUADS, 1 );
 

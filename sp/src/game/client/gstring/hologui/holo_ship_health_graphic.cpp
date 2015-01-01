@@ -26,12 +26,8 @@ CHoloShipHealthGraphic::CHoloShipHealthGraphic( ISpacecraftData *pSpacecraftData
 
 CHoloShipHealthGraphic::~CHoloShipHealthGraphic()
 {
-	if ( m_pHullElement != NULL )
-	{
-		CMatRenderContextPtr pRenderContext( materials );
-		pRenderContext->DestroyStaticMesh( m_pHullElement );
-		m_pHullElement = NULL;
-	}
+	CMatRenderContextPtr pRenderContext( materials );
+	pRenderContext->DestroyStaticMesh( m_pHullElement );
 }
 
 void CHoloShipHealthGraphic::Draw( IMatRenderContext *pRenderContext )

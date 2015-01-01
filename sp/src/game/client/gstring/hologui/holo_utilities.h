@@ -6,7 +6,38 @@ inline Vector2D GetVector2DFromAngle( float radians )
 	return Vector2D( cos( radians ), -sin( radians ) );
 }
 
-void CreateArc( IMesh *pMesh, int subDivCount, float radius, float thickness,
+inline void CreateSlantedRect( IMesh *pMesh, float x, float y, float width, float height, float offset = 0.0f )
+{
+	CMeshBuilder builder;
+	builder.Begin( pMesh, MATERIAL_QUADS, 1 );
+
+	const float color3[] = { 1, 1, 1 };
+	const float normal[] = { 1, 0, 0 };
+
+	builder.Position3f( 0.0f, x, y );
+	builder.Color3fv( color3 );
+	builder.Normal3fv( normal );
+	builder.AdvanceVertex();
+
+	builder.Position3f( 0.0f, x + width, y + offset );
+	builder.Color3fv( color3 );
+	builder.Normal3fv( normal );
+	builder.AdvanceVertex();
+
+	builder.Position3f( 0.0f, x + width, y + offset + height );
+	builder.Color3fv( color3 );
+	builder.Normal3fv( normal );
+	builder.AdvanceVertex();
+
+	builder.Position3f( 0.0f, x, y + height );
+	builder.Color3fv( color3 );
+	builder.Normal3fv( normal );
+	builder.AdvanceVertex();
+
+	builder.End();
+}
+
+inline void CreateArc( IMesh *pMesh, int subDivCount, float radius, float thickness,
 	float startAngle, float endAngle )
 {
 	Assert( subDivCount >= 1 );
@@ -47,7 +78,7 @@ void CreateArc( IMesh *pMesh, int subDivCount, float radius, float thickness,
 	builder.End();
 }
 
-void CreateArcFaded( IMesh *pMesh, int subDivCount, float radius, float thickness,
+inline void CreateArcFaded( IMesh *pMesh, int subDivCount, float radius, float thickness,
 	float startAngle, float endAngle,
 	float fadeStart, float fadeEnd )
 {

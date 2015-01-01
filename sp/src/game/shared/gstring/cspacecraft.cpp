@@ -157,13 +157,14 @@ CSpacecraft::CSpacecraft()
 	, m_flHealthRegeneratedTimeStamp( 0.0f )
 #else
 	: m_iMaxHealth( 0 )
-	, m_iEngineLevelLast( 0 )
+	, m_iEngineLevelLast( ENGINELEVEL_STALLED )
 	, m_iProjectileParityLast( 0 )
 	, m_iGUID_Engine( -1 )
 	, m_iGUID_Boost( -1 )
 	, m_flEngineAlpha( 0.0f )
 	, m_flEngineVolume( ENGINE_VOLUME_LOW )
 	, m_flShakeTimer( 0.0f )
+	, m_flThrusterPower( NULL )
 #endif
 {
 	m_iSettingsIndex = UTL_INVAL_SYMBOL;
@@ -174,6 +175,8 @@ CSpacecraft::~CSpacecraft()
 #ifdef GAME_DLL
 	delete m_pAI;
 #else
+	delete [] m_flThrusterPower;
+
 	if ( m_iGUID_Engine >= 0 && enginesound->IsSoundStillPlaying( m_iGUID_Engine ) )
 	{
 		enginesound->StopSoundByGuid( m_iGUID_Engine );
@@ -683,6 +686,7 @@ void CSpacecraft::ClientThink()
 		const float flLocalImpulseStrength = DotProduct( vecImpulseDelta, vecFwdLocal );
 		const bool bShouldShowThruster = flLocalImpulseStrength > 1.5f;
 		const bool bIsShowingThruster = m_ThrusterParticles[ i ].GetObject() != NULL;
+		m_flThrusterPower[ i ] = flLocalImpulseStrength;
 		if ( bShouldShowThruster != bIsShowingThruster )
 		{
 			if ( bShouldShowThruster )
@@ -733,8 +737,8 @@ void CSpacecraft::ClientThink()
 
 	if ( m_iEngineLevelLast != m_iEngineLevel )
 	{
-		const bool bEngineRunning = m_iEngineLevel > 0;
-		const bool bEngineWasRunning = m_iEngineLevelLast > 0;
+		const bool bEngineRunning = m_iEngineLevel > ENGINELEVEL_STALLED;
+		const bool bEngineWasRunning = m_iEngineLevelLast > ENGINELEVEL_STALLED;
 
 		if ( bEngineRunning != bEngineWasRunning )
 		{
@@ -913,6 +917,7 @@ CStudioHdr *CSpacecraft::OnNewModel()
 #ifdef CLIENT_DLL
 	m_ThrusterAttachments.RemoveAll();
 	m_EngineAttachments.RemoveAll();
+	delete [] m_flThrusterPower;
 
 	if ( pRet != NULL )
 	{
@@ -929,6 +934,9 @@ CStudioHdr *CSpacecraft::OnNewModel()
 			}
 		}
 	}
+
+	m_flThrusterPower = new float[ m_ThrusterAttachments.Count() ];
+	Plat_FastMemset( m_flThrusterPower, 0, sizeof( float ) * m_ThrusterAttachments.Count() );
 
 	FOR_EACH_VEC( m_ThrusterParticles, i )
 	{
@@ -1129,14 +1137,4 @@ void CSpacecraft::SimulateMove( CMoveData &moveData, float flFrametime )
 #ifdef GAME_DLL
 	SimulateFire( moveData, flFrametime );
 #endif
-}
-
-const Vector &CSpacecraft::GetPhysVelocity() const
-{
-	return m_PhysVelocity.Get();
-}
-
-CSpacecraft::EngineLevel_e CSpacecraft::GetEngineLevel() const
-{
-	return ( EngineLevel_e )m_iEngineLevel.Get();
 }

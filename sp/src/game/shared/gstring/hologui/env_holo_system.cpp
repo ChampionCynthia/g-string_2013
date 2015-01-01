@@ -6,6 +6,8 @@
 #include "gstring/hologui/holo_ship_health_graphic.h"
 #include "gstring/hologui/holo_ship_health_text.h"
 #include "gstring/hologui/holo_ship_model.h"
+#include "gstring/hologui/holo_ship_engine.h"
+#include "gstring/hologui/holo_ship_thruster.h"
 #include "gstring/cspacecraft.h"
 #include "gstring/gstring_rendertargets.h"
 
@@ -238,6 +240,8 @@ void CEnvHoloSystem::CreatePanels()
 	m_Panels.AddToTail( new CHoloShipHealthGraphic( pSpacecraft ) );
 	m_Panels.AddToTail( new CHoloShipHealthText( pSpacecraft ) );
 	m_Panels.AddToTail( new CHoloShipModel( pSpacecraft ) );
+	m_Panels.AddToTail( new CHoloShipEngine( pSpacecraft ) );
+	m_Panels.AddToTail( new CHoloShipThruster( pSpacecraft ) );
 
 	FOR_EACH_VEC( m_Panels, i )
 	{

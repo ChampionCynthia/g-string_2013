@@ -110,6 +110,10 @@ $Project "Client (G-String)"
 				$File	"gstring\hologui\holo_ship_health_text.h"
 				$File	"gstring\hologui\holo_ship_model.cpp"
 				$File	"gstring\hologui\holo_ship_model.h"
+				$File	"gstring\hologui\holo_ship_engine.cpp"
+				$File	"gstring\hologui\holo_ship_engine.h"
+				$File	"gstring\hologui\holo_ship_thruster.cpp"
+				$File	"gstring\hologui\holo_ship_thruster.h"
 				
 			}
 		}

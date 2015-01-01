@@ -30,6 +30,14 @@ class ISpacecraftData
 public:
 	virtual ~ISpacecraftData() {}
 
+	enum EngineLevel_e
+	{
+		ENGINELEVEL_STALLED = 0,
+		ENGINELEVEL_IDLE,
+		ENGINELEVEL_NORMAL,
+		ENGINELEVEL_BOOST,
+	};
+
 	virtual int GetShield() const = 0;
 	virtual int GetMaxShield() const = 0;
 	virtual int GetHull() const = 0;
@@ -38,6 +46,13 @@ public:
 	virtual const model_t *GetModel() const = 0;
 
 	virtual const QAngle &GetAngularImpulse() const = 0;
+	virtual const Vector &GetPhysVelocity() const = 0;
+	virtual EngineLevel_e GetEngineLevel() const = 0;
+
+#ifdef CLIENT_DLL
+	virtual int GetThrusterCount() const = 0;
+	virtual float GetThrusterPower( int index ) const = 0;
+#endif
 };
 
 class CSpacecraft : public CBaseAnimating, public ISpacecraftData
@@ -50,25 +65,24 @@ class CSpacecraft : public CBaseAnimating, public ISpacecraftData
 #endif
 
 public:
-	enum EngineLevel_e
-	{
-		ENGINELEVEL_STALLED = 0,
-		ENGINELEVEL_IDLE,
-		ENGINELEVEL_NORMAL,
-		ENGINELEVEL_BOOST,
-	};
-
 	CSpacecraft();
 	virtual ~CSpacecraft();
 
 	bool IsPlayerControlled() const;
 
+	// ISpacecraftData implementation
 	virtual int GetShield() const { return m_iShield; }
 	virtual int GetMaxShield() const { return m_iMaxShield; }
 	virtual int GetHull() const { return GetHealth(); }
 	virtual int GetMaxHull() const { return GetMaxHealth(); }
 	virtual const model_t *GetModel() const { return ((BaseClass*)this)->BaseClass::GetModel(); }
 	virtual const QAngle &GetAngularImpulse() const { return m_AngularImpulse.Get(); }
+	virtual const Vector &GetPhysVelocity() const { return m_PhysVelocity.Get(); }
+	virtual EngineLevel_e GetEngineLevel() const { return ( EngineLevel_e )m_iEngineLevel.Get(); }
+#ifdef CLIENT_DLL
+	virtual int GetThrusterCount() const { return m_ThrusterAttachments.Count(); }
+	virtual float GetThrusterPower( int index ) const { return m_flThrusterPower[ index ]; }
+#endif
 
 #ifdef GAME_DLL
 	void SetAI( ISpacecraftAI *pSpacecraftAI );
@@ -112,9 +126,6 @@ public:
 	virtual CStudioHdr *OnNewModel();
 	virtual void SimulateMove( CMoveData &moveData, float flFrametime );
 
-	const Vector &GetPhysVelocity() const;
-	EngineLevel_e GetEngineLevel() const;
-
 private:
 #ifdef GAME_DLL
 	void SimulateFire( CMoveData &moveData, float flFrametime );
@@ -145,6 +156,7 @@ private:
 	CUtlVector< int > m_ThrusterAttachments;
 	CUtlVector< int > m_ThrusterSounds;
 	CUtlVector< int > m_EngineAttachments;
+	float *m_flThrusterPower;
 
 	CUtlVector< CSmartPtr< CNewParticleEffect > > m_ThrusterParticles;
 	CUtlVector< CSmartPtr< CNewParticleEffect > > m_EngineParticles;

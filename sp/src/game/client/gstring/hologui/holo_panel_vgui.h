@@ -23,10 +23,16 @@ protected:
 	virtual void Think( float frametime );
 
 	vgui::HFont m_FontLarge;
+	vgui::HFont m_FontSmall;
+	vgui::HFont m_FontSmallMono;
 	Vector2D m_vecUVs[ 2 ];
 	float m_flScale;
 	float m_flWidth;
 	float m_flHeight;
+
+private:
+	CMaterialReference m_MaterialVGUI;
+
 };
 
 #endif
