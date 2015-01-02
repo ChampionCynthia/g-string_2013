@@ -51,12 +51,12 @@ inline void CreateArc( IMesh *pMesh, int subDivCount, float radius, float thickn
 	const float toInnerRadius = ( radius - thickness ) / radius;
 
 	Vector2D dir( GetVector2DFromAngle( startAngle ) * radius );
-	builder.Position3f( radius, 0.0f, 0.0f );
+	builder.Position3f( dir.x, dir.y, 0.0f );
 	builder.Color3fv( color3 );
 	builder.Normal3fv( normal );
 	builder.AdvanceVertex();
 
-	builder.Position3f( radius - thickness, 0.0f, 0.0f );
+	builder.Position3f( dir.x * toInnerRadius, dir.y * toInnerRadius, 0.0f );
 	builder.Color3fv( color3 );
 	builder.Normal3fv( normal );
 	builder.AdvanceVertex();

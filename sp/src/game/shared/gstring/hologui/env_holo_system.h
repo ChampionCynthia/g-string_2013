@@ -32,7 +32,6 @@ public:
 	virtual int UpdateTransmitState();
 #else
 	virtual void OnDataChanged( DataUpdateType_t type );
-	virtual void UpdateOnRemove();
 
 	virtual int DrawModel( int flags );
 	virtual bool ShouldDraw() { return true; }

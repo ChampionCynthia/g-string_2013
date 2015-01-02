@@ -80,7 +80,7 @@ void CHoloShipModel::Draw( IMatRenderContext *pRenderContext )
 void CHoloShipModel::Think( float frametime )
 {
 	const model_t *pMdl = m_hModel ? m_hModel->GetModel() : NULL;
-	const model_t *pDesiredMdl = m_pSpacecraftData->GetModel();
+	const model_t *pDesiredMdl = m_pSpacecraftData->GetEntity()->GetModel();
 
 	if ( pMdl != pDesiredMdl )
 	{
@@ -92,7 +92,7 @@ void CHoloShipModel::Think( float frametime )
 		C_BaseAnimating *pAnimating = new C_BaseAnimating();
 		pAnimating->InitializeAsClientEntity( NULL, RENDER_GROUP_OPAQUE_ENTITY );
 		pAnimating->SetModelPointer( pDesiredMdl );
-		pAnimating->SetModelScale( 0.015f );
+		pAnimating->SetModelScale( 0.012f );
 
 		m_hModel = pAnimating;
 	}

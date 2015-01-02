@@ -23,7 +23,7 @@ CHoloShipEngine::CHoloShipEngine( ISpacecraftData *pSpacecraftData ) :
 		VERTEX_NORMAL, TEXTURE_GROUP_MODEL, m_MaterialWhite );
 	CreateSlantedRect( m_pMeshElement, 0, 0, 1.2f, 0.35f, -0.125f );
 
-	SetOrigin( Vector( 0, -5.5f, -8.5f ) );
+	SetOrigin( Vector( 0, -5.5f, -7.5f ) );
 	SetAngles( QAngle( 0, 160, 0 ) );
 }
 

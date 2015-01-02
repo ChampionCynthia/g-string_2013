@@ -8,8 +8,10 @@
 #include "gstring/hologui/holo_ship_model.h"
 #include "gstring/hologui/holo_ship_engine.h"
 #include "gstring/hologui/holo_ship_thruster.h"
+#include "gstring/hologui/holo_ship_radar.h"
 #include "gstring/cspacecraft.h"
 #include "gstring/gstring_rendertargets.h"
+#include "gstring/cgstring_globals.h"
 
 #include "iviewrender.h"
 #include "viewrender.h"
@@ -138,7 +140,7 @@ int CEnvHoloSystem::DrawModel( int flags )
 		MatrixInvert( camera, eyesInv );
 		ConcatTransforms( eyesInv, eyes, cameraOffset );
 
-		MatrixScaleBy( 1.0f / 16.0f, cameraOffset );
+		MatrixScaleBy( g_pGstringGlobals ? g_pGstringGlobals->GetWorldScale() : 1.0f, cameraOffset );
 		pRenderContext->MultMatrix( cameraOffset );
 		pRenderContext->MultMatrix( matToDeviceInv );
 
@@ -226,11 +228,6 @@ void CEnvHoloSystem::OnDataChanged( DataUpdateType_t type )
 	}
 }
 
-void CEnvHoloSystem::UpdateOnRemove()
-{
-	BaseClass::UpdateOnRemove();
-}
-
 void CEnvHoloSystem::CreatePanels()
 {
 	m_Panels.PurgeAndDeleteElements();
@@ -242,6 +239,7 @@ void CEnvHoloSystem::CreatePanels()
 	m_Panels.AddToTail( new CHoloShipModel( pSpacecraft ) );
 	m_Panels.AddToTail( new CHoloShipEngine( pSpacecraft ) );
 	m_Panels.AddToTail( new CHoloShipThruster( pSpacecraft ) );
+	m_Panels.AddToTail( new CHoloShipRadar( pSpacecraft ) );
 
 	FOR_EACH_VEC( m_Panels, i )
 	{

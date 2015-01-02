@@ -22,7 +22,7 @@ CHoloShipHealthText::CHoloShipHealthText( ISpacecraftData *pSpacecraftData ) :
 
 	SetAngles( QAngle( 0, 200, 0 ) );
 	//SetOrigin( Vector( -4.5f, 14, -8.5f ) );
-	SetOrigin( Vector( -4.5f, 14.5f, -7.0f ) );
+	SetOrigin( Vector( -4.3f, 14.5f, -7.0f ) );
 }
 
 void CHoloShipHealthText::PerformLayout()

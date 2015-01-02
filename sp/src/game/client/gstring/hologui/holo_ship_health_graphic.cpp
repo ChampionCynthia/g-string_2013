@@ -21,7 +21,7 @@ CHoloShipHealthGraphic::CHoloShipHealthGraphic( ISpacecraftData *pSpacecraftData
 		VERTEX_NORMAL,
 		TEXTURE_GROUP_MODEL, m_MaterialWhite );
 
-	CreateArc( m_pHullElement, 8, 3.4f, 0.5f, DEG2RAD( 1.0f ), DEG2RAD( flStepAngle - 1.0f ) );
+	CreateArc( m_pHullElement, 8, 3.0f, 0.5f, DEG2RAD( 0.5f ), DEG2RAD( flStepAngle - 0.5f ) );
 }
 
 CHoloShipHealthGraphic::~CHoloShipHealthGraphic()
@@ -71,7 +71,7 @@ void CHoloShipHealthGraphic::Draw( IMatRenderContext *pRenderContext )
 		const float flFadeRange = 0.5f * m_flShieldFraction * ( 1.0f - m_flShieldFraction * 0.9f );
 
 		IMesh *pMesh = pRenderContext->GetDynamicMesh( true, 0, 0, m_MaterialWhite );
-		CreateArcFaded( pMesh, 25, 3.8f, 0.1f, 0.0f, DEG2RAD( 180.0f ), m_flShieldFraction - 0.001f, m_flShieldFraction + flFadeRange );
+		CreateArcFaded( pMesh, 25, 3.4f, 0.1f, 0.0f, DEG2RAD( 180.0f ), m_flShieldFraction - 0.001f, m_flShieldFraction + flFadeRange );
 		pColor->SetVecValue( HOLO_COLOR_HIGHLIGHT );
 		pAlpha->SetFloatValue( 1.0f );
 

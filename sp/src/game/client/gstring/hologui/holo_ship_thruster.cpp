@@ -19,8 +19,8 @@ CHoloShipThruster::CHoloShipThruster( ISpacecraftData *pSpacecraftData ) :
 		VERTEX_NORMAL, TEXTURE_GROUP_MODEL, m_MaterialWhite );
 	CreateSlantedRect( m_pMeshElement, 0, 0, 0.2f, 0.3f );
 
-	SetOrigin( Vector( -1.0f, -9.5f, -8.2f ) );
-	SetAngles( QAngle( 0, 160, 0 ) );
+	SetOrigin( Vector( -1.2f, -9.5f, -7.0f ) );
+	SetAngles( QAngle( 0, 150, 0 ) );
 	m_flScale = 0.015f;
 }
 

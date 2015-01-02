@@ -1041,7 +1041,9 @@ void C_GstringPlayer::GetSpacecraftCameraFirstPerson( Vector &origin, QAngle &an
 
 	pSpacecraft->GetAttachment( "eyes", origin, angles );
 
-	//angles.y += sin( gpGlobals->curtime ) * 10;
+	//angles.y += sin( gpGlobals->curtime * 0.6f ) * 10;
+	//angles.x += sin( gpGlobals->curtime * 0.4 ) * 10 + 10;
+	//angles.z += sin( gpGlobals->curtime * 1 ) * 20;
 	//origin.y += sin( gpGlobals->curtime ) * 1;
 
 	vieweffects->CalcShake();
