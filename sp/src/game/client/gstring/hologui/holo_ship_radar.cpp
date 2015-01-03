@@ -8,6 +8,27 @@
 
 #include "materialsystem/imaterialvar.h"
 
+void GetHoloTargetTypeColor( IHoloTarget::TargetType type, Vector &color, float &alpha )
+{
+	switch ( type )
+	{
+	case IHoloTarget::FRIENDLY:
+		color.Init( HOLO_COLOR_FRIENDLY );
+		alpha = 1;
+		break;
+
+	case IHoloTarget::ENEMY:
+		color.Init( HOLO_COLOR_WARNING );
+		alpha = 1.5f;
+		break;
+
+	default:
+		color.Init( HOLO_COLOR_DEFAULT );
+		alpha = 1;
+		break;
+	}
+}
+
 namespace
 {
 	const float g_flRadarSize = 3.8f;
@@ -20,16 +41,16 @@ CHoloShipRadar::CHoloShipRadar( ISpacecraftData *pSpacecraftData ) :
 	m_pSpacecraftData( pSpacecraftData )
 {
 	CMatRenderContextPtr pRenderContext( materials );
-	m_pMeshRingLarge = pRenderContext->CreateStaticMesh( VERTEX_POSITION | VERTEX_COLOR | VERTEX_TEXCOORD_SIZE( 0, 2 ) |
-		VERTEX_NORMAL, TEXTURE_GROUP_MODEL, m_MaterialWhite );
-	m_pMeshRingSmall = pRenderContext->CreateStaticMesh( VERTEX_POSITION | VERTEX_COLOR | VERTEX_TEXCOORD_SIZE( 0, 2 ) |
-		VERTEX_NORMAL, TEXTURE_GROUP_MODEL, m_MaterialWhite );
-	m_pMeshRingCenter = pRenderContext->CreateStaticMesh( VERTEX_POSITION | VERTEX_COLOR | VERTEX_TEXCOORD_SIZE( 0, 2 ) |
-		VERTEX_NORMAL, TEXTURE_GROUP_MODEL, m_MaterialWhite );
-	m_pMeshRingLine = pRenderContext->CreateStaticMesh( VERTEX_POSITION | VERTEX_COLOR | VERTEX_TEXCOORD_SIZE( 0, 2 ) |
-		VERTEX_NORMAL, TEXTURE_GROUP_MODEL, m_MaterialWhite );
-	m_pMeshCircle = pRenderContext->CreateStaticMesh( VERTEX_POSITION | VERTEX_COLOR | VERTEX_TEXCOORD_SIZE( 0, 2 ) |
-		VERTEX_NORMAL, TEXTURE_GROUP_MODEL, m_MaterialWhite );
+	m_pMeshRingLarge = pRenderContext->CreateStaticMesh( VERTEX_POSITION | VERTEX_TEXCOORD_SIZE( 0, 2 ),
+		TEXTURE_GROUP_MODEL, GetMaterial() );
+	m_pMeshRingSmall = pRenderContext->CreateStaticMesh( VERTEX_POSITION | VERTEX_TEXCOORD_SIZE( 0, 2 ),
+		TEXTURE_GROUP_MODEL, GetMaterial() );
+	m_pMeshRingCenter = pRenderContext->CreateStaticMesh( VERTEX_POSITION | VERTEX_TEXCOORD_SIZE( 0, 2 ),
+		TEXTURE_GROUP_MODEL, GetMaterial() );
+	m_pMeshRingLine = pRenderContext->CreateStaticMesh( VERTEX_POSITION | VERTEX_TEXCOORD_SIZE( 0, 2 ),
+		TEXTURE_GROUP_MODEL, GetMaterial() );
+	m_pMeshCircle = pRenderContext->CreateStaticMesh( VERTEX_POSITION | VERTEX_TEXCOORD_SIZE( 0, 2 ),
+		TEXTURE_GROUP_MODEL, GetMaterial() );
 
 	const float flFOVRadians = DEG2RAD( g_flRadarFOV );
 
@@ -62,10 +83,9 @@ void CHoloShipRadar::Draw( IMatRenderContext *pRenderContext )
 	SetIdentityMatrix( matrixTemp );
 
 	pRenderContext->PushMatrix();
+	pRenderContext->Bind( GetMaterial() );
 	for ( int i = 0; i < iRingCount; ++i )
 	{
-		pRenderContext->Bind( m_MaterialWhite );
-
 		GetColorVar()->SetVecValue( HOLO_COLOR_DEFAULT );
 		GetAlphaVar()->SetFloatValue( 0.5f );
 		m_pMeshRingLarge->Draw();
@@ -150,28 +170,27 @@ void CHoloShipRadar::DrawBlips( IMatRenderContext *pRenderContext )
 		Vector vecDelta;
 		VectorITransform( pEntity->GetAbsOrigin(), m_pSpacecraftData->GetEntity()->EntityToWorldTransform(), vecDelta );
 
+		const float flBlipSize = 0.02f;
 		vecDelta *= g_flRadarScale;
+		const float flVisibleDistance = g_flRadarSize + g_flRadarSize * g_flRadarFieldSize * pTarget->GetSize();
 
-		if ( vecDelta.Length2DSqr() > g_flRadarSize * g_flRadarSize )
+		if ( vecDelta.LengthSqr() > flVisibleDistance * flVisibleDistance )
 		{
 			continue;
 		}
 
+		const bool bCenterVisible = vecDelta.Length2DSqr() < g_flRadarSize * g_flRadarSize;
+
 		// Exponential falloff
-		//vecDelta.x = powf( vecDelta.x / g_flRadarSize, 2.0f ) * g_flRadarSize;
-		//vecDelta.y = powf( vecDelta.y / g_flRadarSize, 2.0f ) * g_flRadarSize;
+		//if ( vecDelta.Length2DSqr() > 0.00001f )
+		//{
+		//	float length = powf( vecDelta.Length2D() / g_flRadarSize, 0.5f ) * g_flRadarSize;
+		//	vecDelta = vecDelta.Normalized() * length;
+		//}
 
-		Vector color = Vector( HOLO_COLOR_DEFAULT );
-		switch ( pTarget->GetType() )
-		{
-		case IHoloTarget::FRIENDLY:
-			color.Init( 0.3f, 1.0f, 0.5f );
-			break;
-
-		case IHoloTarget::ENEMY:
-			color.Init( HOLO_COLOR_WARNING );
-			break;
-		}
+		Vector color;
+		float flAlphaScale;
+		GetHoloTargetTypeColor( pTarget->GetType(), color, flAlphaScale );
 
 		GetColorVar()->SetVecValue( XYZ( color ) );
 
@@ -187,10 +206,10 @@ void CHoloShipRadar::DrawBlips( IMatRenderContext *pRenderContext )
 		// Draw center
 		pRenderContext->PushMatrix();
 		SetIdentityMatrix( matrixTemp );
-		MatrixScaleBy( 0.02f, matrixTemp );
+		MatrixScaleBy( flBlipSize, matrixTemp );
 		pRenderContext->MultMatrixLocal( matrixTemp );
 
-		GetAlphaVar()->SetFloatValue( 0.6f );
+		GetAlphaVar()->SetFloatValue( 0.8f * flAlphaScale );
 		m_pMeshCircle->Draw();
 
 		pRenderContext->PopMatrix();
@@ -200,36 +219,40 @@ void CHoloShipRadar::DrawBlips( IMatRenderContext *pRenderContext )
 		MatrixScaleBy( g_flRadarFieldSize * pTarget->GetSize(), matrixTemp );
 		pRenderContext->MultMatrixLocal( matrixTemp );
 
-		GetAlphaVar()->SetFloatValue( 0.2f );
+		GetAlphaVar()->SetFloatValue( 0.05f * flAlphaScale );
 		m_pMeshCircle->Draw();
 
 		pRenderContext->PopMatrix();
 
 		// Draw blip line
-		if ( abs( vecDelta.z ) > 0.1f )
+		if ( bCenterVisible && abs( vecDelta.z ) > 0.1f )
 		{
 			pRenderContext->SetStencilEnable( false );
 
 			const float flStripeWidth = 0.02f;
 
-			IMesh *pMesh = pRenderContext->GetDynamicMesh( true, 0, 0, m_MaterialWhite );
+			IMesh *pMesh = pRenderContext->GetDynamicMesh( true, 0, 0, GetMaterial() );
 			CreateSlantedRect( pMesh, -flStripeWidth, 0.0f, flStripeWidth * 2.0f, vecDelta.z );
 
-			GetAlphaVar()->SetFloatValue( vecDelta.z < 0.0f ? 0.05f : 0.3f );
+			GetAlphaVar()->SetFloatValue( ( vecDelta.z < 0.0f ? 0.1f : 0.3f ) * flAlphaScale );
 			pMesh->Draw();
 
 			SetIdentityMatrix( matrixTemp );
 			MatrixSetTranslation( Vector( 0, 0, vecDelta.z ), matrixTemp );
 			MatrixScaleBy( 0.02f, matrixTemp );
 
+			matrix3x4_t mat;
+			ConcatTransforms( matrixTemp, modelInverted, mat );
+			ConcatTransforms( mat, viewMatrixInv, matrixTemp );
+
 			// Offset Z and scale
 			pRenderContext->MultMatrixLocal( matrixTemp );
 
 			// reverse model orientation
-			pRenderContext->MultMatrixLocal( modelInverted );
+			//pRenderContext->MultMatrixLocal( modelInverted );
 
 			// reverse view orientation
-			pRenderContext->MultMatrixLocal( viewMatrixInv );
+			//pRenderContext->MultMatrixLocal( viewMatrixInv );
 
 			m_pMeshCircle->Draw();
 

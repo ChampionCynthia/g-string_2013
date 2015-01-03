@@ -692,6 +692,8 @@ void CSpacecraft::ClientThink()
 			if ( bShouldShowThruster )
 			{
 				m_ThrusterParticles[ i ] = ParticleProp()->Create( "thruster_small", PATTACH_POINT_FOLLOW, iAttachmentIndex );
+				m_ThrusterParticles[ i ]->SetClientViewModelEffect( IsViewModel(), true );
+				ClientLeafSystem()->EnableAlternateSorting( m_ThrusterParticles[ i ]->RenderHandle(), true );
 			}
 			else
 			{

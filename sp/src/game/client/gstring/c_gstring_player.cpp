@@ -64,6 +64,9 @@ C_GstringPlayer::C_GstringPlayer()
 	, m_angSpacecraftDeathAngle( vec3_angle )
 	, m_vecSpacecraftDeathOrigin( vec3_origin )
 	, m_vecSpacecraftDeathVelocity( vec3_origin )
+	, m_flSpacecraftOffsetScale( 0.0f )
+	, m_flSpacecraftOffset( vec3_origin )
+	, m_flSpacecraftAngularOffset( 0, 0, 0, 1 )
 	, m_flInteractionBodyTransitionBlend( 0.0f )
 	, m_vecInteractionViewOrigin( vec3_origin )
 	, m_angInteractionViewAngles( vec3_angle )
@@ -1039,12 +1042,47 @@ void C_GstringPlayer::GetSpacecraftCameraFirstPerson( Vector &origin, QAngle &an
 	CSpacecraft *pSpacecraft = GetSpacecraft();
 	Assert( pSpacecraft );
 
-	pSpacecraft->GetAttachment( "eyes", origin, angles );
+	QAngle targetAngles;
+	Vector targetOrigin;
+	pSpacecraft->GetAttachment( "eyes", targetOrigin, targetAngles );
 
-	//angles.y += sin( gpGlobals->curtime * 0.6f ) * 10;
-	//angles.x += sin( gpGlobals->curtime * 0.4 ) * 10 + 10;
+	Quaternion viewQuat, physQuat, finalQuat;
+	AngleQuaternion( targetAngles, viewQuat );
+
+	AngleQuaternion( pSpacecraft->GetAngularImpulse() * 0.02f, physQuat );
+	Quaternion oldOffset = m_flSpacecraftAngularOffset;
+	QuaternionSlerp( oldOffset, physQuat, MIN( 1.0f, gpGlobals->frametime * 5.0f ), m_flSpacecraftAngularOffset );
+
+	QuaternionMult( viewQuat, m_flSpacecraftAngularOffset, finalQuat );
+	QuaternionAngles( finalQuat, angles );
+
+	const float flOffsetScale = pSpacecraft->GetEngineLevel() == ISpacecraftData::ENGINELEVEL_BOOST ? 0.0005f : 0.0002f;
+	const float flOffsetScaleApproachSpeed = flOffsetScale > m_flSpacecraftOffsetScale ? 0.004f : 0.0005f;
+	m_flSpacecraftOffsetScale = Approach( flOffsetScale, m_flSpacecraftOffsetScale, gpGlobals->frametime * flOffsetScaleApproachSpeed );
+
+	Vector vecTargetOffset = -pSpacecraft->GetPhysVelocity();
+	if ( ( m_flSpacecraftOffset - vecTargetOffset ).LengthSqr() > 1.0f )
+	{
+		m_flSpacecraftOffset += ( vecTargetOffset - m_flSpacecraftOffset ) * MIN( 1.0f, gpGlobals->frametime * 50.0f );
+	}
+	else
+	{
+		m_flSpacecraftOffset = vecTargetOffset;
+	}
+	origin = targetOrigin + m_flSpacecraftOffset * m_flSpacecraftOffsetScale;
+
+
+	angles = targetAngles;
+	origin = targetOrigin;
+
+	//angles = QuaternionSlerp( angles, targetAngles,  )
+
+	//angles.y += sin( gpGlobals->curtime * 4 ) * 15;
+	//angles.x += sin( gpGlobals->curtime * 1 ) * 10 + 5;
 	//angles.z += sin( gpGlobals->curtime * 1 ) * 20;
-	//origin.y += sin( gpGlobals->curtime ) * 1;
+	//origin.y += sin( gpGlobals->curtime ) * 0.3;
+	//angles.y += 45;
+	//angles.y += gpGlobals->curtime * 10;
 
 	vieweffects->CalcShake();
 	vieweffects->ApplyShake( origin, angles, 0.05f );

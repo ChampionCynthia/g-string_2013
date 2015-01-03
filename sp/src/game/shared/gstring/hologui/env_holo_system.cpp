@@ -9,6 +9,8 @@
 #include "gstring/hologui/holo_ship_engine.h"
 #include "gstring/hologui/holo_ship_thruster.h"
 #include "gstring/hologui/holo_ship_radar.h"
+#include "gstring/hologui/holo_ship_aim.h"
+
 #include "gstring/cspacecraft.h"
 #include "gstring/gstring_rendertargets.h"
 #include "gstring/cgstring_globals.h"
@@ -77,6 +79,8 @@ int CEnvHoloSystem::UpdateTransmitState()
 
 #else
 
+Vector _eye;
+
 int CEnvHoloSystem::DrawModel( int flags )
 {
 	if ( ( flags & STUDIO_SHADOWDEPTHTEXTURE ) != 0 ||
@@ -109,13 +113,13 @@ int CEnvHoloSystem::DrawModel( int flags )
 	//}
 
 	// view model
-	if ( pAttachedModel && m_iAttachment >= 0 && pAttachedModel->GetAttachmentLocal( m_iAttachment, attachmentMatrix ) )
+	if ( pAttachedModel && m_iAttachment >= 0 )
 	{
 		const mstudioattachment_t &attachEyes = pAttachedModel->GetModelPtr()->pAttachment( m_iEyes - 1 );
 		const mstudioattachment_t &attachGUI = pAttachedModel->GetModelPtr()->pAttachment( m_iAttachment - 1 );
 
 		matrix3x4_t eyes, eyesInv;
-		attachmentMatrix = attachGUI.local;
+		matrix3x4_t attachmentMatrix = attachGUI.local;
 		MatrixInvert( attachEyes.local, eyesInv );
 		ConcatTransforms( eyesInv, attachmentMatrix, eyes );
 
@@ -127,7 +131,17 @@ int CEnvHoloSystem::DrawModel( int flags )
 		MatrixInvert( matToDevice, matToDeviceInv );
 
 		pRenderContext->MatrixMode( MATERIAL_VIEW );
+
+		Vector v0, v1;
+		MatrixGetTranslation( eyes, v0 );
+		v0 *= -1;
+		_eye = v0;
+		//MatrixSetTranslation(v0, eyes);
+
 		pRenderContext->LoadMatrix( eyes );
+
+		MatrixGetTranslation( eyes, v1 );
+		engine->Con_NPrintf(20, "eyeees: %f %f %f", XYZ(v1));
 
 		// Apply view offset back
 		QAngle eyeAngles;
@@ -140,9 +154,46 @@ int CEnvHoloSystem::DrawModel( int flags )
 		MatrixInvert( camera, eyesInv );
 		ConcatTransforms( eyesInv, eyes, cameraOffset );
 
+
+		MatrixGetTranslation( eyes, v0 );
+		MatrixGetTranslation( camera, v1 );
+		engine->Con_NPrintf(18, "eyes: %f %f %f", XYZ(v0));
+		engine->Con_NPrintf(19, "camera: %f %f %f", XYZ(v1));
+
+		Vector localOffset = (v1 - v0) * 16.0f;
+
+		MatrixGetTranslation( cameraOffset, localOffset );
+		//matrix3x4_t cameraOffset2 = cameraOffset;
+		//MatrixSetTranslation(localOffset * 16, cameraOffset2);
+
+
+		engine->Con_NPrintf(9, "localOffset: %f %f %f", XYZ(localOffset));
+		//localOffset.Init( 0.11709595f, -0.27185059f , -0.048645020f  );
+
+		//_eye -= localOffset * 16.0f;
+
+		//MatrixSetTranslation( v0 - v1, cameraOffset );
+
+		//SetIdentityMatrix( cameraOffset );
+		localOffset = (CurrentViewOrigin() - eyePosition);
+		matrix3x4_t ee;
+		AngleMatrix( eyeAngles, vec3_origin, ee );
+		Vector t = localOffset;
+		VectorITransform(t, ee, localOffset);
+		_eye += localOffset * 16.0f;
+
+
 		MatrixScaleBy( g_pGstringGlobals ? g_pGstringGlobals->GetWorldScale() : 1.0f, cameraOffset );
 		pRenderContext->MultMatrix( cameraOffset );
 		pRenderContext->MultMatrix( matToDeviceInv );
+
+
+	matrix3x4_t viewMatrix;
+	pRenderContext->GetMatrix( MATERIAL_VIEW, &viewMatrix );
+	MatrixGetTranslation(viewMatrix, v0);
+	for (int i = 0; i < 4; ++i)
+		engine->Con_NPrintf(21 + i, "view: %f %f %f", viewMatrix.m_flMatVal[0][i], viewMatrix.m_flMatVal[1][i], viewMatrix.m_flMatVal[2][i]);
+
 
 		pRenderContext->MatrixMode( MATERIAL_MODEL );
 		pRenderContext->LoadIdentity();
@@ -240,6 +291,7 @@ void CEnvHoloSystem::CreatePanels()
 	m_Panels.AddToTail( new CHoloShipEngine( pSpacecraft ) );
 	m_Panels.AddToTail( new CHoloShipThruster( pSpacecraft ) );
 	m_Panels.AddToTail( new CHoloShipRadar( pSpacecraft ) );
+	m_Panels.AddToTail( new CHoloShipAim( pSpacecraft ) );
 
 	FOR_EACH_VEC( m_Panels, i )
 	{

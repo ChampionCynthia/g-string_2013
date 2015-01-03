@@ -1,6 +1,8 @@
 #ifndef HOLO_PANEL_H
 #define HOLO_PANEL_H
 
+#define HOLO_COLOR_FRIENDLY 0.3f, 1.0f, 0.5f
+
 #define HOLO_COLOR_DEFAULT 0.929f, 0.8f, 0.502f
 #define HOLO_COLOR255_DEFAULT 0.929f * 255.0f, 0.8f * 255.0f, 0.502f * 255.0f
 
@@ -29,13 +31,23 @@ protected:
 	virtual void Draw( IMatRenderContext *pRenderContext );
 	virtual void Think( float frametime );
 
-	IMaterialVar *GetColorVar();
-	IMaterialVar *GetAlphaVar();
+	enum MaterialType
+	{
+		MATERIALTYPE_NORMAL = 0,
+		MATERIALTYPE_VERTEXCOLOR,
+		MATERIALTYPE_COUNT
+	};
+
+	IMaterialVar *GetColorVar( MaterialType type = MATERIALTYPE_NORMAL );
+	IMaterialVar *GetAlphaVar( MaterialType type = MATERIALTYPE_NORMAL );
+	IMaterial *GetMaterial( MaterialType type = MATERIALTYPE_NORMAL )
+	{
+		Assert( type >= 0 && type < MATERIALTYPE_COUNT );
+		return m_Materials[ type ];
+	}
 
 	const QAngle &GetAngles();
 	const Vector &GetOrigin();
-
-	CMaterialReference m_MaterialWhite;
 
 private:
 	void UpdateTransformation();
@@ -44,6 +56,8 @@ private:
 	Vector m_Origin;
 	matrix3x4_t m_Transformation;
 	bool m_bTransformationDirty;
+
+	CMaterialReference m_Materials[ MATERIALTYPE_COUNT ];
 };
 
 #endif

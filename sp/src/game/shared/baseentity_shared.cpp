@@ -1153,6 +1153,7 @@ void CBaseEntity::VPhysicsUpdate( IPhysicsObject *pPhysics )
 			Vector prevOrigin = GetAbsOrigin();
 #endif
 
+			// GSTRING_INF
 			if ( IsEntityPositionReasonable( origin ) )
 			{
 				SetAbsOrigin( origin );

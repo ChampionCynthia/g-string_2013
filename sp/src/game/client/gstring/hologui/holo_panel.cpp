@@ -12,12 +12,16 @@ CHoloPanel::CHoloPanel() :
 	m_bTransformationDirty( false )
 {
 	SetIdentityMatrix( m_Transformation );
-	m_MaterialWhite.Init( materials->FindMaterial( "engine/hologui", TEXTURE_GROUP_OTHER ) );
+	m_Materials[ MATERIALTYPE_NORMAL ].Init( materials->FindMaterial( "engine/hologui", TEXTURE_GROUP_OTHER ) );
+	m_Materials[ MATERIALTYPE_VERTEXCOLOR ].Init( materials->FindMaterial( "engine/hologui_vertexcolor", TEXTURE_GROUP_OTHER ) );
 }
 
 CHoloPanel::~CHoloPanel()
 {
-	m_MaterialWhite.Shutdown();
+	for ( int i = 0; i < MATERIALTYPE_COUNT; ++i )
+	{
+		m_Materials[ i ].Shutdown();
+	}
 }
 
 void CHoloPanel::SetAngles( const QAngle &angles )
@@ -75,16 +79,18 @@ void CHoloPanel::Think( float frametime )
 {
 }
 
-IMaterialVar *CHoloPanel::GetColorVar()
+IMaterialVar *CHoloPanel::GetColorVar( MaterialType type )
 {
-	static unsigned int iMatVar = 0;
-	return m_MaterialWhite->FindVarFast( "$color", &iMatVar );
+	Assert( type >= 0 && type < MATERIALTYPE_COUNT );
+	static unsigned int iMatVar[ MATERIALTYPE_COUNT ] = { 0 };
+	return m_Materials[ type ]->FindVarFast( "$color", &iMatVar[ type ] );
 }
 
-IMaterialVar *CHoloPanel::GetAlphaVar()
+IMaterialVar *CHoloPanel::GetAlphaVar( MaterialType type )
 {
-	static unsigned int iMatVar = 0;
-	return m_MaterialWhite->FindVarFast( "$alpha", &iMatVar );
+	Assert( type >= 0 && type < MATERIALTYPE_COUNT );
+	static unsigned int iMatVar[ MATERIALTYPE_COUNT ] = { 0 };
+	return m_Materials[ type ]->FindVarFast( "$alpha", &iMatVar[ type ] );
 }
 
 const QAngle &CHoloPanel::GetAngles()

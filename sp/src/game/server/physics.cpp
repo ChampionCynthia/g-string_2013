@@ -248,7 +248,7 @@ void CPhysicsHook::LevelInitPreEntity()
 	physenv->SetGravity( Vector( 0, 0, -GetCurrentGravity() ) );
 	g_PhysAverageSimTime = 0;
 
-	g_PhysWorldObject = PhysCreateWorld( GetWorldEntity() );
+	g_PhysWorldObject = PhysCreateWorld( GetWorldEntity() ); // GSTRING_INF
 
 	g_pShadowEntities = new CEntityList;
 #ifdef PORTAL

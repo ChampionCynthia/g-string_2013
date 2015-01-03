@@ -3,8 +3,76 @@
 #include "mathlib/vmatrix.h"
 #include "convar.h"
 
+#include "gstring_holo_gui_ps20b.inc"
+#include "gstring_holo_gui_vs20.inc"
 #include "gstring_holo_model_ps20b.inc"
 #include "gstring_holo_model_vs20.inc"
+
+
+BEGIN_VS_SHADER( gstring_holo_gui, "" )
+
+	BEGIN_SHADER_PARAMS
+	END_SHADER_PARAMS
+
+	SHADER_INIT_PARAMS()
+	{
+	}
+
+	SHADER_FALLBACK
+	{
+		return 0;
+	}
+
+	SHADER_INIT
+	{
+	}
+
+	SHADER_DRAW
+	{
+		SHADOW_STATE
+		{
+			const bool bHasVertexColor = IS_FLAG_SET( MATERIAL_VAR_VERTEXALPHA ) || IS_FLAG_SET( MATERIAL_VAR_VERTEXCOLOR );
+			SetInitialShadowState();
+
+			pShaderShadow->EnableDepthTest( false );
+			pShaderShadow->EnableDepthWrites( false );
+			pShaderShadow->EnableCulling( false );
+			pShaderShadow->EnableSRGBWrite( true );
+			EnableAlphaBlending( SHADER_BLEND_SRC_ALPHA, SHADER_BLEND_ONE );
+
+			unsigned int flags = VERTEX_POSITION;
+			if ( bHasVertexColor )
+			{
+				flags |= VERTEX_COLOR;
+			}
+			int nTexCoordCount = 1;
+			int userDataSize = 0;
+			pShaderShadow->VertexShaderVertexFormat( flags, nTexCoordCount, NULL, userDataSize );
+
+			// Vertex Shader
+			DECLARE_STATIC_VERTEX_SHADER( gstring_holo_gui_vs20 );
+			SET_STATIC_VERTEX_SHADER_COMBO( VERTEXCOLOR, bHasVertexColor );
+			SET_STATIC_VERTEX_SHADER( gstring_holo_gui_vs20 );
+
+			DECLARE_STATIC_PIXEL_SHADER( gstring_holo_gui_ps20b );
+			SET_STATIC_PIXEL_SHADER( gstring_holo_gui_ps20b );
+		}
+		DYNAMIC_STATE
+		{
+			pShaderAPI->SetDefaultState();
+
+			DECLARE_DYNAMIC_VERTEX_SHADER( gstring_holo_gui_vs20 );
+			SET_DYNAMIC_VERTEX_SHADER( gstring_holo_gui_vs20 );
+
+			DECLARE_DYNAMIC_PIXEL_SHADER( gstring_holo_gui_ps20b );
+			SET_DYNAMIC_PIXEL_SHADER( gstring_holo_gui_ps20b );
+
+			SetModulationVertexShaderDynamicState();
+		}
+
+		Draw();
+	}
+END_SHADER
 
 BEGIN_VS_SHADER( gstring_holo_model, "" )
 

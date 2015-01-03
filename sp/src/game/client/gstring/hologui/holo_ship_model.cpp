@@ -63,7 +63,7 @@ void CHoloShipModel::Draw( IMatRenderContext *pRenderContext )
 		MatrixGetTranslation( viewMatrix, eyePos );
 		if ( g_pGstringGlobals )
 		{
-			eyePos *= 1.0f / g_pGstringGlobals->GetWorldScale();
+			eyePos /= g_pGstringGlobals->GetWorldScale();
 		}
 		eyePos.Init( eyePos.z, eyePos.x, -eyePos.y );
 

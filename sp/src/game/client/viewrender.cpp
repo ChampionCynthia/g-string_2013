@@ -1087,7 +1087,7 @@ void CViewRender::DrawViewModels( const CViewSetup &view, bool drawViewmodel, bo
 
 	CViewSetup viewModelSetup( view );
 	viewModelSetup.zNear = bSpaceMap ? 0.1f : view.zNearViewmodel;
-	viewModelSetup.zFar = bSpaceMap ? 500.0f : view.zFarViewmodel;
+	viewModelSetup.zFar = bSpaceMap ? 1000.0f : view.zFarViewmodel;
 	viewModelSetup.fov = view.fovViewmodel;
 	viewModelSetup.m_flAspectRatio = engine->GetScreenAspectRatio();
 
@@ -5545,7 +5545,7 @@ bool CSkyboxView::Setup( const CViewSetup &view, int *pClearFlags, SkyboxVisibil
 	BaseClass::Setup( view );
 
 	// The skybox might not be visible from here
-	*pSkyboxVisible = ComputeSkyboxVisibility();
+	*pSkyboxVisible = ComputeSkyboxVisibility(); // GSTRING_INF
 	m_pSky3dParams = PreRender3dSkyboxWorld( *pSkyboxVisible );
 
 	if ( !m_pSky3dParams )

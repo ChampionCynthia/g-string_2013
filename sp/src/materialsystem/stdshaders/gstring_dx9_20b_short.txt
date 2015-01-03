@@ -13,3 +13,5 @@
 
 gstring_holo_model_ps20b.fxc
 gstring_holo_model_vs20.fxc
+gstring_holo_gui_ps20b.fxc
+gstring_holo_gui_vs20.fxc

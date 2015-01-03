@@ -79,6 +79,11 @@ public:
 
 	void DebugDrawBbox ( bool bCulled );
 
+	// GSTRINGMIGRATION
+	bool IsClientViewModelEffect() const { return m_bClientViewModelEffect; }
+	void SetClientViewModelEffect( bool bClientViewModelEffect, bool bOpaque = false );
+	// END GSTRINGMIGRATION
+
 	// CParticleCollection overrides
 public:
 	void StopEmission( bool bInfiniteOnly = false, bool bRemoveAllParticles = false, bool bWakeOnStop = false );
@@ -162,6 +167,10 @@ private:
 	
 	int			m_RefCount;		// When this goes to zero and the effect has no more active
 								// particles, (and it's dynamically allocated), it will delete itself.
+
+	// GSTRINGMIGRATION
+	bool m_bClientViewModelEffect;
+	// END GSTRINGMIGRATION
 
 	CNewParticleEffect( const CNewParticleEffect & ); // not defined, not accessible
 };

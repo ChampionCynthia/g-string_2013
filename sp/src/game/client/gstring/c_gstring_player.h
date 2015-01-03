@@ -118,6 +118,9 @@ private:
 	QAngle m_angSpacecraftDeathAngle;
 	Vector m_vecSpacecraftDeathOrigin;
 	Vector m_vecSpacecraftDeathVelocity;
+	float m_flSpacecraftOffsetScale;
+	Vector m_flSpacecraftOffset;
+	Quaternion m_flSpacecraftAngularOffset;
 
 	CNetworkHandle( C_BaseAnimating, m_hInteractionBody );
 	float m_flInteractionBodyTransitionBlend;

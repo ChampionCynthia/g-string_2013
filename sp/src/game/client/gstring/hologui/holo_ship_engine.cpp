@@ -19,8 +19,8 @@ CHoloShipEngine::CHoloShipEngine( ISpacecraftData *pSpacecraftData ) :
 	m_pLabelSpeedLabel = new Label( this, "", "#holo_gui_speed" );
 	m_pLabelSpeedValue = new Label( this, "", "" );
 	CMatRenderContextPtr pRenderContext( materials );
-	m_pMeshElement = pRenderContext->CreateStaticMesh( VERTEX_POSITION | VERTEX_COLOR | VERTEX_TEXCOORD_SIZE( 0, 2 ) |
-		VERTEX_NORMAL, TEXTURE_GROUP_MODEL, m_MaterialWhite );
+	m_pMeshElement = pRenderContext->CreateStaticMesh( VERTEX_POSITION | VERTEX_TEXCOORD_SIZE( 0, 2 ),
+		TEXTURE_GROUP_MODEL, GetMaterial() );
 	CreateSlantedRect( m_pMeshElement, 0, 0, 1.2f, 0.35f, -0.125f );
 
 	SetOrigin( Vector( 0, -5.5f, -7.5f ) );
@@ -96,7 +96,7 @@ void CHoloShipEngine::Draw( IMatRenderContext *pRenderContext )
 			flAlpha = Clamp( flAlpha, 0.0f, 1.0f );
 			pAlpha->SetFloatValue( flAlphaMin + flAlpha * flAlphaDelta + flPulse );
 
-			pRenderContext->Bind( m_MaterialWhite );
+			pRenderContext->Bind( GetMaterial() );
 			m_pMeshElement->Draw();
 			pRenderContext->MultMatrixLocal( up );
 		}

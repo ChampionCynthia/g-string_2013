@@ -1460,6 +1460,10 @@ void CClientLeafSystem::CollateViewModelRenderables( CUtlVector< IClientRenderab
 		{
 			opaque.AddToTail( renderable.m_pRenderable );
 		}
+		else if ( ( renderable.m_Flags & RENDER_FLAGS_ALTERNATE_SORTING ) != 0 )
+		{
+			translucent.AddToHead( renderable.m_pRenderable );
+		}
 		else
 		{
 			translucent.AddToTail( renderable.m_pRenderable );

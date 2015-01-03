@@ -1,0 +1,28 @@
+
+#include "common_ps_fxc.h"
+
+struct PS_INPUT
+{
+	float4 vColor		: COLOR0;
+};
+
+float4 FinalOutputConst( const float4 vShaderColor, const int iTONEMAP_SCALE_TYPE )
+{
+	float4 result = vShaderColor;
+	if( iTONEMAP_SCALE_TYPE == TONEMAP_SCALE_LINEAR )
+	{
+		result.rgb *= LINEAR_LIGHT_SCALE;
+	}
+	else if( iTONEMAP_SCALE_TYPE == TONEMAP_SCALE_GAMMA )
+	{
+		result.rgb *= GAMMA_LIGHT_SCALE;
+	}
+
+	result.rgb = SRGBOutput( result.rgb );
+	return result;
+}
+
+float4 main( PS_INPUT i ) : COLOR
+{
+	return FinalOutputConst( i.vColor, TONEMAP_SCALE_LINEAR );
+}

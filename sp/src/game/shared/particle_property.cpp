@@ -625,7 +625,7 @@ void CParticleProperty::UpdateControlPoint( ParticleEffectList_t *pEffect, int i
 					MatrixVectors( vMat.As3x4(), &vecForward, &vecRight, &vecUp );
 					MatrixPosition( vMat.As3x4(), vecOrigin );
 
-					if ( pEffect->pParticleEffect->m_pDef->IsViewModelEffect() )
+					if ( pEffect->pParticleEffect->m_pDef->IsViewModelEffect() || pEffect->pParticleEffect->IsClientViewModelEffect() )
 					{
 						FormatViewModelAttachment( vecOrigin, true );
 					}

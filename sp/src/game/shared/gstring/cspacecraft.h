@@ -43,7 +43,7 @@ public:
 	virtual int GetHull() const = 0;
 	virtual int GetMaxHull() const = 0;
 
-	virtual const CBaseEntity *GetEntity() const = 0;
+	virtual CBaseEntity *GetEntity() = 0;
 
 	virtual const QAngle &GetAngularImpulse() const = 0;
 	virtual const Vector &GetPhysVelocity() const = 0;
@@ -75,7 +75,7 @@ public:
 	virtual int GetMaxShield() const { return m_iMaxShield; }
 	virtual int GetHull() const { return GetHealth(); }
 	virtual int GetMaxHull() const { return GetMaxHealth(); }
-	virtual const CBaseEntity *GetEntity() const { return this; }
+	virtual CBaseEntity *GetEntity() { return this; }
 	virtual const QAngle &GetAngularImpulse() const { return m_AngularImpulse.Get(); }
 	virtual const Vector &GetPhysVelocity() const { return m_PhysVelocity.Get(); }
 	virtual EngineLevel_e GetEngineLevel() const { return ( EngineLevel_e )m_iEngineLevel.Get(); }
@@ -86,6 +86,9 @@ public:
 
 #ifdef GAME_DLL
 	void SetAI( ISpacecraftAI *pSpacecraftAI );
+
+
+	virtual int UpdateTransmitState() { return SetTransmitState( FL_EDICT_ALWAYS ); } // GSTRING_INF
 
 	virtual void Precache();
 	virtual void Activate();

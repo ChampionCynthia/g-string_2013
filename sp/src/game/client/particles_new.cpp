@@ -46,6 +46,7 @@ void CNewParticleEffect::Construct()
 {
 	m_vSortOrigin.Init();
 
+	m_bClientViewModelEffect = false; // GSTRINGMIGRATION
 	m_bDontRemove = false;
 	m_bRemove = false;
 	m_bDrawn = false;
@@ -497,6 +498,18 @@ void CNewParticleEffect::DebugDrawBbox ( bool bCulled )
 	}
 }
 
+// GSTRINGMIGRATION
+void CNewParticleEffect::SetClientViewModelEffect( bool bClientViewModelEffect, bool bOpaque )
+{
+	if ( m_bClientViewModelEffect != bClientViewModelEffect )
+	{
+		m_bClientViewModelEffect = bClientViewModelEffect;
+		const RenderGroup_t group = bOpaque ? RENDER_GROUP_VIEW_MODEL_OPAQUE : RENDER_GROUP_VIEW_MODEL_TRANSLUCENT;
+		ClientLeafSystem()->SetRenderGroup( RenderHandle(), bClientViewModelEffect ?
+			group : RENDER_GROUP_TRANSLUCENT_ENTITY );
+	}
+}
+// END GSTRINGMIGRATION
 
 //-----------------------------------------------------------------------------
 // Rendering
@@ -533,7 +546,7 @@ int CNewParticleEffect::DrawModel( int flags )
 		return 0;
 	}
 
-	if ( flags & STUDIO_TRANSPARENCY )
+	if ( flags & STUDIO_TRANSPARENCY || m_bClientViewModelEffect ) // GSTRINGMIGRATION HACK: Draw flagged view model particles behind opaque viewmodel
 	{
 		int viewentity = render->GetViewEntity();
 		C_BaseEntity *pCameraObject = cl_entitylist->GetEnt( viewentity );

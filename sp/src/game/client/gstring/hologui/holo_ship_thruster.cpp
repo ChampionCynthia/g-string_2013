@@ -15,8 +15,8 @@ CHoloShipThruster::CHoloShipThruster( ISpacecraftData *pSpacecraftData ) :
 {
 	m_pLabelThruster = new Label( this, "", "#holo_gui_thruster" );
 	CMatRenderContextPtr pRenderContext( materials );
-	m_pMeshElement = pRenderContext->CreateStaticMesh( VERTEX_POSITION | VERTEX_COLOR | VERTEX_TEXCOORD_SIZE( 0, 2 ) |
-		VERTEX_NORMAL, TEXTURE_GROUP_MODEL, m_MaterialWhite );
+	m_pMeshElement = pRenderContext->CreateStaticMesh( VERTEX_POSITION | VERTEX_TEXCOORD_SIZE( 0, 2 ),
+		TEXTURE_GROUP_MODEL, GetMaterial() );
 	CreateSlantedRect( m_pMeshElement, 0, 0, 0.2f, 0.3f );
 
 	SetOrigin( Vector( -1.2f, -9.5f, -7.0f ) );
@@ -68,7 +68,7 @@ void CHoloShipThruster::Draw( IMatRenderContext *pRenderContext )
 		pRenderContext->PushMatrix();
 		for ( int u = 0; u < iElementCount; ++u )
 		{
-			float flThrusterPower = m_pSpacecraftData->GetThrusterPower( i ) * 0.05f;
+			float flThrusterPower = m_pSpacecraftData->GetThrusterPower( i ) * 0.1f;
 			flThrusterPower = clamp( flThrusterPower, 0, 1 );
 
 			const float flFadeSelfStart = u / float( iElementCount );
@@ -76,7 +76,7 @@ void CHoloShipThruster::Draw( IMatRenderContext *pRenderContext )
 			flAlpha = Clamp( flAlpha, 0.0f, 1.0f );
 			pAlpha->SetFloatValue( flAlphaMin + flAlpha * flAlphaDelta );
 
-			pRenderContext->Bind( m_MaterialWhite );
+			pRenderContext->Bind( GetMaterial() );
 			m_pMeshElement->Draw();
 			pRenderContext->MultMatrixLocal( up );
 		}

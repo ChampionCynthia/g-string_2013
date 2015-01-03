@@ -17,9 +17,8 @@ CHoloShipHealthGraphic::CHoloShipHealthGraphic( ISpacecraftData *pSpacecraftData
 	SetOrigin( Vector( 0, 8, -7 ) );
 
 	CMatRenderContextPtr pRenderContext( materials );
-	m_pHullElement = pRenderContext->CreateStaticMesh( VERTEX_POSITION | VERTEX_COLOR | VERTEX_TEXCOORD_SIZE( 0, 2 ) |
-		VERTEX_NORMAL,
-		TEXTURE_GROUP_MODEL, m_MaterialWhite );
+	m_pHullElement = pRenderContext->CreateStaticMesh( VERTEX_POSITION | VERTEX_TEXCOORD_SIZE( 0, 2 ),
+		TEXTURE_GROUP_MODEL, GetMaterial() );
 
 	CreateArc( m_pHullElement, 8, 3.0f, 0.5f, DEG2RAD( 0.5f ), DEG2RAD( flStepAngle - 0.5f ) );
 }
@@ -36,7 +35,7 @@ void CHoloShipHealthGraphic::Draw( IMatRenderContext *pRenderContext )
 	matrix3x4_t dst;
 	MatrixBuildRotationAboutAxis( Vector( 0, 0, 1 ), -flStepAngle, dst);
 
-	pRenderContext->Bind( m_MaterialWhite );
+	pRenderContext->Bind( GetMaterial() );
 
 	IMaterialVar *pColor = GetColorVar();
 	IMaterialVar *pAlpha = GetAlphaVar();
@@ -70,10 +69,10 @@ void CHoloShipHealthGraphic::Draw( IMatRenderContext *pRenderContext )
 	{
 		const float flFadeRange = 0.5f * m_flShieldFraction * ( 1.0f - m_flShieldFraction * 0.9f );
 
-		IMesh *pMesh = pRenderContext->GetDynamicMesh( true, 0, 0, m_MaterialWhite );
+		IMesh *pMesh = pRenderContext->GetDynamicMesh( true, 0, 0, GetMaterial( MATERIALTYPE_VERTEXCOLOR ) );
 		CreateArcFaded( pMesh, 25, 3.4f, 0.1f, 0.0f, DEG2RAD( 180.0f ), m_flShieldFraction - 0.001f, m_flShieldFraction + flFadeRange );
-		pColor->SetVecValue( HOLO_COLOR_HIGHLIGHT );
-		pAlpha->SetFloatValue( 1.0f );
+		GetColorVar( MATERIALTYPE_VERTEXCOLOR )->SetVecValue( HOLO_COLOR_HIGHLIGHT );
+		GetAlphaVar( MATERIALTYPE_VERTEXCOLOR )->SetFloatValue( 1.0f );
 
 		pMesh->Draw();
 		MatrixBuildRotationAboutAxis( Vector( 0, 0, 1 ), 180, dst );
