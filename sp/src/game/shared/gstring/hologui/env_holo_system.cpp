@@ -79,7 +79,11 @@ int CEnvHoloSystem::UpdateTransmitState()
 
 #else
 
-Vector _eye;
+static Vector g_vecHoloViewOrigin;
+const Vector &CurrentHoloViewOrigin()
+{
+	return g_vecHoloViewOrigin;
+}
 
 int CEnvHoloSystem::DrawModel( int flags )
 {
@@ -132,68 +136,35 @@ int CEnvHoloSystem::DrawModel( int flags )
 
 		pRenderContext->MatrixMode( MATERIAL_VIEW );
 
-		Vector v0, v1;
-		MatrixGetTranslation( eyes, v0 );
-		v0 *= -1;
-		_eye = v0;
-		//MatrixSetTranslation(v0, eyes);
+		Vector eyePosition;
+		MatrixGetTranslation( eyes, eyePosition );
+		g_vecHoloViewOrigin = -eyePosition;
 
 		pRenderContext->LoadMatrix( eyes );
 
-		MatrixGetTranslation( eyes, v1 );
-		engine->Con_NPrintf(20, "eyeees: %f %f %f", XYZ(v1));
-
 		// Apply view offset back
 		QAngle eyeAngles;
-		Vector eyePosition;
-		pAttachedModel->GetAttachment( m_iEyes, eyePosition, eyeAngles );
-		AngleMatrix( eyeAngles, eyePosition, eyes );
+		Vector attachmentPosition;
+		pAttachedModel->GetAttachment( m_iEyes, attachmentPosition, eyeAngles );
+		AngleMatrix( eyeAngles, attachmentPosition, eyes );
 
 		matrix3x4_t camera, cameraOffset;
 		AngleMatrix( CurrentViewAngles(), CurrentViewOrigin(), camera );
 		MatrixInvert( camera, eyesInv );
 		ConcatTransforms( eyesInv, eyes, cameraOffset );
 
+		const float flWorldScale = g_pGstringGlobals ? g_pGstringGlobals->GetWorldScale() : 1.0f;
 
-		MatrixGetTranslation( eyes, v0 );
-		MatrixGetTranslation( camera, v1 );
-		engine->Con_NPrintf(18, "eyes: %f %f %f", XYZ(v0));
-		engine->Con_NPrintf(19, "camera: %f %f %f", XYZ(v1));
+		matrix3x4_t attachmentOrientation;
+		AngleMatrix( eyeAngles, vec3_origin, attachmentOrientation );
+		Vector temp = ( CurrentViewOrigin() - attachmentPosition );
+		Vector localOffset;
+		VectorITransform(temp, attachmentOrientation, localOffset);
+		g_vecHoloViewOrigin += localOffset / flWorldScale;
 
-		Vector localOffset = (v1 - v0) * 16.0f;
-
-		MatrixGetTranslation( cameraOffset, localOffset );
-		//matrix3x4_t cameraOffset2 = cameraOffset;
-		//MatrixSetTranslation(localOffset * 16, cameraOffset2);
-
-
-		engine->Con_NPrintf(9, "localOffset: %f %f %f", XYZ(localOffset));
-		//localOffset.Init( 0.11709595f, -0.27185059f , -0.048645020f  );
-
-		//_eye -= localOffset * 16.0f;
-
-		//MatrixSetTranslation( v0 - v1, cameraOffset );
-
-		//SetIdentityMatrix( cameraOffset );
-		localOffset = (CurrentViewOrigin() - eyePosition);
-		matrix3x4_t ee;
-		AngleMatrix( eyeAngles, vec3_origin, ee );
-		Vector t = localOffset;
-		VectorITransform(t, ee, localOffset);
-		_eye += localOffset * 16.0f;
-
-
-		MatrixScaleBy( g_pGstringGlobals ? g_pGstringGlobals->GetWorldScale() : 1.0f, cameraOffset );
+		MatrixScaleBy( flWorldScale, cameraOffset );
 		pRenderContext->MultMatrix( cameraOffset );
 		pRenderContext->MultMatrix( matToDeviceInv );
-
-
-	matrix3x4_t viewMatrix;
-	pRenderContext->GetMatrix( MATERIAL_VIEW, &viewMatrix );
-	MatrixGetTranslation(viewMatrix, v0);
-	for (int i = 0; i < 4; ++i)
-		engine->Con_NPrintf(21 + i, "view: %f %f %f", viewMatrix.m_flMatVal[0][i], viewMatrix.m_flMatVal[1][i], viewMatrix.m_flMatVal[2][i]);
-
 
 		pRenderContext->MatrixMode( MATERIAL_MODEL );
 		pRenderContext->LoadIdentity();

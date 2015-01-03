@@ -3,6 +3,7 @@
 #include "holo_ship_model.h"
 #include "cspacecraft.h"
 #include "gstring/cgstring_globals.h"
+#include "gstring/hologui/env_holo_system.h"
 
 #include "model_types.h"
 #include "materialsystem/imaterialvar.h"
@@ -57,19 +58,9 @@ void CHoloShipModel::Draw( IMatRenderContext *pRenderContext )
 		render->SetColorModulation( color.Base() );
 		//render->SetBlend( 0.4f );
 
-		matrix3x4_t viewMatrix;
-		pRenderContext->GetMatrix( MATERIAL_VIEW, &viewMatrix );
-		Vector eyePos;
-		MatrixGetTranslation( viewMatrix, eyePos );
-		if ( g_pGstringGlobals )
-		{
-			eyePos /= g_pGstringGlobals->GetWorldScale();
-		}
-		eyePos.Init( eyePos.z, eyePos.x, -eyePos.y );
-
 		static unsigned int iTokenEyePos = 0;
 		IMaterialVar *pVarEyePos = m_MaterialHoloModel->FindVarFast( "$EYEPOS", &iTokenEyePos );
-		pVarEyePos->SetVecValue( XYZ( eyePos ) );
+		pVarEyePos->SetVecValue( XYZ( CurrentHoloViewOrigin() ) );
 
 		modelrender->ForcedMaterialOverride( m_MaterialHoloModel );
 		m_hModel->DrawModel( STUDIO_RENDER | STUDIO_TRANSPARENCY );

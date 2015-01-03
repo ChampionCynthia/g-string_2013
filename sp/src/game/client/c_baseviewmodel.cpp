@@ -28,6 +28,9 @@
 // NVNT haptics system interface
 #include "haptics/ihaptics.h"
 
+// GSTRINGMIGRATION
+#include "sourcevr/isourcevirtualreality.h"
+// END GSTRINGMIGRATION
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -44,6 +47,12 @@ void PostToolMessage( HTOOLHANDLE hEntity, KeyValues *msg );
 
 void FormatViewModelAttachment( Vector &vOrigin, bool bInverse )
 {
+	// GSTRINGMIGRATION
+	if ( UseVR() )
+	{
+		return;
+	}
+	// END GSTRINGMIGRATION
 	// Presumably, SetUpView has been called so we know our FOV and render origin.
 	const CViewSetup *pViewSetup = view->GetPlayerViewSetup();
 	

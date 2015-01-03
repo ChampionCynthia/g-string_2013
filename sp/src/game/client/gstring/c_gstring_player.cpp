@@ -1072,8 +1072,8 @@ void C_GstringPlayer::GetSpacecraftCameraFirstPerson( Vector &origin, QAngle &an
 	origin = targetOrigin + m_flSpacecraftOffset * m_flSpacecraftOffsetScale;
 
 
-	angles = targetAngles;
-	origin = targetOrigin;
+	//angles = targetAngles;
+	//origin = targetOrigin;
 
 	//angles = QuaternionSlerp( angles, targetAngles,  )
 

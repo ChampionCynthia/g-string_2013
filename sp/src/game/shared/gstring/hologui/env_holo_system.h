@@ -7,6 +7,8 @@
 class CHoloPanel;
 #endif
 
+const Vector &CurrentHoloViewOrigin();
+
 class CEnvHoloSystem : public CBaseEntity
 {
 	DECLARE_CLASS( CEnvHoloSystem, CBaseEntity );
