@@ -410,7 +410,7 @@ void CGstringInput::PerformSpacecraftAutoAim( CUserCmd *cmd )
 					const QAngle& vecRenderAngles,
 					Vector& vecPickingRay );
 
-	float ratio = engine->GetScreenAspectRatio();
+	float ratio = vw / float( vh );
 	ratio = ( 1.0f / ratio ) * ( 4.0f / 3.0f );
 	float flFov = ScaleFOVByWidthRatio( view->GetViewSetup()->fov, ratio );
 	ScreenToWorld( m_MousePosition.x, m_MousePosition.y, flFov,
@@ -419,6 +419,8 @@ void CGstringInput::PerformSpacecraftAutoAim( CUserCmd *cmd )
 	trace_t tr;
 	CSpacecraft *pSpacecraft = pPlayer->GetSpacecraft();
 	CTraceFilterSkipTwoEntities filter( pPlayer, pSpacecraft, COLLISION_GROUP_NONE );
+
+	AngleVectors( pSpacecraft->GetAbsAngles(), &vecPickingRay );
 
 	const Vector vecEnd = vecViewOrigin + vecPickingRay * MAX_TRACE_LENGTH;
 	const Vector vecHull( 2, 2, 2 );

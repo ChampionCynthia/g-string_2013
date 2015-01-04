@@ -77,7 +77,7 @@ static ConVar gstring_spacecraft_move_ang_approach_speed( "gstring_spacecraft_mo
 static ConVar gstring_spacecraft_move_drag_side( "gstring_spacecraft_move_drag_side", "2.0", FCVAR_REPLICATED );
 static ConVar gstring_spacecraft_move_drag_fwd( "gstring_spacecraft_move_drag_fwd", "1.0", FCVAR_REPLICATED );
 static ConVar gstring_spacecraft_move_drag_up( "gstring_spacecraft_move_drag_up", "2.0", FCVAR_REPLICATED );
-ConVar gstring_spacecraft_move_mode( "gstring_spacecraft_move_mode", "1", FCVAR_REPLICATED );
+ConVar gstring_spacecraft_move_mode( "gstring_spacecraft_move_mode", "0", FCVAR_REPLICATED );
 
 #ifdef GAME_DLL
 BEGIN_DATADESC( CSpacecraft )

@@ -10,6 +10,7 @@
 #include "c_bobmodel.h"
 #include "c_gstring_player_ragdoll.h"
 #include "cgstring_interaction_body.h"
+#include "sourcevr\isourcevirtualreality.h"
 
 #define FLASHLIGHT_DISTANCE		1000
 
@@ -1045,6 +1046,13 @@ void C_GstringPlayer::GetSpacecraftCameraFirstPerson( Vector &origin, QAngle &an
 	QAngle targetAngles;
 	Vector targetOrigin;
 	pSpacecraft->GetAttachment( "eyes", targetOrigin, targetAngles );
+
+	if ( UseVR() )
+	{
+		Vector vecFwd;
+		AngleVectors( targetAngles, &vecFwd );
+		targetOrigin += vecFwd * 0.7f;
+	}
 
 	Quaternion viewQuat, physQuat, finalQuat;
 	AngleQuaternion( targetAngles, viewQuat );

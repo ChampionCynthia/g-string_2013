@@ -54,35 +54,26 @@ CHoloShipAim::~CHoloShipAim()
 
 void CHoloShipAim::Draw( IMatRenderContext *pRenderContext )
 {
-	matrix3x4_t matrixTemp;
+	//matrix3x4_t matrixTemp;
 
-	GetColorVar()->SetVecValue( HOLO_COLOR_DEFAULT );
-	GetAlphaVar()->SetFloatValue( 0.5f );
-	pRenderContext->Bind( GetMaterial() );
+	//GetColorVar()->SetVecValue( HOLO_COLOR_DEFAULT );
+	//GetAlphaVar()->SetFloatValue( 0.5f );
+	//pRenderContext->Bind( GetMaterial() );
 
-	pRenderContext->PushMatrix();
-	MatrixBuildRotationAboutAxis( Vector( 0, 1, 0 ), 90.0f, matrixTemp );
-	pRenderContext->MultMatrixLocal( matrixTemp );
+	//pRenderContext->PushMatrix();
+	//MatrixBuildRotationAboutAxis( Vector( 0, 1, 0 ), 90.0f, matrixTemp );
+	//pRenderContext->MultMatrixLocal( matrixTemp );
 
-	m_pMeshLargeReticule->Draw();
+	//m_pMeshLargeReticule->Draw();
 
-	MatrixBuildRotationAboutAxis( Vector( 1, 0, 0 ), 180.0f, matrixTemp );
-	pRenderContext->MultMatrixLocal( matrixTemp );
+	//MatrixBuildRotationAboutAxis( Vector( 1, 0, 0 ), 180.0f, matrixTemp );
+	//pRenderContext->MultMatrixLocal( matrixTemp );
 
-	m_pMeshLargeReticule->Draw();
+	//m_pMeshLargeReticule->Draw();
 
-	pRenderContext->PopMatrix();
+	//pRenderContext->PopMatrix();
 
 	DrawTargets( pRenderContext );
-
-	SetIdentityMatrix( matrixTemp );
-	MatrixSetTranslation( Vector( 5, 0, 0 ), matrixTemp );
-	pRenderContext->MultMatrixLocal( matrixTemp );
-
-	GetColorVar()->SetVecValue( HOLO_COLOR_DEFAULT );
-	GetAlphaVar()->SetFloatValue( 0.5f );
-	pRenderContext->Bind( GetMaterial() );
-	m_pMeshReticule->Draw();
 }
 
 void FormatForViewSpace( const Vector &forward, const Vector &right, const Vector &up, const Vector &viewOrigin,
@@ -159,6 +150,32 @@ void CHoloShipAim::DrawTargets( IMatRenderContext *pRenderContext )
 
 	float flWorldSpaceScale = g_pGstringGlobals ? g_pGstringGlobals->GetWorldScale() : 1.0f;
 
+
+	pRenderContext->ClearBuffers( false, false, true );
+	pRenderContext->SetStencilEnable( true );
+	pRenderContext->SetStencilWriteMask( 1 );
+	pRenderContext->SetStencilTestMask( 1 );
+	pRenderContext->SetStencilReferenceValue( 1 );
+	pRenderContext->SetStencilCompareFunction( STENCILCOMPARISONFUNCTION_NEVER );
+	pRenderContext->SetStencilFailOperation( STENCILOPERATION_REPLACE );
+	pRenderContext->SetStencilPassOperation( STENCILOPERATION_KEEP );
+	pRenderContext->SetStencilZFailOperation( STENCILOPERATION_KEEP );
+
+	pRenderContext->PushMatrix();
+
+	matrix3x4_t temp2;
+	SetIdentityMatrix( temp2 );
+	MatrixSetTranslation( g_vecPanelPosition, temp2 );
+	pRenderContext->MultMatrixLocal( temp2 );
+	m_pMeshPanel->Draw();
+
+	pRenderContext->PopMatrix();
+
+	pRenderContext->SetStencilCompareFunction( STENCILCOMPARISONFUNCTION_EQUAL );
+	pRenderContext->SetStencilWriteMask( 0 );
+
+
+
 	pRenderContext->PushMatrix();
 
 	matrix3x4_t guiAttachment;
@@ -207,9 +224,112 @@ void CHoloShipAim::DrawTargets( IMatRenderContext *pRenderContext )
 			m_pMeshTarget->Draw();
 		}
 	}
-
 	pRenderContext->PopMatrix();
 
+	GetColorVar()->SetVecValue( HOLO_COLOR_DEFAULT );
+	GetAlphaVar()->SetFloatValue( 0.5f );
+	pRenderContext->Bind( GetMaterial() );
+	// Draw projected center reticule
+	pRenderContext->PushMatrix();
+	if ( UseVR() )
+	{
+		//const CViewSetup *pMonoSetup = view->GetPlayerViewSetup();
+
+		Vector guiForward, guiRight, guiUp;
+		//AngleVectors( pMonoSetup->angles, &guiForward, &guiRight, &guiUp );
+		//Vector start = eyePosition + guiForward * flWorldSpaceScale * 5.0f;
+		//Vector delta = start - pMonoSetup->origin;
+		//delta.NormalizeInPlace();
+		//Vector end = start + delta * MAX_TRACE_LENGTH;
+
+		trace_t tr;
+		//UTIL_TraceLine( start, end, MASK_SHOT, m_pSpacecraftData->GetEntity(), COLLISION_GROUP_NONE, &tr );
+
+		// Trace to actual shoot position
+		AngleVectors( eyeAngles, &guiForward );
+		Vector start = CurrentViewOrigin();
+		Vector end = start + guiForward * MAX_TRACE_LENGTH;
+		UTIL_TraceLine( start, end, MASK_SHOT, m_pSpacecraftData->GetEntity(), COLLISION_GROUP_NONE, &tr );
+
+		//DebugDrawLine( CurrentViewOrigin(), tr.endpos, 255, 0, 0, true, -1 );
+		//DebugDrawLine( tr.endpos + Vector(0,0,100), tr.endpos, 0, 255, 0, true, -1 );
+
+		Vector vecGUISpace;
+		VectorITransform( tr.endpos - eyePosition, guiAttachment, vecGUISpace );
+		FormatForViewSpace( forward, right, up, holoEyePos, vecGUISpace, flWorldSpaceScale, true );
+
+		Vector sphereRay = vecGUISpace - holoEyePos;
+		float pT1, pT2;
+		if ( IntersectInfiniteRayWithSphere( holoEyePos, sphereRay, g_vecPanelPosition, g_flPanelRadius, &pT1, &pT2 ) && pT2 > 0.0f )
+		{
+			Vector vecSpherePosition = sphereRay * pT2 + holoEyePos;
+
+			const float flMaxDistance = 10000.0f;
+			float length = vecGUISpace.NormalizeInPlace();
+			if ( length > flMaxDistance )
+			{
+				length = flMaxDistance;
+			}
+			vecGUISpace *= length;
+
+			matrix3x4_t mat;
+			SetIdentityMatrix( mat );
+			MatrixSetTranslation( vecGUISpace, mat );
+			MatrixScaleBy( ( vecGUISpace - holoEyePos ).Length() * 0.03f, mat );
+
+
+			Vector normal = ( vecSpherePosition - g_vecPanelPosition ).Normalized();
+			QAngle an;
+			VectorAngles( normal, an );
+			matrix3x4_t rr, mat2;
+			AngleMatrix( an, rr );
+			ConcatTransforms( mat, rr, mat2 );
+
+
+			pRenderContext->LoadMatrix( mat );
+			pRenderContext->LoadMatrix( mat2 );
+			m_pMeshReticule->Draw();
+
+			// sides
+			matrix3x4_t matrixTemp;
+			MatrixBuildRotationAboutAxis( Vector( 0, 1, 0 ), 90.0f, matrixTemp );
+			pRenderContext->MultMatrixLocal( matrixTemp );
+
+			m_pMeshLargeReticule->Draw();
+
+			MatrixBuildRotationAboutAxis( Vector( 1, 0, 0 ), 180.0f, matrixTemp );
+			pRenderContext->MultMatrixLocal( matrixTemp );
+
+			m_pMeshLargeReticule->Draw();
+		}
+	}
+	else // Draw simple reticule
+	{
+		// center
+		matrix3x4_t matrixTemp;
+		SetIdentityMatrix( matrixTemp );
+		MatrixSetTranslation( Vector( 5, 0, 0 ), matrixTemp );
+
+		pRenderContext->MultMatrixLocal( matrixTemp );
+		m_pMeshReticule->Draw();
+
+		// sides
+		MatrixBuildRotationAboutAxis( Vector( 0, 1, 0 ), 90.0f, matrixTemp );
+		pRenderContext->MultMatrixLocal( matrixTemp );
+
+		m_pMeshLargeReticule->Draw();
+
+		MatrixBuildRotationAboutAxis( Vector( 1, 0, 0 ), 180.0f, matrixTemp );
+		pRenderContext->MultMatrixLocal( matrixTemp );
+
+		m_pMeshLargeReticule->Draw();
+
+	}
+	pRenderContext->PopMatrix();
+
+	pRenderContext->SetStencilEnable( false );
+
+	// Draw the panel
 	pRenderContext->Bind( GetMaterial( MATERIALTYPE_VERTEXCOLOR ) );
 	GetColorVar( MATERIALTYPE_VERTEXCOLOR )->SetVecValue( HOLO_COLOR_DEFAULT );
 	GetAlphaVar( MATERIALTYPE_VERTEXCOLOR )->SetFloatValue( 0.1f );

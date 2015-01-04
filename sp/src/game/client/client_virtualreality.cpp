@@ -819,6 +819,7 @@ bool CClientVirtualReality::OverridePlayerMotion( float flInputSampleFrametime, 
 
 	// Whatever position is already here (set up by OverrideView) needs to be preserved.
 	Vector vWeaponOrigin = m_WorldFromWeapon.GetTranslation();
+	C_GstringPlayer *pPlayer = LocalGstringPlayer();
 
 	switch ( m_hmmMovementActual )
 	{
@@ -896,7 +897,6 @@ bool CClientVirtualReality::OverridePlayerMotion( float flInputSampleFrametime, 
 			}
 
 			// GSTRINGMIGRATION
-			C_GstringPlayer *pPlayer = LocalGstringPlayer();
 			if ( fReticlePitchLimit >= 0.0f && ( !pPlayer || !pPlayer->IsInSpacecraft() ) )
 			{
 				// Clamp pitch to within the limits.
@@ -969,37 +969,40 @@ bool CClientVirtualReality::OverridePlayerMotion( float flInputSampleFrametime, 
 	default: Assert ( false ); break;
 	}
 
-	// Figure out player motion.
-	switch ( m_hmmMovementActual )
+	if ( !pPlayer || !pPlayer->IsInSpacecraftFirstperson() )
 	{
-	case HMM_SHOOTBOUNDEDMOUSE_LOOKFACE_MOVEFACE:
+		// Figure out player motion.
+		switch ( m_hmmMovementActual )
 		{
-			// The motion passed in is meant to be relative to the face, so jimmy it to be relative to the new weapon aim.
-			VMatrix mideyeFromWorld = m_WorldFromMidEye.InverseTR();
-			VMatrix newMidEyeFromWeapon = mideyeFromWorld * m_WorldFromWeapon;
-			newMidEyeFromWeapon.SetTranslation ( Vector ( 0.0f, 0.0f, 0.0f ) );
-			*pNewMotion = newMidEyeFromWeapon * curMotion;
+		case HMM_SHOOTBOUNDEDMOUSE_LOOKFACE_MOVEFACE:
+			{
+				// The motion passed in is meant to be relative to the face, so jimmy it to be relative to the new weapon aim.
+				VMatrix mideyeFromWorld = m_WorldFromMidEye.InverseTR();
+				VMatrix newMidEyeFromWeapon = mideyeFromWorld * m_WorldFromWeapon;
+				newMidEyeFromWeapon.SetTranslation ( Vector ( 0.0f, 0.0f, 0.0f ) );
+				*pNewMotion = newMidEyeFromWeapon * curMotion;
+			}
+			break;
+		case HMM_SHOOTFACE_MOVETORSO:
+			{
+				// The motion passed in is meant to be relative to the torso, so jimmy it to be relative to the new weapon aim.
+				VMatrix torsoFromWorld = worldFromTorso.InverseTR();
+				VMatrix newTorsoFromWeapon = torsoFromWorld * m_WorldFromWeapon;
+				newTorsoFromWeapon.SetTranslation ( Vector ( 0.0f, 0.0f, 0.0f ) );
+				*pNewMotion = newTorsoFromWeapon * curMotion;
+			}
+			break;
+		case HMM_SHOOTBOUNDEDMOUSE_LOOKFACE_MOVEMOUSE:
+		case HMM_SHOOTMOVELOOKMOUSEFACE:
+		case HMM_SHOOTFACE_MOVEFACE:
+		case HMM_SHOOTMOUSE_MOVEFACE:
+		case HMM_SHOOTMOVEMOUSE_LOOKFACE:
+		case HMM_SHOOTMOVELOOKMOUSE:
+			// Motion is meant to be relative to the weapon, so we're fine.
+			*pNewMotion = curMotion;
+			break;
+		default: Assert ( false ); break;
 		}
-		break;
-	case HMM_SHOOTFACE_MOVETORSO:
-		{
-			// The motion passed in is meant to be relative to the torso, so jimmy it to be relative to the new weapon aim.
-			VMatrix torsoFromWorld = worldFromTorso.InverseTR();
-			VMatrix newTorsoFromWeapon = torsoFromWorld * m_WorldFromWeapon;
-			newTorsoFromWeapon.SetTranslation ( Vector ( 0.0f, 0.0f, 0.0f ) );
-			*pNewMotion = newTorsoFromWeapon * curMotion;
-		}
-		break;
-	case HMM_SHOOTBOUNDEDMOUSE_LOOKFACE_MOVEMOUSE:
-	case HMM_SHOOTMOVELOOKMOUSEFACE:
-	case HMM_SHOOTFACE_MOVEFACE:
-	case HMM_SHOOTMOUSE_MOVEFACE:
-	case HMM_SHOOTMOVEMOUSE_LOOKFACE:
-	case HMM_SHOOTMOVELOOKMOUSE:
-		// Motion is meant to be relative to the weapon, so we're fine.
-		*pNewMotion = curMotion;
-		break;
-	default: Assert ( false ); break;
 	}
 
 	// If the game told us to, recenter the torso yaw to match the weapon

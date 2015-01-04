@@ -215,7 +215,7 @@ inline void CreateRecticule( IMesh *pMesh, float scale, float thickness, float l
 		builder.AdvanceVertex();
 
 		const float lineSizeRatio = lineSize / scale;
-		v += offset * thickness + dir * thickness * sin( 0.5f * M_PI_F * lineSizeRatio);
+		v += offset * thickness + dir * thickness * lineSizeRatio;
 		builder.Position3fv( v.Base() );
 		builder.AdvanceVertex();
 	}
