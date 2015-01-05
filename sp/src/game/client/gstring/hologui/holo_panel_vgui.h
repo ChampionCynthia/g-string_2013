@@ -26,6 +26,7 @@ protected:
 	vgui::HFont m_FontSmall;
 	vgui::HFont m_FontSmallMono;
 	Vector2D m_vecUVs[ 2 ];
+	Vector2D m_vecPanelWorldOffset;
 	float m_flScale;
 	float m_flWidth;
 	float m_flHeight;

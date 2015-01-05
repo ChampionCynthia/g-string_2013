@@ -8,6 +8,8 @@ class CHoloPanel;
 #endif
 
 const Vector &CurrentHoloViewOrigin();
+const matrix3x4_t &CurrentHoloViewMatrix();
+const matrix3x4_t &CurrentHoloViewMatrixInverted();
 
 class CEnvHoloSystem : public CBaseEntity
 {

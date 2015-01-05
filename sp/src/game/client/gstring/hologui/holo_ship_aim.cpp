@@ -38,7 +38,7 @@ CHoloShipAim::CHoloShipAim( ISpacecraftData *pSpacecraftData ) :
 	m_iAttachmentGUI = pSpacecraftData->GetEntity()->LookupAttachment( "gui" );
 
 	CreateArc( m_pMeshLargeReticule, 32, 4.5f, 0.0f, 0.1f, M_PI_F * 0.3f, M_PI_F * 0.7f );
-	CreateRecticule( m_pMeshReticule, 0.5f, 0.05f, 0.5f * 0.707f, DEG2RAD( 45.0f ) );
+	CreateRecticule( m_pMeshReticule, 0.3f, 0.05f, 0.3f * 0.707f, DEG2RAD( 45.0f ) );
 	CreateRecticule( m_pMeshTarget, 1.0f, 0.05f, 0.5f, 0.0f );
 	CreateAimPanel( m_pMeshPanel, 10, 20, QAngle( -50, -80, 0 ), QAngle( 5, 80, 0 ), g_flPanelRadius, 0.1f );
 }
@@ -131,9 +131,11 @@ extern int ScreenTransform( const Vector& point, Vector& screen );
 
 void CHoloShipAim::DrawTargets( IMatRenderContext *pRenderContext )
 {
+	pRenderContext->Bind( GetMaterial() );
+
 	// Find direction vectors
-	matrix3x4_t viewMatrix, viewMatrixInv;
-	pRenderContext->GetMatrix( MATERIAL_VIEW, &viewMatrix );
+	//pRenderContext->GetMatrix( MATERIAL_VIEW, &viewMatrix );
+	const matrix3x4_t &viewMatrix = CurrentHoloViewMatrix();
 
 	Vector f, r, u;
 	MatrixGetColumn( viewMatrix, 0, f );
@@ -275,7 +277,7 @@ void CHoloShipAim::DrawTargets( IMatRenderContext *pRenderContext )
 			matrix3x4_t mat;
 			SetIdentityMatrix( mat );
 			MatrixSetTranslation( vecGUISpace, mat );
-			MatrixScaleBy( ( vecGUISpace - holoEyePos ).Length() * 0.03f, mat );
+			MatrixScaleBy( ( vecGUISpace - holoEyePos ).Length() * 0.05f, mat );
 
 
 			Vector normal = ( vecSpherePosition - g_vecPanelPosition ).Normalized();

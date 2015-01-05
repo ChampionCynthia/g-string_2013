@@ -10,6 +10,8 @@
 #include "gstring/hologui/holo_ship_thruster.h"
 #include "gstring/hologui/holo_ship_radar.h"
 #include "gstring/hologui/holo_ship_aim.h"
+#include "gstring/hologui/holo_ship_objectives.h"
+#include "gstring/hologui/holo_ship_comm.h"
 
 #include "gstring/cspacecraft.h"
 #include "gstring/gstring_rendertargets.h"
@@ -80,9 +82,21 @@ int CEnvHoloSystem::UpdateTransmitState()
 #else
 
 static Vector g_vecHoloViewOrigin;
+static matrix3x4_t g_matView;
+static matrix3x4_t g_matViewInverted;
 const Vector &CurrentHoloViewOrigin()
 {
 	return g_vecHoloViewOrigin;
+}
+
+const matrix3x4_t &CurrentHoloViewMatrix()
+{
+	return g_matView;
+}
+
+const matrix3x4_t &CurrentHoloViewMatrixInverted()
+{
+	return g_matViewInverted;
 }
 
 int CEnvHoloSystem::DrawModel( int flags )
@@ -115,6 +129,8 @@ int CEnvHoloSystem::DrawModel( int flags )
 	//{
 	//	pRenderContext->LoadMatrix( attachmentMatrix );
 	//}
+
+	const float flWorldScale = g_pGstringGlobals ? g_pGstringGlobals->GetWorldScale() : 1.0f;
 
 	// view model
 	if ( pAttachedModel && m_iAttachment >= 0 )
@@ -153,8 +169,6 @@ int CEnvHoloSystem::DrawModel( int flags )
 		MatrixInvert( camera, eyesInv );
 		ConcatTransforms( eyesInv, eyes, cameraOffset );
 
-		const float flWorldScale = g_pGstringGlobals ? g_pGstringGlobals->GetWorldScale() : 1.0f;
-
 		matrix3x4_t attachmentOrientation;
 		AngleMatrix( eyeAngles, vec3_origin, attachmentOrientation );
 		Vector temp = ( CurrentViewOrigin() - attachmentPosition );
@@ -169,6 +183,10 @@ int CEnvHoloSystem::DrawModel( int flags )
 		pRenderContext->MatrixMode( MATERIAL_MODEL );
 		pRenderContext->LoadIdentity();
 	}
+
+	pRenderContext->GetMatrix( MATERIAL_VIEW, &g_matView );
+	MatrixScaleBy( 1.0f / flWorldScale, g_matView );
+	MatrixInvert( g_matView, g_matViewInverted );
 
 	DrawPanels();
 
@@ -263,6 +281,8 @@ void CEnvHoloSystem::CreatePanels()
 	m_Panels.AddToTail( new CHoloShipThruster( pSpacecraft ) );
 	m_Panels.AddToTail( new CHoloShipRadar( pSpacecraft ) );
 	m_Panels.AddToTail( new CHoloShipAim( pSpacecraft ) );
+	m_Panels.AddToTail( new CHoloShipObjectives( pSpacecraft ) );
+	m_Panels.AddToTail( new CHoloShipComm( pSpacecraft ) );
 
 	FOR_EACH_VEC( m_Panels, i )
 	{

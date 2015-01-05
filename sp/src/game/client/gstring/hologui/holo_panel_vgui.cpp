@@ -13,6 +13,7 @@ CHoloPanelVGUI::CHoloPanelVGUI() :
 	m_FontLarge( 0 ),
 	m_FontSmall( 0 ),
 	m_FontSmallMono( 0 ),
+	m_vecPanelWorldOffset( vec2_origin ),
 	m_flWidth( 1.0f ),
 	m_flHeight( 1.0f ),
 	m_flScale( 0.022f )
@@ -72,7 +73,7 @@ void CHoloPanelVGUI::PreRender( IMatRenderContext *pRenderContext, Rect_t &posit
 	}
 
 	position.width = desiredWidth;
-	position.height = desiredHeight;
+	position.height = MAX( position.height, desiredHeight );
 
 	desiredWidth -= 2;
 	desiredHeight -= 2;
@@ -117,25 +118,58 @@ void CHoloPanelVGUI::Draw( IMatRenderContext *pRenderContext )
 	CMeshBuilder builder;
 	builder.Begin( pMesh, MATERIAL_QUADS, 1 );
 
-	builder.Position3f( 0, 0, 0 );
+	builder.Position3f( 0, m_vecPanelWorldOffset.x, m_vecPanelWorldOffset.y );
 	builder.Color4f( 1, 1, 1, 1 );
 	builder.TexCoord2f( 0, m_vecUVs[ 0 ].x, m_vecUVs[ 0 ].y );
 	builder.AdvanceVertex();
-	builder.Position3f( 0, m_flWidth * m_flScale, 0 );
+	builder.Position3f( 0, m_flWidth * m_flScale + m_vecPanelWorldOffset.x, m_vecPanelWorldOffset.y );
 	builder.Color4f( 1, 1, 1, 1 );
 	builder.TexCoord2f( 0, m_vecUVs[ 1 ].x, m_vecUVs[ 0 ].y );
 	builder.AdvanceVertex();
-	builder.Position3f( 0, m_flWidth * m_flScale, -m_flHeight * m_flScale );
+	builder.Position3f( 0, m_flWidth * m_flScale + m_vecPanelWorldOffset.x, -m_flHeight * m_flScale + m_vecPanelWorldOffset.y );
 	builder.Color4f( 1, 1, 1, 1 );
 	builder.TexCoord2f( 0, m_vecUVs[ 1 ].x, m_vecUVs[ 1 ].y );
 	builder.AdvanceVertex();
-	builder.Position3f( 0, 0, -m_flHeight * m_flScale );
+	builder.Position3f( 0, m_vecPanelWorldOffset.x, -m_flHeight * m_flScale + m_vecPanelWorldOffset.y );
 	builder.Color4f( 1, 1, 1, 1 );
 	builder.TexCoord2f( 0, m_vecUVs[ 0 ].x, m_vecUVs[ 1 ].y );
 	builder.AdvanceVertex();
 
 	builder.End();
 	pMesh->Draw();
+
+
+#if 0
+	const float debugScale = 4;
+	pRenderContext->PushMatrix();
+	matrix3x4_t debugRotation;
+	MatrixBuildRotationAboutAxis( Vector( 0, 0, 1 ), 180.0f, debugRotation );
+	pRenderContext->LoadMatrix( debugRotation );
+	pMesh = pRenderContext->GetDynamicMesh( true, 0, 0, GetMaterial( MATERIALTYPE_VERTEXCOLOR ) );
+	builder;
+	builder.Begin( pMesh, MATERIAL_QUADS, 1 );
+
+	builder.Position3f( 0, m_vecUVs[ 0 ].x * debugScale, m_vecUVs[ 0 ].y * -debugScale );
+	builder.Color4f( 1, 1, 1, 1 );
+	builder.TexCoord2f( 0, m_vecUVs[ 0 ].x, m_vecUVs[ 0 ].y );
+	builder.AdvanceVertex();
+	builder.Position3f( 0, m_vecUVs[ 1 ].x * debugScale, m_vecUVs[ 0 ].y * -debugScale );
+	builder.Color4f( 1, 1, 1, 1 );
+	builder.TexCoord2f( 0, m_vecUVs[ 1 ].x, m_vecUVs[ 0 ].y );
+	builder.AdvanceVertex();
+	builder.Position3f( 0, m_vecUVs[ 1 ].x * debugScale, m_vecUVs[ 1 ].y * -debugScale );
+	builder.Color4f( 1, 1, 1, 1 );
+	builder.TexCoord2f( 0, m_vecUVs[ 1 ].x, m_vecUVs[ 1 ].y );
+	builder.AdvanceVertex();
+	builder.Position3f( 0, m_vecUVs[ 0 ].x * debugScale, m_vecUVs[ 1 ].y * -debugScale );
+	builder.Color4f( 1, 1, 1, 1 );
+	builder.TexCoord2f( 0, m_vecUVs[ 0 ].x, m_vecUVs[ 1 ].y );
+	builder.AdvanceVertex();
+
+	builder.End();
+	pMesh->Draw();
+	pRenderContext->PopMatrix();
+#endif
 }
 
 void CHoloPanelVGUI::Think( float frametime )

@@ -3,8 +3,18 @@
 #include "holo_panel.h"
 
 #include "materialsystem/imaterialvar.h"
-//CMaterialReference CHoloPanel::m_MaterialWhite;
 
+#define LOAD_SHARED_MATERIAL_REFERENCE( reference, material ) \
+	if ( reference.IsValid() ) \
+	{ \
+		reference->IncrementReferenceCount(); \
+	} \
+	else \
+	{ \
+		reference.Init( material ); \
+	}
+
+CMaterialReference CHoloPanel::m_Materials[ MATERIALTYPE_COUNT ];
 
 CHoloPanel::CHoloPanel() :
 	m_Angles( vec3_angle ),
@@ -12,15 +22,17 @@ CHoloPanel::CHoloPanel() :
 	m_bTransformationDirty( false )
 {
 	SetIdentityMatrix( m_Transformation );
-	m_Materials[ MATERIALTYPE_NORMAL ].Init( materials->FindMaterial( "engine/hologui", TEXTURE_GROUP_OTHER ) );
-	m_Materials[ MATERIALTYPE_VERTEXCOLOR ].Init( materials->FindMaterial( "engine/hologui_vertexcolor", TEXTURE_GROUP_OTHER ) );
+
+	LOAD_SHARED_MATERIAL_REFERENCE( m_Materials[ MATERIALTYPE_NORMAL ], materials->FindMaterial( "engine/hologui", TEXTURE_GROUP_OTHER ) );
+	LOAD_SHARED_MATERIAL_REFERENCE( m_Materials[ MATERIALTYPE_VERTEXCOLOR ], materials->FindMaterial( "engine/hologui_vertexcolor", TEXTURE_GROUP_OTHER ) );
+	LOAD_SHARED_MATERIAL_REFERENCE( m_Materials[ MATERIALTYPE_GLOW ], materials->FindMaterial( "engine/linear_glow", TEXTURE_GROUP_OTHER ) );
 }
 
 CHoloPanel::~CHoloPanel()
 {
 	for ( int i = 0; i < MATERIALTYPE_COUNT; ++i )
 	{
-		m_Materials[ i ].Shutdown();
+		m_Materials[ i ]->DecrementReferenceCount();
 	}
 }
 

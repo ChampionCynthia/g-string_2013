@@ -663,7 +663,11 @@ void CSpacecraft::ClientThink()
 
 	Vector vecShipFwd, vecShipRight, vecShipUp;
 	AngleVectors( GetRenderAngles(), &vecShipFwd, &vecShipRight, &vecShipUp );
-	Vector vecMoveDelta( Vector( 0.0f, -1.0f, 0.0 ) * m_flMoveY + Vector( 0.0f, 0.0f, 1.0 ) * m_flMoveX );
+	Vector vecMoveDelta( Vector( 0.0f, -1.0f, 0.0 ) * m_flMoveY );
+	if ( gstring_spacecraft_move_mode.GetBool() )
+	{
+		vecMoveDelta += Vector( 0.0f, 0.0f, 1.0 ) * m_flMoveX;
+	}
 	vecMoveDelta *= -1000.0f;
 
 	FOR_EACH_VEC( m_ThrusterAttachments, i )

@@ -75,6 +75,7 @@ void CHoloShipHealthGraphic::Draw( IMatRenderContext *pRenderContext )
 		GetAlphaVar( MATERIALTYPE_VERTEXCOLOR )->SetFloatValue( 1.0f );
 
 		pMesh->Draw();
+
 		MatrixBuildRotationAboutAxis( Vector( 0, 0, 1 ), 180, dst );
 		pRenderContext->MultMatrixLocal(dst);
 		pMesh->Draw();

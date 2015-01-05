@@ -1089,6 +1089,8 @@ void C_GstringPlayer::GetSpacecraftCameraFirstPerson( Vector &origin, QAngle &an
 	//angles.x += sin( gpGlobals->curtime * 1 ) * 10 + 5;
 	//angles.z += sin( gpGlobals->curtime * 1 ) * 20;
 	//origin.y += sin( gpGlobals->curtime ) * 0.3;
+	//origin.x += sin( gpGlobals->curtime * 1.7f ) * 0.3;
+	//origin.z += sin( gpGlobals->curtime * 0.7f ) * 0.3;
 	//angles.y += 45;
 	//angles.y += gpGlobals->curtime * 10;
 

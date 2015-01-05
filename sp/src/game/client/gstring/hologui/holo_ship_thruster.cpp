@@ -2,6 +2,7 @@
 #include "cbase.h"
 #include "holo_ship_thruster.h"
 #include "holo_utilities.h"
+#include "gstring/hologui/env_holo_system.h"
 #include "gstring/cspacecraft.h"
 
 #include "materialsystem/imaterialvar.h"
@@ -83,6 +84,19 @@ void CHoloShipThruster::Draw( IMatRenderContext *pRenderContext )
 		pRenderContext->PopMatrix();
 		pRenderContext->MultMatrixLocal( mat );
 	}
+
+	// Draw glow
+	matrix3x4_t viewMatrixInv = CurrentHoloViewMatrixInverted();
+	MatrixSetTranslation( Vector( -0.5f, -1.0f, 0.4f ), viewMatrixInv );
+	pRenderContext->MultMatrixLocal( viewMatrixInv );
+
+	GetColorVar( MATERIALTYPE_GLOW )->SetVecValue( HOLO_COLOR_HIGHLIGHT );
+	GetAlphaVar( MATERIALTYPE_GLOW )->SetFloatValue( 0.03f );
+
+	const float flScale = 5.0f;
+	IMesh *pMeshGlow = pRenderContext->GetDynamicMesh( true, 0, 0, GetMaterial( MATERIALTYPE_GLOW ) );
+	CreateTexturedRect( pMeshGlow, -flScale, -flScale, flScale * 2, flScale * 2 );
+	pMeshGlow->Draw();
 }
 
 void CHoloShipThruster::Think( float frametime )

@@ -2,6 +2,7 @@
 #include "cbase.h"
 #include "holo_ship_engine.h"
 #include "holo_utilities.h"
+#include "gstring/hologui/env_holo_system.h"
 #include "gstring/cspacecraft.h"
 #include "gstring/cgstring_globals.h"
 
@@ -103,6 +104,19 @@ void CHoloShipEngine::Draw( IMatRenderContext *pRenderContext )
 		pRenderContext->PopMatrix();
 		pRenderContext->MultMatrixLocal( mat );
 	}
+
+	// Draw glow
+	matrix3x4_t viewMatrixInv = CurrentHoloViewMatrixInverted();
+	MatrixSetTranslation( Vector( -1, -2, 0.8f ), viewMatrixInv );
+	pRenderContext->MultMatrixLocal( viewMatrixInv );
+
+	GetColorVar( MATERIALTYPE_GLOW )->SetVecValue( HOLO_COLOR_DEFAULT );
+	GetAlphaVar( MATERIALTYPE_GLOW )->SetFloatValue( 0.02f + 0.03f * m_flEngineStrength );
+
+	const float flScale = 6.0f;
+	IMesh *pMeshGlow = pRenderContext->GetDynamicMesh( true, 0, 0, GetMaterial( MATERIALTYPE_GLOW ) );
+	CreateTexturedRect( pMeshGlow, -flScale, -flScale, flScale * 2, flScale * 2 );
+	pMeshGlow->Draw();
 }
 
 void CHoloShipEngine::Think( float frametime )

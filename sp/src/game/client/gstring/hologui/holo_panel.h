@@ -35,6 +35,7 @@ protected:
 	{
 		MATERIALTYPE_NORMAL = 0,
 		MATERIALTYPE_VERTEXCOLOR,
+		MATERIALTYPE_GLOW,
 		MATERIALTYPE_COUNT
 	};
 
@@ -57,7 +58,7 @@ private:
 	matrix3x4_t m_Transformation;
 	bool m_bTransformationDirty;
 
-	CMaterialReference m_Materials[ MATERIALTYPE_COUNT ];
+	static CMaterialReference m_Materials[ MATERIALTYPE_COUNT ];
 };
 
 #endif

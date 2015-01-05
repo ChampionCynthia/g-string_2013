@@ -17,7 +17,7 @@ BEGIN_DATADESC( CPointHoloTarget )
 END_DATADESC()
 #else
 
-CUtlVector< IHoloTarget* > g_HoloTargets;
+static CUtlVector< IHoloTarget* > g_HoloTargets;
 const CUtlVector< IHoloTarget* > &GetHoloTargets()
 {
 	return g_HoloTargets;

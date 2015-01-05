@@ -49,6 +49,8 @@ $Project
 				$File	"$SRCDIR\game\shared\gstring\hologui\env_holo_system.h"
 				$File	"$SRCDIR\game\shared\gstring\hologui\point_holo_target.cpp"
 				$File	"$SRCDIR\game\shared\gstring\hologui\point_holo_target.h"
+				$File	"$SRCDIR\game\shared\gstring\hologui\point_holo_objective.cpp"
+				$File	"$SRCDIR\game\shared\gstring\hologui\point_holo_objective.h"
 			}
 		}
 	}

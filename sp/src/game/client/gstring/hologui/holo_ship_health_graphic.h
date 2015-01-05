@@ -20,6 +20,7 @@ protected:
 private:
 	ISpacecraftData *m_pSpacecraftData;
 	IMesh *m_pHullElement;
+
 	float m_flHullFraction;
 	float m_flShieldFraction;
 };

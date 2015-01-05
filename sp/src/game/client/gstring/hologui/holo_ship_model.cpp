@@ -1,6 +1,7 @@
 
 #include "cbase.h"
 #include "holo_ship_model.h"
+#include "holo_utilities.h"
 #include "cspacecraft.h"
 #include "gstring/cgstring_globals.h"
 #include "gstring/hologui/env_holo_system.h"
@@ -65,6 +66,19 @@ void CHoloShipModel::Draw( IMatRenderContext *pRenderContext )
 		modelrender->ForcedMaterialOverride( m_MaterialHoloModel );
 		m_hModel->DrawModel( STUDIO_RENDER | STUDIO_TRANSPARENCY );
 		modelrender->ForcedMaterialOverride( NULL );
+
+		// Draw glow
+		matrix3x4_t viewMatrixInv = CurrentHoloViewMatrixInverted();
+		MatrixSetTranslation( Vector( 0, 8, -6.5f ), viewMatrixInv );
+		pRenderContext->MultMatrixLocal( viewMatrixInv );
+
+		GetColorVar( MATERIALTYPE_GLOW )->SetVecValue( color.Base(), 3 );
+		GetAlphaVar( MATERIALTYPE_GLOW )->SetFloatValue( 0.04f );
+
+		const float flScale = 8.0f;
+		IMesh *pMeshGlow = pRenderContext->GetDynamicMesh( true, 0, 0, GetMaterial( MATERIALTYPE_GLOW ) );
+		CreateTexturedRect( pMeshGlow, -flScale, -flScale, flScale * 2, flScale * 2 );
+		pMeshGlow->Draw();
 	}
 }
 

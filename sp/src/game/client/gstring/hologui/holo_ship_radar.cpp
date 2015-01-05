@@ -3,6 +3,7 @@
 #include "holo_ship_radar.h"
 #include "holo_utilities.h"
 #include "gstring/cspacecraft.h"
+#include "gstring/hologui/env_holo_system.h"
 #include "gstring/hologui/point_holo_target.h"
 #include "gstring/cgstring_globals.h"
 
@@ -138,16 +139,27 @@ void CHoloShipRadar::Draw( IMatRenderContext *pRenderContext )
 	DrawBlips( pRenderContext );
 
 	pRenderContext->SetStencilEnable( false );
+
+	// Draw glow
+	matrix3x4_t viewMatrixInv = CurrentHoloViewMatrixInverted();
+	MatrixSetTranslation( vec3_origin, viewMatrixInv );
+	pRenderContext->MultMatrixLocal( viewMatrixInv );
+
+	GetColorVar( MATERIALTYPE_GLOW )->SetVecValue( HOLO_COLOR_DEFAULT );
+	GetAlphaVar( MATERIALTYPE_GLOW )->SetFloatValue( 0.04f );
+
+	const float flScale = 8.0f;
+	IMesh *pMeshGlow = pRenderContext->GetDynamicMesh( true, 0, 0, GetMaterial( MATERIALTYPE_GLOW ) );
+	CreateTexturedRect( pMeshGlow, -flScale, -flScale, flScale * 2, flScale * 2 );
+	pMeshGlow->Draw();
 }
 
 void CHoloShipRadar::DrawBlips( IMatRenderContext *pRenderContext )
 {
-	const float flWorldScale = g_pGstringGlobals ? g_pGstringGlobals->GetWorldScale() : 1.0f;
-	matrix3x4_t viewMatrix, viewMatrixInv;
-	pRenderContext->GetMatrix( MATERIAL_VIEW, &viewMatrix );
+	matrix3x4_t viewMatrix = CurrentHoloViewMatrix();
+	matrix3x4_t viewMatrixInv = CurrentHoloViewMatrixInverted();
 	MatrixSetTranslation( vec3_origin, viewMatrix );
-	MatrixScaleBy( 1.0f / flWorldScale, viewMatrix );
-	MatrixInvert( viewMatrix, viewMatrixInv );
+	MatrixSetTranslation( vec3_origin, viewMatrixInv );
 
 	matrix3x4_t modelMatrix;
 	pRenderContext->GetMatrix( MATERIAL_MODEL, &modelMatrix );
@@ -230,9 +242,10 @@ void CHoloShipRadar::DrawBlips( IMatRenderContext *pRenderContext )
 			pRenderContext->SetStencilEnable( false );
 
 			const float flStripeWidth = 0.02f;
+			const float flZPosition = clamp( vecDelta.z, -g_flRadarSize, g_flRadarSize );
 
 			IMesh *pMesh = pRenderContext->GetDynamicMesh( true, 0, 0, GetMaterial() );
-			CreateSlantedRect( pMesh, -flStripeWidth, 0.0f, flStripeWidth * 2.0f, vecDelta.z );
+			CreateSlantedRect( pMesh, -flStripeWidth, 0.0f, flStripeWidth * 2.0f, flZPosition );
 
 			GetAlphaVar()->SetFloatValue( ( vecDelta.z < 0.0f ? 0.1f : 0.3f ) * flAlphaScale );
 			pMesh->Draw();

@@ -118,7 +118,10 @@ $Project "Client (G-String)"
 				$File	"gstring\hologui\holo_ship_radar.h"
 				$File	"gstring\hologui\holo_ship_aim.cpp"
 				$File	"gstring\hologui\holo_ship_aim.h"
-				
+				$File	"gstring\hologui\holo_ship_objectives.cpp"
+				$File	"gstring\hologui\holo_ship_objectives.h"
+				$File	"gstring\hologui\holo_ship_comm.cpp"
+				$File	"gstring\hologui\holo_ship_comm.h"
 			}
 		}
 	
