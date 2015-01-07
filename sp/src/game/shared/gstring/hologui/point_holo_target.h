@@ -39,6 +39,9 @@ class CPointHoloTarget : public CBaseEntity
 
 #ifdef GAME_DLL
 	DECLARE_DATADESC();
+
+	void InputEnable( inputdata_t &inputdata );
+	void InputDisable( inputdata_t &inputdata );
 #else
 	virtual const char *GetName() const;
 	virtual float GetSize() const;
@@ -46,6 +49,8 @@ class CPointHoloTarget : public CBaseEntity
 	virtual TargetType GetType() const;
 	virtual float GetMaxDistance() const;
 	virtual const C_BaseEntity *GetEntity() const { return this; }
+
+	virtual void NotifyShouldTransmit( ShouldTransmitState_t state );
 #endif
 
 public:
@@ -75,6 +80,9 @@ private:
 #ifdef GAME_DLL
 	string_t m_strTargetName;
 	bool m_bEnabled;
+
+	COutputEvent m_OnEnabled;
+	COutputEvent m_OnDisabled;
 #else
 #endif
 

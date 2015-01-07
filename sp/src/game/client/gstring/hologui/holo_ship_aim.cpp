@@ -6,6 +6,7 @@
 #include "gstring/hologui/env_holo_system.h"
 #include "gstring/cspacecraft.h"
 #include "gstring/cgstring_globals.h"
+#include "gstring/gstring_in_main.h"
 
 #include "materialsystem/imaterialvar.h"
 #include "view.h"
@@ -14,7 +15,6 @@
 #include "sourcevr/isourcevirtualreality.h"
 
 extern void GetHoloTargetTypeColor( IHoloTarget::TargetType type, Vector &color, float &alpha );
-extern void FormatViewModelAttachment( Vector &vOrigin, bool bInverse );
 
 namespace
 {
@@ -32,6 +32,10 @@ CHoloShipAim::CHoloShipAim( ISpacecraftData *pSpacecraftData ) :
 		TEXTURE_GROUP_MODEL, GetMaterial() );
 	m_pMeshTarget = pRenderContext->CreateStaticMesh( VERTEX_POSITION | VERTEX_TEXCOORD_SIZE( 0, 2 ),
 		TEXTURE_GROUP_MODEL, GetMaterial() );
+	m_pMeshTargetThick = pRenderContext->CreateStaticMesh( VERTEX_POSITION | VERTEX_TEXCOORD_SIZE( 0, 2 ),
+		TEXTURE_GROUP_MODEL, GetMaterial() );
+	m_pMeshTargetArrows = pRenderContext->CreateStaticMesh( VERTEX_POSITION | VERTEX_TEXCOORD_SIZE( 0, 2 ),
+		TEXTURE_GROUP_MODEL, GetMaterial() );
 	m_pMeshPanel = pRenderContext->CreateStaticMesh( VERTEX_POSITION | VERTEX_COLOR | VERTEX_TEXCOORD_SIZE( 0, 2 ),
 		TEXTURE_GROUP_MODEL, GetMaterial() );
 
@@ -40,6 +44,8 @@ CHoloShipAim::CHoloShipAim( ISpacecraftData *pSpacecraftData ) :
 	CreateArc( m_pMeshLargeReticule, 32, 4.5f, 0.0f, 0.1f, M_PI_F * 0.3f, M_PI_F * 0.7f );
 	CreateRecticule( m_pMeshReticule, 0.3f, 0.05f, 0.3f * 0.707f, DEG2RAD( 45.0f ) );
 	CreateRecticule( m_pMeshTarget, 1.0f, 0.05f, 0.5f, 0.0f );
+	CreateRecticule( m_pMeshTargetThick, 1.04f, 0.13f, 0.5f, 0.0f );
+	CreateTargetArrows( m_pMeshTargetArrows, 45.0f, 8.0f, 0.25f, 1.0f, 0.12f );
 	CreateAimPanel( m_pMeshPanel, 10, 20, QAngle( -50, -80, 0 ), QAngle( 5, 80, 0 ), g_flPanelRadius, 0.1f );
 }
 
@@ -49,7 +55,65 @@ CHoloShipAim::~CHoloShipAim()
 	pRenderContext->DestroyStaticMesh( m_pMeshLargeReticule );
 	pRenderContext->DestroyStaticMesh( m_pMeshReticule );
 	pRenderContext->DestroyStaticMesh( m_pMeshTarget );
+	pRenderContext->DestroyStaticMesh( m_pMeshTargetThick );
+	pRenderContext->DestroyStaticMesh( m_pMeshTargetArrows );
 	pRenderContext->DestroyStaticMesh( m_pMeshPanel );
+}
+
+void CHoloShipAim::Think( float frametime )
+{
+	FOR_EACH_VEC( m_Targets, oldTargetIndex )
+	{
+		Target &target = m_Targets[ oldTargetIndex ];
+		if ( target.m_flBlinkTimer > 0.0f )
+		{
+			target.m_flBlinkTimer -= frametime;
+			target.m_flBlinkTimer = MAX( 0.0f, target.m_flBlinkTimer );
+		}
+	}
+
+	const CUtlVector< IHoloTarget* > &targets = GetHoloTargets();
+	if ( m_KnownTargetEntities.Count() != targets.Count() ||
+		Q_memcmp( m_KnownTargetEntities.Base(), targets.Base(), sizeof( IHoloTarget* ) * m_KnownTargetEntities.Count() ) != 0 )
+	{
+		m_KnownTargetEntities.RemoveAll();
+		m_KnownTargetEntities.AddVectorToTail( targets );
+
+		CUtlVector< IHoloTarget* > newTargets;
+		newTargets.AddVectorToTail( targets );
+
+		FOR_EACH_VEC( m_Targets, oldTargetIndex )
+		{
+			bool bFound = false;
+			FOR_EACH_VEC( newTargets, newTargetIndex )
+			{
+				// Target stays
+				if ( newTargets[ newTargetIndex ] == m_Targets[ oldTargetIndex ].m_Entity )
+				{
+					newTargets.Remove( newTargetIndex );
+					--newTargetIndex;
+					bFound = true;
+					break;
+				}
+			}
+
+			// Target is removed
+			if ( !bFound )
+			{
+				m_Targets.Remove( oldTargetIndex );
+				--oldTargetIndex;
+			}
+		}
+
+		// Add new targets
+		FOR_EACH_VEC( newTargets, newTargetIndex )
+		{
+			Target target;
+			target.m_Entity = newTargets[ newTargetIndex ];
+			target.m_flBlinkTimer = 0.5f;
+			m_Targets.AddToTail( target );
+		}
+	}
 }
 
 void CHoloShipAim::Draw( IMatRenderContext *pRenderContext )
@@ -76,7 +140,7 @@ void CHoloShipAim::Draw( IMatRenderContext *pRenderContext )
 	DrawTargets( pRenderContext );
 }
 
-void FormatForViewSpace( const Vector &forward, const Vector &right, const Vector &up, const Vector &viewOrigin,
+static void FormatForViewSpace( const Vector &forward, const Vector &right, const Vector &up, const Vector &viewOrigin,
 	Vector &vOrigin, float flWorldSpaceScale, bool bInverse )
 {
 	if ( UseVR() )
@@ -126,8 +190,6 @@ void FormatForViewSpace( const Vector &forward, const Vector &right, const Vecto
 	Vector vOut = (right * vTransformed.x) + (up * vTransformed.y) + (forward * vTransformed.z);
 	vOrigin = viewOrigin + vOut;
 }
-
-extern int ScreenTransform( const Vector& point, Vector& screen );
 
 void CHoloShipAim::DrawTargets( IMatRenderContext *pRenderContext )
 {
@@ -186,11 +248,18 @@ void CHoloShipAim::DrawTargets( IMatRenderContext *pRenderContext )
 	m_pSpacecraftData->GetEntity()->GetAttachment( m_iAttachmentGUI, eyePosition, eyeAngles );
 	AngleMatrix( eyeAngles, vec3_origin, guiAttachment );
 
+	const C_BaseEntity *pAutoAimTarget = GetGstringInput()->GetAutoAimTargetEntity();
+
 	const Vector &holoEyePos = CurrentHoloViewOrigin();
-	const CUtlVector< IHoloTarget* > &targets = GetHoloTargets();
-	FOR_EACH_VEC( targets, i )
+	FOR_EACH_VEC( m_Targets, i )
 	{
-		const IHoloTarget *pTarget = targets[ i ];
+		const Target &target = m_Targets[ i ];
+		const IHoloTarget *pTarget = target.m_Entity;
+		if ( !pTarget )
+		{
+			continue;
+		}
+
 		Vector position = pTarget->GetEntity()->GetAbsOrigin() - eyePosition;
 
 		Vector vecGUISpace;
@@ -208,8 +277,15 @@ void CHoloShipAim::DrawTargets( IMatRenderContext *pRenderContext )
 			float flAlphaScale;
 			GetHoloTargetTypeColor( pTarget->GetType(), color, flAlphaScale );
 
+			float flAlpha = 1.0f;
+			if ( target.m_flBlinkTimer > 0.0f )
+			{
+				flAlpha = abs( cos( target.m_flBlinkTimer * M_PI_F * 3.0f ) );
+				flAlpha *= flAlpha;
+			}
+
 			GetColorVar()->SetVecValue( XYZ( color ) );
-			GetAlphaVar()->SetFloatValue( 1.0f );
+			GetAlphaVar()->SetFloatValue( flAlpha );
 
 			matrix3x4_t temp, mat;
 			SetIdentityMatrix( temp );
@@ -223,7 +299,20 @@ void CHoloShipAim::DrawTargets( IMatRenderContext *pRenderContext )
 			ConcatTransforms( temp, rr, mat );
 
 			pRenderContext->LoadMatrix( mat );
-			m_pMeshTarget->Draw();
+
+			if ( pAutoAimTarget != pTarget->GetEntity() )
+			{
+				m_pMeshTarget->Draw();
+			}
+			else
+			{
+				m_pMeshTargetThick->Draw();
+
+				if ( pTarget->GetType() == IHoloTarget::ENEMY )
+				{
+					m_pMeshTargetArrows->Draw();
+				}
+			}
 		}
 	}
 	pRenderContext->PopMatrix();

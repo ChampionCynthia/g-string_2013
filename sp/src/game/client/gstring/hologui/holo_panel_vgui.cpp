@@ -98,13 +98,16 @@ void CHoloPanelVGUI::PreRender( IMatRenderContext *pRenderContext, Rect_t &posit
 	m_flWidth = desiredWidth;
 	m_flHeight = desiredHeight;
 
+	ipanel()->PerformApplySchemeSettings( GetVPanel() );
+	surface()->SolveTraverse( GetVPanel() );
+
 	Frustum frustum;
 	render->Push2DView( setup, 0, pRenderContext->GetRenderTarget(), frustum );
 
 	surface()->DrawSetAlphaMultiplier( 1 );
 
 	surface()->PushMakeCurrent( GetVPanel(), false );
-	ipanel()->PaintTraverse( GetVPanel(), true );
+	surface()->PaintTraverse( GetVPanel() );
 	surface()->PopMakeCurrent( GetVPanel() );
 
 	surface()->SwapBuffers( GetVPanel() );

@@ -4,5 +4,4 @@
 extern bool UTIL_PredictProjectileTarget( Vector vecProjectileOrigin, Vector vecTargetOrigin, Vector vecTargetLinearVelocity,
 										float flLinearProjectileSpeed, Vector &vecPredictedTarget );
 
-
 #endif

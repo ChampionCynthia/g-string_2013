@@ -50,16 +50,21 @@ void CHoloShipEngine::PerformLayout()
 	const int iLargeTall = surface()->GetFontTall( m_FontLarge );
 	const int iSmallTall = surface()->GetFontTall( m_FontSmall );
 
+	const int iWide = 150;
 	m_pLabelEngine->SetPos( 3, 0 );
-	m_pLabelSpeedLabel->SetPos( 10, iLargeTall );
+	m_pLabelEngine->SetWide( iWide - 3 );
+	m_pLabelEngine->SetContentAlignment( Label::a_center );
+
+	m_pLabelSpeedLabel->SetPos( 0, iLargeTall );
 	m_pLabelSpeedValue->SetPos( 0, iLargeTall );
 	SetBounds( 0, 0, m_pLabelEngine->GetWide() + 3, iLargeTall + iSmallTall );
-	m_pLabelSpeedValue->SetSize( GetWide() - 10, iSmallTall );
+	m_pLabelSpeedValue->SetSize( iWide, iSmallTall );
 	m_pLabelSpeedValue->SetContentAlignment( Label::a_east );
 }
 
 void CHoloShipEngine::Draw( IMatRenderContext *pRenderContext )
 {
+	m_vecPanelWorldOffset.x = -0.4f;
 	BaseClass::Draw( pRenderContext );
 
 	matrix3x4_t mat, up;
@@ -142,9 +147,9 @@ void CHoloShipEngine::Think( float frametime )
 	const float flApproachSpeed = flDesiredEngineStrength > m_flEngineStrength ? 4.0f : 1.2f;
 	m_flEngineStrength = Approach( flDesiredEngineStrength, m_flEngineStrength, frametime * flApproachSpeed );
 
-	//const float flToKmH = 1000000.0f / 60.0f / 60.0f;
-	const float flWorldScale = g_pGstringGlobals ? g_pGstringGlobals->GetWorldScale() : 1.0f;
-	const float flSpeed = m_pSpacecraftData->GetPhysVelocity().Length() / flWorldScale;
-	m_pLabelSpeedValue->SetText( VarArgs( "%.0f", flSpeed * 0.03f ) );
+	const float flMetersPerSecondToKmH = 0.001f * 60.0f * 60.0f;
+	const float flWorldScaleInv = g_pGstringGlobals ? 1.0f / g_pGstringGlobals->GetWorldScale() : 1.0f;
+	const float flSpeed = UNITS2METERS( m_pSpacecraftData->GetPhysVelocity().Length() ) * flWorldScaleInv * flMetersPerSecondToKmH;
+	m_pLabelSpeedValue->SetText( VarArgs( "%.0f km/h", flSpeed ) );
 	m_pLabelSpeedValue->MakeReadyForUse();
 }

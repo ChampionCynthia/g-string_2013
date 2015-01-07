@@ -1,10 +1,14 @@
 
 #include "cbase.h"
+#include "c_gstring_util.h"
 #include "bone_setup.h"
 
 #include "engine/ivmodelinfo.h"
 #include "vcollide_parse.h"
 #include "solidsetdefaults.h"
+
+#include "vgui/ILocalize.h"
+#include "tier3/tier3.h"
 
 int ConvertPhysBoneToStudioBone( C_BaseAnimating *pEntity, int iPhysBone )
 {
@@ -86,7 +90,7 @@ bool BoneHasParent( CStudioHdr *pHdr, const char *pszBone, const char *pszPotent
 	return BoneParentDepth( pHdr, pszBone, pszPotentialParent ) > 0;
 }
 
-extern bool SupportsCascadedShadows()
+bool SupportsCascadedShadows()
 {
 	static bool bInit = true;
 	static bool bValue = false;
@@ -99,4 +103,37 @@ extern bool SupportsCascadedShadows()
 	}
 
 	return bValue;
+}
+
+const wchar_t *SafeLocalize( const char *tokenName )
+{
+	const wchar_t *pResult = g_pVGuiLocalize->Find( tokenName );
+	if ( pResult != NULL )
+	{
+		return pResult;
+	}
+	else
+	{
+		static wchar_t s_wszTranslated[ 256 ];
+		g_pVGuiLocalize->ConvertANSIToUnicode( tokenName, s_wszTranslated, sizeof( s_wszTranslated ) );
+		return s_wszTranslated;
+	}
+}
+
+SafeLocalizeInline::SafeLocalizeInline( const char *tokenName )
+{
+	const wchar_t *pResult = g_pVGuiLocalize->Find( tokenName );
+	if ( pResult != NULL )
+	{
+		Q_wcsncpy( m_wszLocalized, pResult, sizeof( m_wszLocalized ) );
+	}
+	else
+	{
+		g_pVGuiLocalize->ConvertANSIToUnicode( tokenName, m_wszLocalized, sizeof( m_wszLocalized ) );
+	}
+}
+
+SafeLocalizeInline::~SafeLocalizeInline()
+{
+
 }

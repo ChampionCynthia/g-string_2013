@@ -14,6 +14,12 @@ BEGIN_DATADESC( CPointHoloTarget )
 	DEFINE_KEYFIELD( m_flMaxDistance, FIELD_FLOAT, "MaxDistance" ),
 	DEFINE_KEYFIELD( m_bEnabled, FIELD_BOOLEAN, "Enabled" ),
 
+	DEFINE_INPUTFUNC( FIELD_VOID, "Enable", InputEnable ),
+	DEFINE_INPUTFUNC( FIELD_VOID, "Disable", InputDisable ),
+
+	DEFINE_OUTPUT( m_OnEnabled, "OnEnabled" ),
+	DEFINE_OUTPUT( m_OnDisabled, "OnDisabled" ),
+
 END_DATADESC()
 #else
 
@@ -26,13 +32,18 @@ const CUtlVector< IHoloTarget* > &GetHoloTargets()
 void AddHoloTarget( IHoloTarget *pEntity )
 {
 	Assert( !g_HoloTargets.HasElement( pEntity ) );
-	g_HoloTargets.AddToTail( pEntity );
+	if ( !g_HoloTargets.HasElement( pEntity ) )
+	{
+		g_HoloTargets.AddToTail( pEntity );
+	}
 }
 
 void RemoveHoloTarget( IHoloTarget *pEntity )
 {
-	Assert( g_HoloTargets.HasElement( pEntity ) );
-	g_HoloTargets.FindAndRemove( pEntity );
+	if ( g_HoloTargets.HasElement( pEntity ) )
+	{
+		g_HoloTargets.FindAndRemove( pEntity );
+	}
 }
 
 #endif
@@ -59,9 +70,7 @@ LINK_ENTITY_TO_CLASS( point_holo_target, CPointHoloTarget );
 
 CPointHoloTarget::CPointHoloTarget()
 {
-#ifdef CLIENT_DLL
-	AddHoloTarget( this );
-#else
+#ifdef GAME_DLL
 	m_bEnabled = true;
 #endif
 }
@@ -74,6 +83,26 @@ CPointHoloTarget::~CPointHoloTarget()
 }
 
 #ifdef GAME_DLL
+
+void CPointHoloTarget::InputEnable( inputdata_t &inputdata )
+{
+	if ( !m_bEnabled )
+	{
+		m_bEnabled = true;
+		m_OnEnabled.FireOutput( inputdata.pActivator, inputdata.pCaller );
+		DispatchUpdateTransmitState();
+	}
+}
+
+void CPointHoloTarget::InputDisable( inputdata_t &inputdata )
+{
+	if ( m_bEnabled )
+	{
+		m_bEnabled = false;
+		m_OnDisabled.FireOutput( inputdata.pActivator, inputdata.pCaller );
+		DispatchUpdateTransmitState();
+	}
+}
 
 void CPointHoloTarget::Activate()
 {
@@ -103,7 +132,7 @@ float CPointHoloTarget::GetSize() const
 
 float CPointHoloTarget::GetHealthPercentage() const
 {
-	return m_flHealth;
+	return m_flHealth * 0.01f;
 }
 
 IHoloTarget::TargetType CPointHoloTarget::GetType() const
@@ -114,6 +143,22 @@ IHoloTarget::TargetType CPointHoloTarget::GetType() const
 float CPointHoloTarget::GetMaxDistance() const
 {
 	return m_flMaxDistance;
+}
+
+void CPointHoloTarget::NotifyShouldTransmit( ShouldTransmitState_t state )
+{
+	// TODO: Called with SHOULDTRANSMIT_START on map shutdown? fucking source.
+	BaseClass::NotifyShouldTransmit( state );
+	switch( state )
+	{
+	case SHOULDTRANSMIT_START:
+		AddHoloTarget( this );
+		break;
+
+	case SHOULDTRANSMIT_END:
+		RemoveHoloTarget( this );
+		break;
+	}
 }
 
 void CPointHoloTarget::OnDataChanged( DataUpdateType_t type )

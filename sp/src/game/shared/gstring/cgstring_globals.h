@@ -3,6 +3,9 @@
 
 #include "cbase.h"
 
+#define UNITS2METERS( units ) ( ( units ) * ( 1.22f / 64.0f ) )
+#define METERS2UNITS( meters ) ( ( meters ) * ( 64.0f / 1.22f ) )
+
 class CGstringGlobals : public CBaseEntity
 {
 	DECLARE_CLASS( CGstringGlobals, CBaseEntity );

@@ -12,6 +12,7 @@
 #include "gstring/hologui/holo_ship_aim.h"
 #include "gstring/hologui/holo_ship_objectives.h"
 #include "gstring/hologui/holo_ship_comm.h"
+#include "gstring/hologui/holo_ship_aim_info.h"
 
 #include "gstring/cspacecraft.h"
 #include "gstring/gstring_rendertargets.h"
@@ -283,6 +284,7 @@ void CEnvHoloSystem::CreatePanels()
 	m_Panels.AddToTail( new CHoloShipAim( pSpacecraft ) );
 	m_Panels.AddToTail( new CHoloShipObjectives( pSpacecraft ) );
 	m_Panels.AddToTail( new CHoloShipComm( pSpacecraft ) );
+	m_Panels.AddToTail( new CHoloShipAimInfo( pSpacecraft ) );
 
 	FOR_EACH_VEC( m_Panels, i )
 	{

@@ -14,6 +14,7 @@ class CPointHoloObjective : public CBaseEntity
 {
 	DECLARE_CLASS( CPointHoloObjective, CBaseEntity );
 	DECLARE_NETWORKCLASS();
+public:
 
 	enum ObjectiveState
 	{
@@ -29,14 +30,16 @@ class CPointHoloObjective : public CBaseEntity
 	void InputSetStateActive( inputdata_t &inputdata );
 	void InputSetStateCompleted( inputdata_t &inputdata );
 	void InputSetCountCurrent( inputdata_t &inputdata );
+	void InputAddToCountCurrent( inputdata_t &inputdata );
 #else
 	const char *GetDescription() const;
 	ObjectiveState GetObjectiveState() const;
 	int GetCountMax() const;
 	int GetCountCurrent() const;
+
+	virtual void NotifyShouldTransmit( ShouldTransmitState_t state );
 #endif
 
-public:
 	CPointHoloObjective();
 	virtual ~CPointHoloObjective();
 
@@ -61,6 +64,8 @@ private:
 	void CompleteObjective( CBaseEntity *pActivator, CBaseEntity *pCaller );
 
 	string_t m_strDescription;
+	COutputEvent m_OnObjectiveDisabled;
+	COutputEvent m_OnObjectiveActive;
 	COutputEvent m_OnObjectiveCompleted;
 #else
 #endif

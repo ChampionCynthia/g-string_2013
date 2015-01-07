@@ -14,6 +14,11 @@ BEGIN_DATADESC( CPointHoloObjective )
 	DEFINE_INPUTFUNC( FIELD_VOID, "setStateActive", InputSetStateActive ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "setStateCompleted", InputSetStateCompleted ),
 	DEFINE_INPUTFUNC( FIELD_INTEGER, "setCurrentCount", InputSetCountCurrent ),
+	DEFINE_INPUTFUNC( FIELD_INTEGER, "addToCurrentCount", InputAddToCountCurrent ),
+
+	DEFINE_OUTPUT( m_OnObjectiveDisabled, "OnObjectiveDisabled" ),
+	DEFINE_OUTPUT( m_OnObjectiveActive, "OnObjectiveActive" ),
+	DEFINE_OUTPUT( m_OnObjectiveCompleted, "OnObjectiveCompleted" ),
 
 END_DATADESC()
 #else
@@ -27,13 +32,18 @@ const CUtlVector< CPointHoloObjective* > &GetHoloObjectives()
 void AddHoloObjective( CPointHoloObjective *pEntity )
 {
 	Assert( !g_HoloObjectives.HasElement( pEntity ) );
-	g_HoloObjectives.AddToTail( pEntity );
+	if ( !g_HoloObjectives.HasElement( pEntity ) )
+	{
+		g_HoloObjectives.AddToTail( pEntity );
+	}
 }
 
 void RemoveHoloObjective( CPointHoloObjective *pEntity )
 {
-	Assert( g_HoloObjectives.HasElement( pEntity ) );
-	g_HoloObjectives.FindAndRemove( pEntity );
+	if ( g_HoloObjectives.HasElement( pEntity ) )
+	{
+		g_HoloObjectives.FindAndRemove( pEntity );
+	}
 }
 
 #endif
@@ -58,9 +68,6 @@ LINK_ENTITY_TO_CLASS( point_holo_objective, CPointHoloObjective );
 
 CPointHoloObjective::CPointHoloObjective()
 {
-#ifdef CLIENT_DLL
-	AddHoloObjective( this );
-#endif
 }
 
 CPointHoloObjective::~CPointHoloObjective()
@@ -74,13 +81,22 @@ CPointHoloObjective::~CPointHoloObjective()
 
 void CPointHoloObjective::InputSetStateDisabled( inputdata_t &inputdata )
 {
-	m_iObjectiveState = OBJECTIVESTATE_DISABLED;
+	if ( m_iObjectiveState != OBJECTIVESTATE_DISABLED )
+	{
+		m_iObjectiveState = OBJECTIVESTATE_DISABLED;
+		m_OnObjectiveDisabled.FireOutput( inputdata.pActivator, inputdata.pCaller );
+		DispatchUpdateTransmitState();
+	}
 }
 
 void CPointHoloObjective::InputSetStateActive( inputdata_t &inputdata )
 {
-	m_iObjectiveState = OBJECTIVESTATE_ACTIVE;
-	DispatchUpdateTransmitState();
+	if ( m_iObjectiveState != OBJECTIVESTATE_ACTIVE )
+	{
+		m_iObjectiveState = OBJECTIVESTATE_ACTIVE;
+		m_OnObjectiveActive.FireOutput( inputdata.pActivator, inputdata.pCaller );
+		DispatchUpdateTransmitState();
+	}
 }
 
 void CPointHoloObjective::InputSetStateCompleted( inputdata_t &inputdata )
@@ -100,6 +116,19 @@ void CPointHoloObjective::InputSetCountCurrent( inputdata_t &inputdata )
 	}
 }
 
+void CPointHoloObjective::InputAddToCountCurrent( inputdata_t &inputdata )
+{
+	if ( inputdata.value.Convert( FIELD_INTEGER ) )
+	{
+		m_iCountCurrent += inputdata.value.Int();
+		if ( m_iCountCurrent >= m_iCountMax )
+		{
+			m_iCountCurrent = m_iCountMax;
+			CompleteObjective( inputdata.pActivator, inputdata.pCaller );
+		}
+	}
+}
+
 void CPointHoloObjective::Activate()
 {
 	BaseClass::Activate();
@@ -114,8 +143,11 @@ int CPointHoloObjective::UpdateTransmitState()
 
 void CPointHoloObjective::CompleteObjective( CBaseEntity *pActivator, CBaseEntity *pCaller )
 {
-	m_iObjectiveState = OBJECTIVESTATE_COMPLETED;
-	m_OnObjectiveCompleted.FireOutput( pActivator, pCaller );
+	if ( m_iObjectiveState != OBJECTIVESTATE_COMPLETED )
+	{
+		m_iObjectiveState = OBJECTIVESTATE_COMPLETED;
+		m_OnObjectiveCompleted.FireOutput( pActivator, pCaller );
+	}
 }
 
 #else
@@ -138,6 +170,22 @@ int CPointHoloObjective::GetCountMax() const
 int CPointHoloObjective::GetCountCurrent() const
 {
 	return m_iCountCurrent;
+}
+
+void CPointHoloObjective::NotifyShouldTransmit( ShouldTransmitState_t state )
+{
+	// TODO: Called with SHOULDTRANSMIT_START on map shutdown? fucking source.
+	BaseClass::NotifyShouldTransmit( state );
+	switch( state )
+	{
+	case SHOULDTRANSMIT_START:
+		AddHoloObjective( this );
+		break;
+
+	case SHOULDTRANSMIT_END:
+		RemoveHoloObjective( this );
+		break;
+	}
 }
 
 void CPointHoloObjective::OnDataChanged( DataUpdateType_t type )

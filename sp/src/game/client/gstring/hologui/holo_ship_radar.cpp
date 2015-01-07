@@ -223,6 +223,7 @@ void CHoloShipRadar::DrawBlips( IMatRenderContext *pRenderContext )
 
 		GetAlphaVar()->SetFloatValue( 0.8f * flAlphaScale );
 		m_pMeshCircle->Draw();
+		m_pMeshCircle->Draw();
 
 		pRenderContext->PopMatrix();
 

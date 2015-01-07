@@ -628,7 +628,7 @@ void CSpacecraft::OnDataChanged( DataUpdateType_t t )
 	}
 	else if ( GetOwnerEntity() == C_BasePlayer::GetLocalPlayer() )
 	{
-		m_nSkin = gstring_spacecraft_firstperson.GetBool() ? 2 : 0;
+		m_nSkin = gstring_spacecraft_firstperson.GetBool() ? 3 : 0;
 	}
 }
 

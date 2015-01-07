@@ -4,6 +4,8 @@
 #include "input.h"
 #include "gstring/gstring_player_shared_forward.h"
 
+class IHoloTarget;
+
 class CGstringInput : public CInput
 {
 	typedef CInput BaseClass;
@@ -18,8 +20,9 @@ public:
 	void GetNormalizedMousePosition( Vector2D &vecMousePosition ) const;
 	void GetCrosshairPosition( int &x, int &y, float &angle ) const;
 
-	const CUtlVector< EHANDLE > &GetPotentialAutoAimTargets() const;
-	CBaseEntity *GetAutoAimTarget() const;
+	//const CUtlVector< EHANDLE > &GetPotentialAutoAimTargets() const;
+	const IHoloTarget *GetAutoAimTarget() const { return m_AutoAimTargetEntity.Get() != NULL ? m_AutoAimTarget : NULL; }
+	const CBaseEntity *GetAutoAimTargetEntity() const { return m_AutoAimTargetEntity.Get(); }
 
 protected:
 	virtual void ClampAngles( QAngle &viewangles );
@@ -44,8 +47,10 @@ private:
 
 	float m_flAutoAimUpdateTick;
 	float m_flLockFraction;
-	CUtlVector< EHANDLE > m_PotentialAutoAimTargets;
-	EHANDLE m_AutoAimTarget;
+	//CUtlVector< EHANDLE > m_PotentialAutoAimTargets;
+	EHANDLE m_AutoAimTargetEntity;
+	const IHoloTarget *m_AutoAimTarget;
+	bool m_bAutoAimTargetIsEnemy;
 };
 
 extern CGstringInput *GetGstringInput();

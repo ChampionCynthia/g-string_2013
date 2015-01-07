@@ -3,6 +3,7 @@
 #include "gstring_in_main.h"
 #include "c_gstring_player.h"
 #include "gstring/cspacecraft.h"
+#include "gstring/hologui/point_holo_target.h"
 #include "iviewrender.h"
 #include "viewrender.h"
 #include "view.h"
@@ -18,7 +19,7 @@
 static ConVar gstring_spacecraft_mouse_roll_speed( "gstring_spacecraft_mouse_roll_speed", "100.0" );
 static ConVar gstring_spacecraft_mouse_drift_speed( "gstring_spacecraft_mouse_drift_speed", "0.15" );
 static ConVar gstring_spacecraft_move_roll_speed( "gstring_spacecraft_move_roll_speed", "100.0" );
-static ConVar gstring_spacecraft_autoaim_maxscreendist( "gstring_spacecraft_autoaim_maxscreendist", "30" );
+static ConVar gstring_spacecraft_autoaim_maxscreendist( "gstring_spacecraft_autoaim_maxscreendist", "90" );
 static ConVar gstring_spacecraft_autoaim_maxworlddist( "gstring_spacecraft_autoaim_maxworlddist", "4096" );
 static ConVar gstring_spacecraft_mouse_mode( "gstring_spacecraft_mouse_mode", "0", FCVAR_ARCHIVE );
 
@@ -42,6 +43,8 @@ CGstringInput::CGstringInput()
 	, m_bIsUsingCustomCrosshair( false )
 	, m_flAutoAimUpdateTick( 0.0f )
 	, m_flLockFraction( 0.0f )
+	, m_bAutoAimTargetIsEnemy( false )
+	, m_AutoAimTarget( NULL )
 {
 }
 
@@ -84,16 +87,6 @@ void CGstringInput::GetCrosshairPosition( int &x, int &y, float &angle ) const
 	const float flMaxCrosshairAngle = 45.0f;
 	angle = RemapValClamped( y, 0, vh, -flMaxCrosshairAngle, flMaxCrosshairAngle );
 	angle *= RemapValClamped( x, 0, vw, -1.0f, 1.0f );
-}
-
-const CUtlVector< EHANDLE > &CGstringInput::GetPotentialAutoAimTargets() const
-{
-	return m_PotentialAutoAimTargets;
-}
-
-CBaseEntity *CGstringInput::GetAutoAimTarget() const
-{
-	return m_AutoAimTarget.Get();
 }
 
 void CGstringInput::ClampAngles( QAngle &viewangles )
@@ -339,7 +332,6 @@ void CGstringInput::JoyStickMove( float frametime, CUserCmd *cmd )
 		engine->SetViewAngles( viewangles );
 
 		PerformSpacecraftAutoAim( cmd );
-		return;
 	}
 }
 
@@ -427,70 +419,79 @@ void CGstringInput::PerformSpacecraftAutoAim( CUserCmd *cmd )
 	UTIL_TraceHull( vecViewOrigin, vecEnd, -vecHull, vecHull, MASK_SOLID, &filter, &tr );
 
 	cmd->worldShootPosition = tr.endpos;
-	C_BaseEntity *pAutoAimTarget = NULL;
+	const IHoloTarget *pAutoAimTarget = NULL;
+	const C_BaseEntity *pAutoAimEntity = NULL;
 
 	if ( m_flAutoAimUpdateTick < 0.0f )
 	{
 		m_flAutoAimUpdateTick = 0.05f;
-		m_PotentialAutoAimTargets.RemoveAll();
 
 		const float flMaxWorldDistanceSqr = gstring_spacecraft_autoaim_maxworlddist.GetFloat() *
 			gstring_spacecraft_autoaim_maxworlddist.GetFloat();
 		float flBestScreenDistSqr = gstring_spacecraft_autoaim_maxscreendist.GetFloat() *
 			gstring_spacecraft_autoaim_maxscreendist.GetFloat() * ( vh / 640.0f );
-		for ( C_BaseEntity *pEnt = ClientEntityList().FirstBaseEntity(); pEnt; pEnt = ClientEntityList().NextBaseEntity( pEnt ) )
+
+		const CUtlVector< IHoloTarget* > &targets = GetHoloTargets();
+		FOR_EACH_VEC( targets, i )
 		{
-			if ( !pEnt || !pEnt->IsVisible() ||
-				pEnt->IsPlayer() || pEnt->GetOwnerEntity() == pPlayer )
-				continue;
+			const IHoloTarget *target = targets[ i ];
+			//if ( target->GetType() != IHoloTarget::ENEMY )
+			//	continue;
 
-			CSpacecraft *pSpacecraft = dynamic_cast< CSpacecraft* >( pEnt );
-			if ( pSpacecraft != NULL )
+			const C_BaseEntity *pEnt = target->GetEntity();
+			const Vector &vecCenter = pEnt->WorldSpaceCenter();
+			const float flWorldDistanceSqr = ( vecCenter - vecViewOrigin ).LengthSqr();
+			const float flTargetMaxDistance = target->GetMaxDistance();
+
+			if ( flWorldDistanceSqr > flMaxWorldDistanceSqr ||
+				flTargetMaxDistance > 0.0f && flWorldDistanceSqr > flTargetMaxDistance * flTargetMaxDistance )
 			{
-				const Vector &vecCenter = pSpacecraft->WorldSpaceCenter();
-				const float flWorldDistanceSqr = ( vecCenter - vecViewOrigin ).LengthSqr();
-
-				if ( flWorldDistanceSqr > flMaxWorldDistanceSqr )
-				{
-					continue;
-				}
-
-				m_PotentialAutoAimTargets.AddToTail( pSpacecraft );
-
-				Vector vecScreen( vec3_origin );
-				if ( !ScreenTransform( vecCenter, vecScreen ) )
-				{
-					vecScreen = vecScreen * Vector( 0.5f, -0.5f, 0 ) + Vector( 0.5f, 0.5f, 0 );
-					vecScreen.x *= vw;
-					vecScreen.y *= vh;
-				}
-
-				const float flScreenDistSqr = ( Vector2D( vecScreen.x, vecScreen.y ) - m_MousePosition ).LengthSqr();
-				if ( flScreenDistSqr > flBestScreenDistSqr )
-				{
-					continue;
-				}
-
-				pAutoAimTarget = pSpacecraft;
-				flBestScreenDistSqr = flScreenDistSqr;
+				continue;
 			}
+
+			Vector vecScreen( vec3_origin );
+			if ( !ScreenTransform( vecCenter, vecScreen ) )
+			{
+				vecScreen = vecScreen * Vector( 0.5f, -0.5f, 0 ) + Vector( 0.5f, 0.5f, 0 );
+				vecScreen.x *= vw;
+				vecScreen.y *= vh;
+			}
+
+			const float flScreenDistSqr = ( Vector2D( vecScreen.x, vecScreen.y ) - m_MousePosition ).LengthSqr();
+			if ( flScreenDistSqr > flBestScreenDistSqr )
+			{
+				continue;
+			}
+
+			pAutoAimTarget = target;
+			flBestScreenDistSqr = flScreenDistSqr;
 		}
 
-		m_AutoAimTarget.Set( pAutoAimTarget );
+		m_AutoAimTargetEntity.Set( pAutoAimTarget ? pAutoAimTarget->GetEntity() : NULL );
 	}
 	else
 	{
 		m_flAutoAimUpdateTick -= gpGlobals->frametime;
+
+		// No auto aim update, restore target
+		if ( pAutoAimTarget == NULL )
+		{
+			pAutoAimEntity = m_AutoAimTargetEntity.Get();
+		}
 	}
 
-	if ( pAutoAimTarget == NULL )
-	{
-		pAutoAimTarget = m_AutoAimTarget.Get();
-	}
-
+	// Auto aim was updated
 	if ( pAutoAimTarget != NULL )
 	{
-		cmd->autoAimTarget = pAutoAimTarget->entindex();
+		m_AutoAimTarget = pAutoAimTarget;
+		pAutoAimEntity = pAutoAimTarget->GetEntity();
+		m_bAutoAimTargetIsEnemy = pAutoAimTarget->GetType() == IHoloTarget::ENEMY;
+	}
+
+	// Apply new or old target
+	if ( pAutoAimEntity != NULL && m_bAutoAimTargetIsEnemy )
+	{
+		cmd->autoAimTarget = pAutoAimEntity->entindex();
 	}
 	else
 	{

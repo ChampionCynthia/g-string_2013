@@ -327,4 +327,48 @@ inline void CreateAimPanel( IMesh *pMesh, int subDivCountX, int subDivCountY,
 	builder.End();
 }
 
+inline void CreateTargetArrows( IMesh *pMesh, float rollDegrees, float angleDegrees,
+	float length, float distance, float indentation )
+{
+	CMeshBuilder builder;
+	builder.Begin( pMesh, MATERIAL_TRIANGLES, 8 );
+
+	for ( int i = 0; i < 4; ++i )
+	{
+		Vector up;
+		QAngle angle( 0, 0, 90.0f * i + rollDegrees + angleDegrees );
+		AngleVectors( angle, NULL, NULL, &up );
+		up *= distance + length + indentation;
+
+		builder.Position3f( 0.0f, up.y, up.z );
+		builder.AdvanceVertex();
+
+		angle.z -= angleDegrees;
+		AngleVectors( angle, NULL, NULL, &up );
+		Vector temp = up * distance;
+		up *= ( distance + length );
+
+		builder.Position3f( 0.0f, temp.y, temp.z );
+		builder.AdvanceVertex();
+
+		builder.Position3f( 0.0f, up.y, up.z );
+		builder.AdvanceVertex();
+
+		builder.Position3f( 0.0f, up.y, up.z );
+		builder.AdvanceVertex();
+
+		builder.Position3f( 0.0f, temp.y, temp.z );
+		builder.AdvanceVertex();
+
+		angle.z -= angleDegrees;
+		AngleVectors( angle, NULL, NULL, &up );
+		up *= distance + length + indentation;
+
+		builder.Position3f( 0.0f, up.y, up.z );
+		builder.AdvanceVertex();
+	}
+
+	builder.End();
+}
+
 #endif
