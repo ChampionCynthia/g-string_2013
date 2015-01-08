@@ -1,6 +1,7 @@
 
 #include "cbase.h"
 #include "holo_ship_aim.h"
+#include "holo_ship_radar.h"
 #include "holo_utilities.h"
 #include "gstring/hologui/point_holo_target.h"
 #include "gstring/hologui/env_holo_system.h"
@@ -38,6 +39,12 @@ CHoloShipAim::CHoloShipAim( ISpacecraftData *pSpacecraftData ) :
 		TEXTURE_GROUP_MODEL, GetMaterial() );
 	m_pMeshPanel = pRenderContext->CreateStaticMesh( VERTEX_POSITION | VERTEX_COLOR | VERTEX_TEXCOORD_SIZE( 0, 2 ),
 		TEXTURE_GROUP_MODEL, GetMaterial() );
+	m_pMeshDamagePanel = pRenderContext->CreateStaticMesh( VERTEX_POSITION | VERTEX_COLOR | VERTEX_TEXCOORD_SIZE( 0, 2 ),
+		TEXTURE_GROUP_MODEL, GetMaterial() );
+	m_pMeshDamagePanelInner = pRenderContext->CreateStaticMesh( VERTEX_POSITION | VERTEX_COLOR | VERTEX_TEXCOORD_SIZE( 0, 2 ),
+		TEXTURE_GROUP_MODEL, GetMaterial() );
+	m_pMeshDamagePanelOuter = pRenderContext->CreateStaticMesh( VERTEX_POSITION | VERTEX_COLOR | VERTEX_TEXCOORD_SIZE( 0, 2 ),
+		TEXTURE_GROUP_MODEL, GetMaterial() );
 
 	m_iAttachmentGUI = pSpacecraftData->GetEntity()->LookupAttachment( "gui" );
 
@@ -47,6 +54,9 @@ CHoloShipAim::CHoloShipAim( ISpacecraftData *pSpacecraftData ) :
 	CreateRecticule( m_pMeshTargetThick, 1.04f, 0.13f, 0.5f, 0.0f );
 	CreateTargetArrows( m_pMeshTargetArrows, 45.0f, 8.0f, 0.25f, 1.0f, 0.12f );
 	CreateAimPanel( m_pMeshPanel, 10, 20, QAngle( -50, -80, 0 ), QAngle( 5, 80, 0 ), g_flPanelRadius, 0.1f );
+	CreateDamageIndicator( m_pMeshDamagePanel, 16, 4.5f, 1.2f, M_PI_F * -0.3f, M_PI_F * 0.3f, 0.0f, 1.0f );
+	CreateRoundDamageIndicator( m_pMeshDamagePanelInner, 32, 0.001f, 1.2f );
+	CreateRoundDamageIndicator( m_pMeshDamagePanelOuter, 32, 4.5f, -1.2f );
 }
 
 CHoloShipAim::~CHoloShipAim()
@@ -58,6 +68,35 @@ CHoloShipAim::~CHoloShipAim()
 	pRenderContext->DestroyStaticMesh( m_pMeshTargetThick );
 	pRenderContext->DestroyStaticMesh( m_pMeshTargetArrows );
 	pRenderContext->DestroyStaticMesh( m_pMeshPanel );
+	pRenderContext->DestroyStaticMesh( m_pMeshDamagePanel );
+	pRenderContext->DestroyStaticMesh( m_pMeshDamagePanelInner );
+	pRenderContext->DestroyStaticMesh( m_pMeshDamagePanelOuter );
+}
+
+void CHoloShipAim::MsgFuncSpacecraftDamage( bf_read &msg )
+{
+	Vector vecFrom;
+	msg.ReadBitVec3Coord( vecFrom );
+
+	Vector vecDelta = vecFrom - m_pSpacecraftData->GetEntity()->GetAbsOrigin();
+	Vector vecFwd, vecRight, vecUp;
+	AngleVectors( m_pSpacecraftData->GetEntity()->GetAbsAngles(), &vecFwd, &vecRight, &vecUp );
+
+	vecDelta.NormalizeInPlace();
+	const float flDotForward = DotProduct( vecDelta, vecFwd );
+	vecDelta -= vecFwd * flDotForward;
+
+	if ( vecDelta.LengthSqr() > 0.0001f )
+	{
+		vecDelta.NormalizeInPlace();
+
+		const float flForwardThreshold = 0.92f;
+		DamagePanel dmg;
+		dmg.m_flAngle = RAD2DEG( atan2( DotProduct( vecDelta, vecUp ), -DotProduct( vecDelta, vecRight ) ) );
+		dmg.m_flAlpha = 1.0f;
+		dmg.m_iType = flDotForward > flForwardThreshold ? 2 : flDotForward < -flForwardThreshold ? 1 : 0;
+		m_DamagePanels.AddToTail( dmg );
+	}
 }
 
 void CHoloShipAim::Think( float frametime )
@@ -112,6 +151,17 @@ void CHoloShipAim::Think( float frametime )
 			target.m_Entity = newTargets[ newTargetIndex ];
 			target.m_flBlinkTimer = 0.5f;
 			m_Targets.AddToTail( target );
+		}
+	}
+
+	FOR_EACH_VEC( m_DamagePanels, i )
+	{
+		DamagePanel &dmg = m_DamagePanels[ i ];
+		dmg.m_flAlpha = Approach( 0.0f, dmg.m_flAlpha, frametime );
+		if ( dmg.m_flAlpha <= 0.0f )
+		{
+			m_DamagePanels.Remove( i );
+			--i;
 		}
 	}
 }
@@ -255,12 +305,17 @@ void CHoloShipAim::DrawTargets( IMatRenderContext *pRenderContext )
 	{
 		const Target &target = m_Targets[ i ];
 		const IHoloTarget *pTarget = target.m_Entity;
-		if ( !pTarget )
+		if ( !pTarget || !pTarget->IsActive() )
 		{
 			continue;
 		}
 
 		Vector position = pTarget->GetEntity()->GetAbsOrigin() - eyePosition;
+
+		if ( position.LengthSqr() > HOLO_TARGET_MAX_DISTANCE * HOLO_TARGET_MAX_DISTANCE )
+		{
+			continue;
+		}
 
 		Vector vecGUISpace;
 		VectorITransform( position, guiAttachment, vecGUISpace );
@@ -317,9 +372,6 @@ void CHoloShipAim::DrawTargets( IMatRenderContext *pRenderContext )
 	}
 	pRenderContext->PopMatrix();
 
-	GetColorVar()->SetVecValue( HOLO_COLOR_DEFAULT );
-	GetAlphaVar()->SetFloatValue( 0.5f );
-	pRenderContext->Bind( GetMaterial() );
 	// Draw projected center reticule
 	pRenderContext->PushMatrix();
 	if ( UseVR() )
@@ -363,11 +415,13 @@ void CHoloShipAim::DrawTargets( IMatRenderContext *pRenderContext )
 			}
 			vecGUISpace *= length;
 
+			const float flDistanceToSphere = ( vecSpherePosition - holoEyePos ).Length();
+			const float flDistanceScale = flDistanceToSphere > 0.0001f ? 1.0f / flDistanceToSphere * 23.0f : 1.0f;
+
 			matrix3x4_t mat;
 			SetIdentityMatrix( mat );
 			MatrixSetTranslation( vecGUISpace, mat );
-			MatrixScaleBy( ( vecGUISpace - holoEyePos ).Length() * 0.05f, mat );
-
+			MatrixScaleBy( ( vecGUISpace - holoEyePos ).Length() * 0.05f * flDistanceScale, mat );
 
 			Vector normal = ( vecSpherePosition - g_vecPanelPosition ).Normalized();
 			QAngle an;
@@ -376,22 +430,8 @@ void CHoloShipAim::DrawTargets( IMatRenderContext *pRenderContext )
 			AngleMatrix( an, rr );
 			ConcatTransforms( mat, rr, mat2 );
 
-
-			pRenderContext->LoadMatrix( mat );
 			pRenderContext->LoadMatrix( mat2 );
-			m_pMeshReticule->Draw();
-
-			// sides
-			matrix3x4_t matrixTemp;
-			MatrixBuildRotationAboutAxis( Vector( 0, 1, 0 ), 90.0f, matrixTemp );
-			pRenderContext->MultMatrixLocal( matrixTemp );
-
-			m_pMeshLargeReticule->Draw();
-
-			MatrixBuildRotationAboutAxis( Vector( 1, 0, 0 ), 180.0f, matrixTemp );
-			pRenderContext->MultMatrixLocal( matrixTemp );
-
-			m_pMeshLargeReticule->Draw();
+			DrawReticule( pRenderContext );
 		}
 	}
 	else // Draw simple reticule
@@ -402,19 +442,7 @@ void CHoloShipAim::DrawTargets( IMatRenderContext *pRenderContext )
 		MatrixSetTranslation( Vector( 5, 0, 0 ), matrixTemp );
 
 		pRenderContext->MultMatrixLocal( matrixTemp );
-		m_pMeshReticule->Draw();
-
-		// sides
-		MatrixBuildRotationAboutAxis( Vector( 0, 1, 0 ), 90.0f, matrixTemp );
-		pRenderContext->MultMatrixLocal( matrixTemp );
-
-		m_pMeshLargeReticule->Draw();
-
-		MatrixBuildRotationAboutAxis( Vector( 1, 0, 0 ), 180.0f, matrixTemp );
-		pRenderContext->MultMatrixLocal( matrixTemp );
-
-		m_pMeshLargeReticule->Draw();
-
+		DrawReticule( pRenderContext );
 	}
 	pRenderContext->PopMatrix();
 
@@ -435,5 +463,70 @@ void CHoloShipAim::DrawTargets( IMatRenderContext *pRenderContext )
 	m_pMeshPanel->Draw();
 
 	pRenderContext->PopMatrix();
+}
+
+void CHoloShipAim::DrawReticule( IMatRenderContext *pRenderContext )
+{
+	matrix3x4_t matrixTemp;
+
+	//GetColorVar( MATERIALTYPE_VERTEXCOLOR )->SetVecValue( 0.9f, 0.2f, 0.05f );
+	//GetAlphaVar( MATERIALTYPE_VERTEXCOLOR )->SetFloatValue( 0.2f );
+
+	//IMesh *pMeshGlow = pRenderContext->GetDynamicMesh( true, 0, 0, GetMaterial( MATERIALTYPE_VERTEXCOLOR ) );
+	//CreateRoundDamageIndicator( pMeshGlow, 32, 4.5f, -1.2f, false );
+	//pMeshGlow->Draw();
+	// damage indicator
+	if ( m_DamagePanels.Count() > 0 )
+	{
+		GetColorVar( MATERIALTYPE_VERTEXCOLOR )->SetVecValue( 0.9f, 0.2f, 0.05f );
+		pRenderContext->Bind( GetMaterial( MATERIALTYPE_VERTEXCOLOR ) );
+		FOR_EACH_VEC( m_DamagePanels, i )
+		{
+			const DamagePanel &panel = m_DamagePanels[ i ];
+			float flAlpha = panel.m_flAlpha;
+			if ( panel.m_iType != 0 )
+			{
+				flAlpha *= 0.3f;
+			}
+			GetAlphaVar( MATERIALTYPE_VERTEXCOLOR )->SetFloatValue( flAlpha );
+			pRenderContext->PushMatrix();
+			MatrixBuildRotationAboutAxis( Vector( 1, 0, 0 ), panel.m_flAngle, matrixTemp );
+			pRenderContext->MultMatrixLocal( matrixTemp );
+
+			switch ( panel.m_iType )
+			{
+			case 0:
+				m_pMeshDamagePanel->Draw();
+				break;
+
+			case 1:
+				m_pMeshDamagePanelOuter->Draw();
+				break;
+
+			case 2:
+				m_pMeshDamagePanelInner->Draw();
+			}
+
+			pRenderContext->PopMatrix();
+		}
+	}
+
+	GetColorVar()->SetVecValue( HOLO_COLOR_DEFAULT );
+	GetAlphaVar()->SetFloatValue( 0.5f );
+	pRenderContext->Bind( GetMaterial() );
+
+	// center
+	m_pMeshReticule->Draw();
+
+	// sides
+	MatrixBuildRotationAboutAxis( Vector( 0, 1, 0 ), 90.0f, matrixTemp );
+	pRenderContext->MultMatrixLocal( matrixTemp );
+
+	m_pMeshLargeReticule->Draw();
+
+	MatrixBuildRotationAboutAxis( Vector( 1, 0, 0 ), 180.0f, matrixTemp );
+	pRenderContext->MultMatrixLocal( matrixTemp );
+
+	m_pMeshLargeReticule->Draw();
 }
 

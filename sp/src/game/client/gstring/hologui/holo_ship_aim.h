@@ -12,6 +12,8 @@ public:
 	CHoloShipAim( ISpacecraftData *pSpacecraftData );
 	virtual ~CHoloShipAim();
 
+	void MsgFuncSpacecraftDamage( bf_read &msg );
+
 protected:
 	virtual void Think( float frametime );
 	virtual void Draw( IMatRenderContext *pRenderContext );
@@ -27,12 +29,21 @@ private:
 		float m_flBlinkTimer;
 	};
 
+	struct DamagePanel
+	{
+		float m_flAngle;
+		float m_flAlpha;
+		int m_iType;
+	};
+
 	void DrawTargets( IMatRenderContext *pRenderContext );
+	void DrawReticule( IMatRenderContext *pRenderContext );
 
 	ISpacecraftData *m_pSpacecraftData;
 	int m_iAttachmentGUI;
 	CUtlVector< Target > m_Targets;
 	CUtlVector< IHoloTarget* > m_KnownTargetEntities;
+	CUtlVector< DamagePanel > m_DamagePanels;
 
 	IMesh *m_pMeshLargeReticule;
 	IMesh *m_pMeshReticule;
@@ -40,6 +51,9 @@ private:
 	IMesh *m_pMeshTargetThick;
 	IMesh *m_pMeshTargetArrows;
 	IMesh *m_pMeshPanel;
+	IMesh *m_pMeshDamagePanel;
+	IMesh *m_pMeshDamagePanelInner;
+	IMesh *m_pMeshDamagePanelOuter;
 };
 
 #endif

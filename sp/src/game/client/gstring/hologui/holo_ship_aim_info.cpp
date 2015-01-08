@@ -20,7 +20,7 @@ CHoloShipAimInfo::CHoloShipAimInfo( ISpacecraftData *pSpacecraftData ) :
 	m_pSpacecraftData( pSpacecraftData ),
 	m_iHealth( -1 ),
 	m_iDistance( 0.0f ),
-	m_pTarget( (IHoloTarget*)0xDEADBEEF )
+	m_pTarget( NULL )
 {
 	m_pLabelTarget = new Label( this, "", "" );
 	m_pLabelDash = new Label( this, "", "-" );
@@ -29,8 +29,8 @@ CHoloShipAimInfo::CHoloShipAimInfo( ISpacecraftData *pSpacecraftData ) :
 	m_pLabelDash->SetVisible( false );
 
 	const int iWide = 270;
-	m_flScale = 0.027f;
-	SetOrigin( Vector( 3.0f, iWide * m_flScale * 0.5f, -4.7f ) );
+	m_flScale = 0.03f;
+	SetOrigin( Vector( 4.0f, iWide * m_flScale * 0.5f, -4.7f ) );
 	SetAngles( QAngle( 0, 180, 0 ) );
 	SetWide( iWide );
 }
@@ -53,7 +53,6 @@ void CHoloShipAimInfo::PerformLayout()
 	m_pLabelHealth->SetContentAlignment( Label::a_east );
 	m_pLabelDistance->SetFont( m_FontSmallMono );
 	m_pLabelDistance->SetFgColor( Color( HOLO_COLOR255_DEFAULT, 127 ) );
-	m_pLabelDistance->SetContentAlignment( Label::a_east );
 
 	const int iFontTall = surface()->GetFontTall( m_FontSmall );
 
@@ -66,7 +65,13 @@ void CHoloShipAimInfo::PerformLayout()
 	m_pLabelDash->SetPos( wide - 70, 0 );
 
 	m_pLabelHealth->SetBounds( wide - 70, 0, 70, iFontTall );
-	m_pLabelDistance->SetBounds( wide - 70, iFontTall, 70, iFontTall );
+	m_pLabelDistance->SetBounds( 0, iFontTall, wide, iFontTall );
+
+	m_pTarget = NULL;
+	m_pLabelTarget->SetText( SafeLocalize( "holo_gui_notarget" ) );
+	m_pLabelHealth->SetText( "" );
+	m_pLabelTarget->SetContentAlignment( Label::a_center );
+	m_pLabelDistance->SetContentAlignment( Label::a_center );
 }
 
 void CHoloShipAimInfo::Draw( IMatRenderContext *pRenderContext )
@@ -94,6 +99,7 @@ void CHoloShipAimInfo::Think( float frametime )
 
 	const float flWorldScaleInv = g_pGstringGlobals ? 1.0f / g_pGstringGlobals->GetWorldScale() : 1.0f;
 	const IHoloTarget *pAutoAimTarget = GetGstringInput()->GetAutoAimTarget();
+	const int iHealth = pAutoAimTarget ? ceil( pAutoAimTarget->GetHealthPercentage() * 100.0f ) : -1;
 	if ( m_pTarget != pAutoAimTarget )
 	{
 		m_pTarget = pAutoAimTarget;
@@ -110,17 +116,17 @@ void CHoloShipAimInfo::Think( float frametime )
 				SafeLocalizeInline( "holo_gui_target" ).Get(),
 				1, SafeLocalizeInline( pAutoAimTarget->GetName() ).Get() );
 			pwsTarget = wszTarget;
-			m_pLabelTarget->SetContentAlignment( Label::a_west );
+			m_pLabelTarget->SetContentAlignment( iHealth >= 0 ? Label::a_west : Label::a_center );
 		}
 		m_pLabelTarget->SetText( pwsTarget );
 		//m_pLabelDash->SetVisible( pAutoAimTarget != NULL );
 	}
 
-	const int iHealth = pAutoAimTarget ? ceil( pAutoAimTarget->GetHealthPercentage() * 100.0f ) : -1;
 	if ( iHealth != m_iHealth )
 	{
 		m_iHealth = iHealth;
 		m_pLabelHealth->SetText( iHealth >= 0 ? VarArgs( "%i%%", iHealth ) : "" );
+		m_pLabelDistance->SetContentAlignment( iHealth >= 0 ? Label::a_east : Label::a_center );
 	}
 
 	const int iDistance = pAutoAimTarget ?

@@ -24,6 +24,9 @@ private:
 	ISpacecraftData *m_pSpacecraftData;
 
 	float m_flEngineStrength;
+	matrix3x4_t m_matrixUp;
+	matrix3x4_t m_matrixCenterOffset;
+	matrix3x4_t m_matrixEndOffset;
 
 	vgui::Label *m_pLabelEngine;
 	vgui::Label *m_pLabelSpeedLabel;

@@ -23,6 +23,7 @@
 #include "view_shared.h"
 #include "model_types.h"
 #include "view.h"
+#include "c_user_message_register.h"
 
 #include "materialsystem/itexture.h"
 #endif
@@ -35,6 +36,34 @@ BEGIN_DATADESC( CEnvHoloSystem )
 	// DEFINE_FIELD( m_bLensflareEnabled,		FIELD_BOOLEAN ),
 
 END_DATADESC()
+#else
+static Vector g_vecHoloViewOrigin;
+static matrix3x4_t g_matView;
+static matrix3x4_t g_matViewInverted;
+const Vector &CurrentHoloViewOrigin()
+{
+	return g_vecHoloViewOrigin;
+}
+
+const matrix3x4_t &CurrentHoloViewMatrix()
+{
+	return g_matView;
+}
+
+const matrix3x4_t &CurrentHoloViewMatrixInverted()
+{
+	return g_matViewInverted;
+}
+
+CUtlVector< CEnvHoloSystem* > g_HoloSystems;
+void __MsgFunc_SpacecraftDamage( bf_read &msg )
+{
+	FOR_EACH_VEC( g_HoloSystems, i )
+	{
+		g_HoloSystems[ i ]->MsgFuncSpacecraftDamage( msg );
+	}
+}
+USER_MESSAGE_REGISTER( SpacecraftDamage );
 #endif
 
 IMPLEMENT_NETWORKCLASS_DT( CEnvHoloSystem, CEnvHoloSystem_DT )
@@ -54,15 +83,21 @@ CEnvHoloSystem::CEnvHoloSystem()
 #else
 	: m_iAttachment( -1 )
 	, m_iEyes( -1 )
+	, m_pAimPanel( NULL )
 #endif
 {
+#ifdef GAME_DLL
+#else
+	g_HoloSystems.AddToTail( this );
+#endif
 }
 
 CEnvHoloSystem::~CEnvHoloSystem()
 {
 #ifdef GAME_DLL
 #else
-	m_Panels.PurgeAndDeleteElements();
+	DestroyPanels();
+	g_HoloSystems.FindAndRemove( this );
 #endif
 }
 
@@ -81,24 +116,6 @@ int CEnvHoloSystem::UpdateTransmitState()
 }
 
 #else
-
-static Vector g_vecHoloViewOrigin;
-static matrix3x4_t g_matView;
-static matrix3x4_t g_matViewInverted;
-const Vector &CurrentHoloViewOrigin()
-{
-	return g_vecHoloViewOrigin;
-}
-
-const matrix3x4_t &CurrentHoloViewMatrix()
-{
-	return g_matView;
-}
-
-const matrix3x4_t &CurrentHoloViewMatrixInverted()
-{
-	return g_matViewInverted;
-}
 
 int CEnvHoloSystem::DrawModel( int flags )
 {
@@ -212,7 +229,7 @@ void CEnvHoloSystem::ClientThink()
 {
 	if ( GetOwnerEntity() == NULL )
 	{
-		m_Panels.PurgeAndDeleteElements();
+		DestroyPanels();
 	}
 	else if ( gpGlobals->frametime > 0.0f )
 	{
@@ -271,7 +288,7 @@ void CEnvHoloSystem::OnDataChanged( DataUpdateType_t type )
 
 void CEnvHoloSystem::CreatePanels()
 {
-	m_Panels.PurgeAndDeleteElements();
+	DestroyPanels();
 
 	CSpacecraft *pSpacecraft = assert_cast< CSpacecraft* >( GetOwnerEntity() );
 
@@ -281,7 +298,8 @@ void CEnvHoloSystem::CreatePanels()
 	m_Panels.AddToTail( new CHoloShipEngine( pSpacecraft ) );
 	m_Panels.AddToTail( new CHoloShipThruster( pSpacecraft ) );
 	m_Panels.AddToTail( new CHoloShipRadar( pSpacecraft ) );
-	m_Panels.AddToTail( new CHoloShipAim( pSpacecraft ) );
+	m_pAimPanel = new CHoloShipAim( pSpacecraft );
+	m_Panels.AddToTail( m_pAimPanel );
 	m_Panels.AddToTail( new CHoloShipObjectives( pSpacecraft ) );
 	m_Panels.AddToTail( new CHoloShipComm( pSpacecraft ) );
 	m_Panels.AddToTail( new CHoloShipAimInfo( pSpacecraft ) );
@@ -289,6 +307,20 @@ void CEnvHoloSystem::CreatePanels()
 	FOR_EACH_VEC( m_Panels, i )
 	{
 		m_Panels[ i ]->Setup();
+	}
+}
+
+void CEnvHoloSystem::DestroyPanels()
+{
+	m_pAimPanel = NULL;
+	m_Panels.PurgeAndDeleteElements();
+}
+
+void CEnvHoloSystem::MsgFuncSpacecraftDamage( bf_read &msg )
+{
+	if ( m_pAimPanel && GetOwnerEntity() )
+	{
+		m_pAimPanel->MsgFuncSpacecraftDamage( msg );
 	}
 }
 

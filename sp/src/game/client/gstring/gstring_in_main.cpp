@@ -19,8 +19,9 @@
 static ConVar gstring_spacecraft_mouse_roll_speed( "gstring_spacecraft_mouse_roll_speed", "100.0" );
 static ConVar gstring_spacecraft_mouse_drift_speed( "gstring_spacecraft_mouse_drift_speed", "0.15" );
 static ConVar gstring_spacecraft_move_roll_speed( "gstring_spacecraft_move_roll_speed", "100.0" );
-static ConVar gstring_spacecraft_autoaim_maxscreendist( "gstring_spacecraft_autoaim_maxscreendist", "90" );
-static ConVar gstring_spacecraft_autoaim_maxworlddist( "gstring_spacecraft_autoaim_maxworlddist", "4096" );
+//static ConVar gstring_spacecraft_autoaim_maxscreendist( "gstring_spacecraft_autoaim_maxscreendist", "90" );
+static ConVar gstring_spacecraft_autoaim_mindot( "gstring_spacecraft_autoaim_mindot", "0.995" );
+//static ConVar gstring_spacecraft_autoaim_maxworlddist( "gstring_spacecraft_autoaim_maxworlddist", "4096" );
 static ConVar gstring_spacecraft_mouse_mode( "gstring_spacecraft_mouse_mode", "0", FCVAR_ARCHIVE );
 
 extern kbutton_t in_attack;
@@ -136,7 +137,28 @@ void CGstringInput::MouseMove( CUserCmd *cmd )
 		m_MousePosition.y = vh / 2.0f;
 
 		PerformSpacecraftAutoAim( cmd );
+
+		// clamp yaw diff to prevent overturn
+		//QAngle viewangles, viewanglesOld;
+		//engine->GetViewAngles( viewanglesOld );
 		BaseClass::MouseMove( cmd );
+		//engine->GetViewAngles( viewangles );
+
+		//QAngle modelAngles = pPlayer->GetSpacecraft()->GetAbsAngles();
+		//const float flDiffOld = AngleDiff( viewanglesOld.y, modelAngles.y );
+		//float flDiffNew = AngleDiff( viewangles.y, modelAngles.y );
+		//if ( Sign( flDiffOld ) != Sign( flDiffNew ) && abs( flDiffOld ) > 90.0f)
+		//{
+		//	viewangles.y = viewanglesOld.y;
+		//}
+
+		//const float flMaxYawDiff = 160.0f;
+		//if ( abs( flDiffNew ) > flMaxYawDiff )
+		//{
+		//	flDiffNew = clamp( flDiffNew, -flMaxYawDiff, flMaxYawDiff );
+		//	viewangles.y = AngleNormalize( modelAngles.y + flDiffNew );
+		//}
+		//engine->SetViewAngles( viewangles );
 		return;
 	}
 
@@ -396,22 +418,23 @@ void CGstringInput::PerformSpacecraftAutoAim( CUserCmd *cmd )
 	vgui::surface()->GetFullscreenViewport( vx, vy, vw, vh );
 
 	Vector vecPickingRay;
-	const Vector vecViewOrigin( MainViewOrigin() );
+	Vector vecViewOrigin( MainViewOrigin() );
 	extern void ScreenToWorld( int mousex, int mousey, float fov,
 					const Vector& vecRenderOrigin,
 					const QAngle& vecRenderAngles,
 					Vector& vecPickingRay );
 
-	float ratio = vw / float( vh );
-	ratio = ( 1.0f / ratio ) * ( 4.0f / 3.0f );
-	float flFov = ScaleFOVByWidthRatio( view->GetViewSetup()->fov, ratio );
-	ScreenToWorld( m_MousePosition.x, m_MousePosition.y, flFov,
-		vecViewOrigin, MainViewAngles(), vecPickingRay );
+	//float ratio = vw / float( vh );
+	//ratio = ( 1.0f / ratio ) * ( 4.0f / 3.0f );
+	//float flFov = ScaleFOVByWidthRatio( view->GetViewSetup()->fov, ratio );
+	//ScreenToWorld( m_MousePosition.x, m_MousePosition.y, flFov,
+	//	vecViewOrigin, MainViewAngles(), vecPickingRay );
 
 	trace_t tr;
 	CSpacecraft *pSpacecraft = pPlayer->GetSpacecraft();
 	CTraceFilterSkipTwoEntities filter( pPlayer, pSpacecraft, COLLISION_GROUP_NONE );
 
+	pSpacecraft->GetAttachment( pSpacecraft->m_iAttachmentGUI, vecViewOrigin );
 	AngleVectors( pSpacecraft->GetAbsAngles(), &vecPickingRay );
 
 	const Vector vecEnd = vecViewOrigin + vecPickingRay * MAX_TRACE_LENGTH;
@@ -426,21 +449,26 @@ void CGstringInput::PerformSpacecraftAutoAim( CUserCmd *cmd )
 	{
 		m_flAutoAimUpdateTick = 0.05f;
 
-		const float flMaxWorldDistanceSqr = gstring_spacecraft_autoaim_maxworlddist.GetFloat() *
-			gstring_spacecraft_autoaim_maxworlddist.GetFloat();
-		float flBestScreenDistSqr = gstring_spacecraft_autoaim_maxscreendist.GetFloat() *
-			gstring_spacecraft_autoaim_maxscreendist.GetFloat() * ( vh / 640.0f );
+		const float flMaxWorldDistanceSqr = HOLO_TARGET_MAX_DISTANCE * HOLO_TARGET_MAX_DISTANCE;
+		//float flBestScreenDistSqr = gstring_spacecraft_autoaim_maxscreendist.GetFloat() *
+		//	gstring_spacecraft_autoaim_maxscreendist.GetFloat() * ( vh / 640.0f );
+		float flBestDot = gstring_spacecraft_autoaim_mindot.GetFloat();
 
 		const CUtlVector< IHoloTarget* > &targets = GetHoloTargets();
 		FOR_EACH_VEC( targets, i )
 		{
 			const IHoloTarget *target = targets[ i ];
+			if ( !target->IsActive() )
+			{
+				continue;
+			}
 			//if ( target->GetType() != IHoloTarget::ENEMY )
 			//	continue;
 
 			const C_BaseEntity *pEnt = target->GetEntity();
 			const Vector &vecCenter = pEnt->WorldSpaceCenter();
-			const float flWorldDistanceSqr = ( vecCenter - vecViewOrigin ).LengthSqr();
+			const Vector vecDelta = vecCenter - vecViewOrigin;
+			const float flWorldDistanceSqr = vecDelta.LengthSqr();
 			const float flTargetMaxDistance = target->GetMaxDistance();
 
 			if ( flWorldDistanceSqr > flMaxWorldDistanceSqr ||
@@ -449,22 +477,34 @@ void CGstringInput::PerformSpacecraftAutoAim( CUserCmd *cmd )
 				continue;
 			}
 
-			Vector vecScreen( vec3_origin );
-			if ( !ScreenTransform( vecCenter, vecScreen ) )
+			//Vector vecScreen( vec3_origin );
+			//if ( !ScreenTransform( vecCenter, vecScreen ) )
+			//{
+			//	vecScreen = vecScreen * Vector( 0.5f, -0.5f, 0 ) + Vector( 0.5f, 0.5f, 0 );
+			//	vecScreen.x *= vw;
+			//	vecScreen.y *= vh;
+			//}
+
+			if ( tr.DidHit() && pEnt == tr.m_pEnt )
 			{
-				vecScreen = vecScreen * Vector( 0.5f, -0.5f, 0 ) + Vector( 0.5f, 0.5f, 0 );
-				vecScreen.x *= vw;
-				vecScreen.y *= vh;
+				pAutoAimTarget = target;
+				break;
 			}
 
-			const float flScreenDistSqr = ( Vector2D( vecScreen.x, vecScreen.y ) - m_MousePosition ).LengthSqr();
-			if ( flScreenDistSqr > flBestScreenDistSqr )
+			//const float flScreenDistSqr = ( Vector2D( vecScreen.x, vecScreen.y ) - m_MousePosition ).LengthSqr();
+			//if ( flScreenDistSqr > flBestScreenDistSqr )
+			//{
+			//	continue;
+			//}
+			const float flDot = DotProduct( vecPickingRay, vecDelta.Normalized() );
+			if ( flDot < flBestDot )
 			{
 				continue;
 			}
 
 			pAutoAimTarget = target;
-			flBestScreenDistSqr = flScreenDistSqr;
+			//flBestScreenDistSqr = flScreenDistSqr;
+			flBestDot = flDot;
 		}
 
 		m_AutoAimTargetEntity.Set( pAutoAimTarget ? pAutoAimTarget->GetEntity() : NULL );

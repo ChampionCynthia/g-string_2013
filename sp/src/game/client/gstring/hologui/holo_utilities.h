@@ -371,4 +371,87 @@ inline void CreateTargetArrows( IMesh *pMesh, float rollDegrees, float angleDegr
 	builder.End();
 }
 
+inline void CreateDamageIndicator( IMesh *pMesh, int subDivCount, float radius, float thickness,
+	float startAngle, float endAngle,
+	float fadeStart, float fadeEnd )
+{
+	Assert( subDivCount >= 1 );
+
+	CMeshBuilder builder;
+	builder.Begin( pMesh, MATERIAL_TRIANGLE_STRIP, subDivCount * 2 );
+
+	float color4[] = { 1, 1, 1, RemapValClamped( 1.0f, fadeStart, fadeEnd, 1.0f, 0.0f ) };
+	const float angleStep = ( endAngle - startAngle ) / (float)subDivCount;
+	const float toInnerRadius = ( radius - thickness ) / radius;
+
+	Vector2D dir( GetVector2DFromAngle( startAngle ) * radius );
+	builder.Position3f( 0.0f, dir.x, dir.y );
+	builder.Color4fv( color4 );
+	builder.AdvanceVertex();
+
+	color4[3] = 0.0f;
+	builder.Position3f( 0.0f, dir.x * toInnerRadius, dir.y * toInnerRadius );
+	builder.Color4fv( color4 );
+	builder.AdvanceVertex();
+
+	const int centerPosition = subDivCount / 2;
+
+	for ( int i = 0; i < subDivCount; ++i )
+	{
+		const float fadePosition = (i > centerPosition ? i - centerPosition : centerPosition - i - 1) / (float)centerPosition;
+		color4[3] = RemapValClamped( fadePosition, fadeStart, fadeEnd, 1.0f, 0.0f );
+		color4[3] = Bias( color4[3], 0.05f );
+
+		dir = GetVector2DFromAngle( startAngle + ( i + 1 ) * angleStep ) * radius;
+		builder.Position3f( 0.0f, dir.x, dir.y );
+		builder.Color4fv( color4 );
+		builder.AdvanceVertex();
+
+		color4[3] = 0.0f;
+		builder.Position3f( 0.0f, dir.x * toInnerRadius, dir.y * toInnerRadius );
+		builder.Color4fv( color4 );
+		builder.AdvanceVertex();
+	}
+
+	builder.End();
+}
+
+inline void CreateRoundDamageIndicator( IMesh *pMesh, int subDivCount, float radius, float thickness )
+{
+	Assert( subDivCount >= 1 );
+
+	CMeshBuilder builder;
+	builder.Begin( pMesh, MATERIAL_TRIANGLE_STRIP, subDivCount * 2 );
+
+	float color4[] = { 1, 1, 1, 1 };
+	const float angleStep = M_PI_F * 2.0f / subDivCount;
+	const float toInnerRadius = ( radius - thickness ) / radius;
+
+	Vector2D dir( GetVector2DFromAngle( 0.0f ) * radius );
+	builder.Position3f( 0.0f, dir.x, dir.y );
+	builder.Color4fv( color4 );
+	builder.AdvanceVertex();
+
+	color4[3] = 0;
+	builder.Position3f( 0.0f, dir.x * toInnerRadius, dir.y * toInnerRadius );
+	builder.Color4fv( color4 );
+	builder.AdvanceVertex();
+
+	for ( int i = 0; i < subDivCount; ++i )
+	{
+		color4[3] = 1;
+		dir = GetVector2DFromAngle( ( i + 1 ) * angleStep ) * radius;
+		builder.Position3f( 0.0f, dir.x, dir.y );
+		builder.Color4fv( color4 );
+		builder.AdvanceVertex();
+
+		color4[3] = 0;
+		builder.Position3f( 0.0f, dir.x * toInnerRadius, dir.y * toInnerRadius );
+		builder.Color4fv( color4 );
+		builder.AdvanceVertex();
+	}
+
+	builder.End();
+}
+
 #endif

@@ -25,6 +25,7 @@ CHoloPanel::CHoloPanel() :
 
 	LOAD_SHARED_MATERIAL_REFERENCE( m_Materials[ MATERIALTYPE_NORMAL ], materials->FindMaterial( "engine/hologui", TEXTURE_GROUP_OTHER ) );
 	LOAD_SHARED_MATERIAL_REFERENCE( m_Materials[ MATERIALTYPE_VERTEXCOLOR ], materials->FindMaterial( "engine/hologui_vertexcolor", TEXTURE_GROUP_OTHER ) );
+	//LOAD_SHARED_MATERIAL_REFERENCE( m_Materials[ MATERIALTYPE_VERTEXCOLOR_LINEAR ], materials->FindMaterial( "engine/hologui_vertexcolor_linear", TEXTURE_GROUP_OTHER ) );
 	LOAD_SHARED_MATERIAL_REFERENCE( m_Materials[ MATERIALTYPE_GLOW ], materials->FindMaterial( "engine/linear_glow", TEXTURE_GROUP_OTHER ) );
 }
 

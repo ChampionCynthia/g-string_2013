@@ -526,7 +526,7 @@ bool CClientVirtualReality::OverrideView ( CViewSetup *pViewMiddle, Vector *pVie
 				const bool bIsInSpaceCraft = pPlayer->IsInSpacecraft();
 				m_WorldFromMidEye.SetupMatrixOrgAngles( originalMiddleOrigin, originalMiddleAngles );
 				m_WorldFromMidEye = m_WorldFromMidEye * matMideyeZeroFromMideyeCurrent;
-				Vector vecOffset = bIsInSpaceCraft ? vec3_origin : worldFromTorso.GetForward() * 5.0f;
+				Vector vecOffset = bIsInSpaceCraft ? vec3_origin : m_WorldFromMidEye.GetForward() * 3.0f;
 				m_WorldFromMidEye.SetTranslation( m_WorldFromMidEye.GetTranslation() + vecOffset );
 			}
 			// END GSTRINGMIGRATION

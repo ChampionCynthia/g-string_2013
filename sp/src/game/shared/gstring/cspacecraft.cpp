@@ -121,6 +121,7 @@ IMPLEMENT_NETWORKCLASS_DT( CSpacecraft, CSpacecraft_DT )
 
 	SendPropFloat( SENDINFO( m_flMoveX ) ),
 	SendPropFloat( SENDINFO( m_flMoveY ) ),
+	SendPropEHandle( SENDINFO( m_hHoloSystem ) ),
 #else
 	RecvPropInt( RECVINFO( m_iHealth ) ),
 	RecvPropInt( RECVINFO( m_iMaxHealth ) ),
@@ -136,6 +137,7 @@ IMPLEMENT_NETWORKCLASS_DT( CSpacecraft, CSpacecraft_DT )
 
 	RecvPropFloat( RECVINFO( m_flMoveX ) ),
 	RecvPropFloat( RECVINFO( m_flMoveY ) ),
+	RecvPropEHandle( RECVINFO( m_hHoloSystem ) ),
 #endif
 
 END_NETWORK_TABLE();
@@ -165,6 +167,7 @@ CSpacecraft::CSpacecraft()
 	, m_flEngineVolume( ENGINE_VOLUME_LOW )
 	, m_flShakeTimer( 0.0f )
 	, m_flThrusterPower( NULL )
+	, m_iAttachmentGUI( 0 )
 #endif
 {
 	m_iSettingsIndex = UTL_INVAL_SYMBOL;
@@ -173,8 +176,17 @@ CSpacecraft::CSpacecraft()
 CSpacecraft::~CSpacecraft()
 {
 #ifdef GAME_DLL
+	if ( m_hHoloSystem.Get() != NULL )
+	{
+		m_hHoloSystem->SetThink( &CBaseEntity::SUB_Remove );
+		m_hHoloSystem->SetNextThink( gpGlobals->curtime + 0.1f );
+	}
 	delete m_pAI;
 #else
+	if ( m_hHoloSystem.Get() != NULL )
+	{
+		m_hHoloSystem->DestroyPanels();
+	}
 	delete [] m_flThrusterPower;
 
 	if ( m_iGUID_Engine >= 0 && enginesound->IsSoundStillPlaying( m_iGUID_Engine ) )
@@ -381,6 +393,12 @@ int CSpacecraft::OnTakeDamage( const CTakeDamageInfo &info )
 	{
 		UTIL_ScreenShake( GetAbsOrigin(), 1.5f, 7.0f, 0.8f, 128.0f, SHAKE_START_NORUMBLE, true );
 		UTIL_ScreenShake( GetAbsOrigin(), 20.0f, 5.0f, 0.8f, 128.0f, SHAKE_START_RUMBLEONLY, true );
+
+		CSingleUserRecipientFilter user( ToGstringPlayer( GetOwnerEntity() ) );
+		user.MakeReliable();
+		UserMessageBegin( user, "SpacecraftDamage" );
+			WRITE_VEC3COORD( newDamage.GetDamagePosition() );
+		MessageEnd();
 	}
 	return ret;
 }
@@ -954,6 +972,7 @@ CStudioHdr *CSpacecraft::OnNewModel()
 
 	m_ThrusterParticles.SetCount( m_ThrusterAttachments.Count() );
 	m_EngineParticles.SetCount( m_EngineAttachments.Count() );
+	m_iAttachmentGUI = LookupAttachment( "gui" );
 #endif
 
 	m_WeaponAttachments.RemoveAll();

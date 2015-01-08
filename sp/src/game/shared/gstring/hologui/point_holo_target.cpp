@@ -6,13 +6,19 @@
 #ifdef GAME_DLL
 BEGIN_DATADESC( CPointHoloTarget )
 
+	DEFINE_THINKFUNC( Update ),
+	DEFINE_FIELD( m_hHealthProxy, FIELD_EHANDLE ),
+	DEFINE_FIELD( m_hPositionProxy, FIELD_EHANDLE ),
+
 	DEFINE_KEYFIELD( m_strTargetName, FIELD_STRING, "HoloTargetName" ),
 
 	DEFINE_KEYFIELD( m_iTargetType, FIELD_INTEGER, "TargetType" ),
 	DEFINE_KEYFIELD( m_flSize, FIELD_FLOAT, "Size" ),
-	DEFINE_KEYFIELD( m_flHealth, FIELD_FLOAT, "Health" ),
+	DEFINE_KEYFIELD( m_flHealth, FIELD_FLOAT, "TargetHealth" ),
 	DEFINE_KEYFIELD( m_flMaxDistance, FIELD_FLOAT, "MaxDistance" ),
 	DEFINE_KEYFIELD( m_bEnabled, FIELD_BOOLEAN, "Enabled" ),
+	DEFINE_KEYFIELD( m_strHealthProxyName, FIELD_STRING, "HealthProxy" ),
+	DEFINE_KEYFIELD( m_strPositionProxyName, FIELD_STRING, "PositionProxy" ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "Enable", InputEnable ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Disable", InputDisable ),
@@ -56,12 +62,14 @@ IMPLEMENT_NETWORKCLASS_DT( CPointHoloTarget, CPointHoloTarget_DT )
 	SendPropFloat( SENDINFO( m_flSize ) ),
 	SendPropFloat( SENDINFO( m_flHealth ) ),
 	SendPropFloat( SENDINFO( m_flMaxDistance ) ),
+	SendPropEHandle( SENDINFO( m_hPositionProxy ) ),
 #else
 	RecvPropString( RECVINFO( m_szTargetName ) ),
 	RecvPropInt( RECVINFO( m_iTargetType ) ),
 	RecvPropFloat( RECVINFO( m_flSize ) ),
 	RecvPropFloat( RECVINFO( m_flHealth ) ),
 	RecvPropFloat( RECVINFO( m_flMaxDistance ) ),
+	RecvPropEHandle( RECVINFO( m_hPositionProxy ) ),
 #endif
 
 END_NETWORK_TABLE();
@@ -108,14 +116,30 @@ void CPointHoloTarget::Activate()
 {
 	BaseClass::Activate();
 
+	m_hHealthProxy = gEntList.FindEntityByName( NULL, m_strHealthProxyName, this );
+	m_hPositionProxy = gEntList.FindEntityByName( NULL, m_strPositionProxyName, this );
+	m_flHealth = -1.0f;
+
 	m_bEnabled = HasSpawnFlags( 1 );
 
 	Q_strncpy( m_szTargetName.GetForModify(), STRING( m_strTargetName ), 32 );
+
+	SetThink( &CPointHoloTarget::Update );
+	SetNextThink( gpGlobals->curtime + 0.1f );
 }
 
 int CPointHoloTarget::UpdateTransmitState()
 {
 	return SetTransmitState( m_bEnabled ? FL_EDICT_ALWAYS : FL_EDICT_DONTSEND );
+}
+
+void CPointHoloTarget::Update()
+{
+	if ( m_hHealthProxy.Get() )
+	{
+		m_flHealth = ceil( m_hHealthProxy->GetHealth() / (float)m_hHealthProxy->GetMaxHealth() * 100.0f );
+	}
+	SetNextThink( gpGlobals->curtime + 0.1f );
 }
 
 #else
@@ -159,11 +183,6 @@ void CPointHoloTarget::NotifyShouldTransmit( ShouldTransmitState_t state )
 		RemoveHoloTarget( this );
 		break;
 	}
-}
-
-void CPointHoloTarget::OnDataChanged( DataUpdateType_t type )
-{
-	BaseClass::OnDataChanged( type );
 }
 
 #endif

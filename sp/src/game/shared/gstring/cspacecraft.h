@@ -124,6 +124,8 @@ public:
 	void UpdateCrosshair( CHudCrosshair *pCrosshair );
 
 	float GetEngineAlpha() const { return m_flEngineAlpha; }
+
+	int m_iAttachmentGUI;
 #endif
 
 	virtual CStudioHdr *OnNewModel();

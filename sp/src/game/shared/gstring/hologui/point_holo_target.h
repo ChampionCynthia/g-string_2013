@@ -4,6 +4,7 @@
 #include "cbase.h"
 
 #ifdef CLIENT_DLL
+#define HOLO_TARGET_MAX_DISTANCE 3000.0f
 class IHoloTarget
 {
 public:
@@ -21,6 +22,7 @@ public:
 	virtual float GetHealthPercentage() const = 0;
 	virtual TargetType GetType() const = 0;
 	virtual float GetMaxDistance() const = 0;
+	virtual bool IsActive() const = 0;
 	virtual const C_BaseEntity *GetEntity() const = 0;
 };
 
@@ -48,7 +50,8 @@ class CPointHoloTarget : public CBaseEntity
 	virtual float GetHealthPercentage() const;
 	virtual TargetType GetType() const;
 	virtual float GetMaxDistance() const;
-	virtual const C_BaseEntity *GetEntity() const { return this; }
+	virtual bool IsActive() const { return m_hPositionProxy.m_Value.IsValid() == ( m_hPositionProxy.Get() != NULL ); };
+	virtual const C_BaseEntity *GetEntity() const { return m_hPositionProxy.Get() ? m_hPositionProxy.Get() : this; }
 
 	virtual void NotifyShouldTransmit( ShouldTransmitState_t state );
 #endif
@@ -68,8 +71,6 @@ public:
 
 	virtual int UpdateTransmitState();
 #else
-	virtual void OnDataChanged( DataUpdateType_t type );
-
 	//virtual int DrawModel( int flags );
 	virtual bool ShouldDraw() { return false; }
 	//virtual RenderGroup_t GetRenderGroup();
@@ -78,8 +79,13 @@ public:
 	
 private:
 #ifdef GAME_DLL
+	void Update();
+
 	string_t m_strTargetName;
+	string_t m_strHealthProxyName;
+	string_t m_strPositionProxyName;
 	bool m_bEnabled;
+	EHANDLE m_hHealthProxy;
 
 	COutputEvent m_OnEnabled;
 	COutputEvent m_OnDisabled;
@@ -91,6 +97,7 @@ private:
 	CNetworkVar( float, m_flSize );
 	CNetworkVar( float, m_flHealth );
 	CNetworkVar( float, m_flMaxDistance );
+	CNetworkHandle( CBaseEntity, m_hPositionProxy );
 };
 
 #endif

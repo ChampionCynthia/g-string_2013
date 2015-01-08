@@ -727,6 +727,11 @@ void C_GstringPlayer::UpdateBodyModel()
 		: -gstring_firstpersonbody_forwardoffset_min.GetFloat(),
 		0, 0 );
 
+	if ( UseVR() && !bDuck )
+	{
+		vecOffsetDesired.x = -8.0f;
+	}
+
 	// hide body while falling/swimming
 	if ( /*GetAbsVelocity().z < -300
 		||*/ GetWaterLevel() >= WL_Eyes )
@@ -1051,7 +1056,7 @@ void C_GstringPlayer::GetSpacecraftCameraFirstPerson( Vector &origin, QAngle &an
 	{
 		Vector vecFwd;
 		AngleVectors( targetAngles, &vecFwd );
-		targetOrigin += vecFwd * 0.7f;
+		targetOrigin += vecFwd * 0.55f;
 	}
 
 	Quaternion viewQuat, physQuat, finalQuat;

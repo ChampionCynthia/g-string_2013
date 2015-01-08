@@ -41,17 +41,17 @@ void CHoloShipHealthGraphic::Draw( IMatRenderContext *pRenderContext )
 	IMaterialVar *pAlpha = GetAlphaVar();
 	pColor->SetVecValue( HOLO_COLOR_DEFAULT );
 
-	const float flHealthPercentage = m_flHullFraction * 6.0f;
+	const float flHealthPercentage = m_flHullFraction * 7.0f;
 	for ( int s = 0; s < 2; ++s )
 	{
 		for ( int i = 0; i < 13; ++i )
 		{
 			const int index = abs( i - 6 );
-			if ( index - 1 <= flHealthPercentage )
+			if ( index <= flHealthPercentage )
 			{
 				float flAlpha = 0.6f;
 				flAlpha *= 1.0f - abs( index ) / 10.0f;
-				const float flLocalPercentage = flHealthPercentage - index + 1;
+				const float flLocalPercentage = flHealthPercentage - index;
 				if ( flLocalPercentage >= 0.0f && flLocalPercentage < 1.0f )
 				{
 					flAlpha *= fmodf( flLocalPercentage, 1.0f );

@@ -5,6 +5,7 @@
 
 #ifdef CLIENT_DLL
 class CHoloPanel;
+class CHoloShipAim;
 #endif
 
 const Vector &CurrentHoloViewOrigin();
@@ -35,6 +36,9 @@ public:
 
 	virtual int UpdateTransmitState();
 #else
+	void DestroyPanels();
+	void MsgFuncSpacecraftDamage( bf_read &msg );
+
 	virtual void OnDataChanged( DataUpdateType_t type );
 
 	virtual int DrawModel( int flags );
@@ -57,6 +61,7 @@ private:
 	int m_iAttachment;
 	int m_iEyes;
 	CUtlVector< CHoloPanel* > m_Panels;
+	CHoloShipAim *m_pAimPanel;
 #endif
 
 	CNetworkString( m_szAttachment, 16 );

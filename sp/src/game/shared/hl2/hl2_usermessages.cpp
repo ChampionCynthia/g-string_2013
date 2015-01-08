@@ -48,6 +48,7 @@ void RegisterUserMessages( void )
 
 	// GSTRINGMIGRATION
 	usermessages->Register( "Fireball", -1 );
+	usermessages->Register( "SpacecraftDamage", -1 );
 	// END GSTRINGMIGRATION
 
 #ifndef _X360

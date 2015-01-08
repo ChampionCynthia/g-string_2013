@@ -33,7 +33,7 @@ void GetHoloTargetTypeColor( IHoloTarget::TargetType type, Vector &color, float 
 namespace
 {
 	const float g_flRadarSize = 3.8f;
-	const float g_flRadarScale = g_flRadarSize / 4096.0f;
+	const float g_flRadarScale = g_flRadarSize / HOLO_TARGET_MAX_DISTANCE;
 	const float g_flRadarFOV = 48.0f;
 	const float g_flRadarFieldSize = 0.1f;
 }
@@ -57,7 +57,7 @@ CHoloShipRadar::CHoloShipRadar( ISpacecraftData *pSpacecraftData ) :
 
 	CreateArc( m_pMeshRingLarge, 64, g_flRadarSize, 0.1f, flFOVRadians, (M_PI_F * 2.0f - flFOVRadians) );
 	CreateArc( m_pMeshRingSmall, 16, g_flRadarSize, 0.1f, -flFOVRadians, flFOVRadians );
-	CreateArc( m_pMeshRingCenter, 16, 0.2f, 0.2f, 0.0f, M_PI_F * 2.0f );
+	CreateArc( m_pMeshRingCenter, 16, 0.1f, 0.1f, 0.0f, M_PI_F * 2.0f );
 	CreateArc( m_pMeshRingLine, 1, g_flRadarSize, g_flRadarSize, M_PI_F * -0.005f, M_PI_F * 0.005f );
 	CreateArc( m_pMeshCircle, 64, g_flRadarSize, g_flRadarSize, 0, M_PI_F * 2.0f );
 

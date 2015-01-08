@@ -16,6 +16,13 @@ CHoloShipEngine::CHoloShipEngine( ISpacecraftData *pSpacecraftData ) :
 	m_pSpacecraftData( pSpacecraftData ),
 	m_flEngineStrength( 0.0f )
 {
+	SetIdentityMatrix( m_matrixUp );
+	SetIdentityMatrix( m_matrixCenterOffset );
+	SetIdentityMatrix( m_matrixEndOffset );
+	MatrixSetTranslation( Vector( 0, 0.0f, 0.45f ), m_matrixUp );
+	MatrixSetTranslation( Vector( 0, 0.0f, 0.15f ), m_matrixCenterOffset );
+	MatrixSetTranslation( Vector( 0, 0.0f, -0.15f ), m_matrixEndOffset );
+
 	m_pLabelEngine = new Label( this, "", "#holo_gui_engine" );
 	m_pLabelSpeedLabel = new Label( this, "", "#holo_gui_speed" );
 	m_pLabelSpeedValue = new Label( this, "", "" );
@@ -67,11 +74,9 @@ void CHoloShipEngine::Draw( IMatRenderContext *pRenderContext )
 	m_vecPanelWorldOffset.x = -0.4f;
 	BaseClass::Draw( pRenderContext );
 
-	matrix3x4_t mat, up;
+	matrix3x4_t mat;
 	SetIdentityMatrix( mat );
-	SetIdentityMatrix( up );
 	MatrixSetTranslation( Vector( 0, -0.6f, 0.2f ), mat );
-	MatrixSetTranslation( Vector( 0, 0.0f, 0.45f ), up );
 	pRenderContext->MultMatrixLocal( mat );
 
 	GetColorVar()->SetVecValue( HOLO_COLOR_DEFAULT );
@@ -87,6 +92,10 @@ void CHoloShipEngine::Draw( IMatRenderContext *pRenderContext )
 	for ( int i = 0; i < 3; ++i )
 	{
 		pRenderContext->PushMatrix();
+		if ( i > 0 )
+		{
+			pRenderContext->MultMatrixLocal( i == 1 ? m_matrixCenterOffset : m_matrixEndOffset );
+		}
 		for ( int u = 0; u < iElementCount; ++u )
 		{
 			float flPulse = 0.0f;
@@ -104,7 +113,7 @@ void CHoloShipEngine::Draw( IMatRenderContext *pRenderContext )
 
 			pRenderContext->Bind( GetMaterial() );
 			m_pMeshElement->Draw();
-			pRenderContext->MultMatrixLocal( up );
+			pRenderContext->MultMatrixLocal( m_matrixUp );
 		}
 		pRenderContext->PopMatrix();
 		pRenderContext->MultMatrixLocal( mat );
