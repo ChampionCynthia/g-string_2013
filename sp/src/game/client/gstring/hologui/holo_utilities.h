@@ -6,6 +6,12 @@ inline Vector2D GetVector2DFromAngle( float radians )
 	return Vector2D( cos( radians ), -sin( radians ) );
 }
 
+inline void GetVector2DFromAngle( float radians, Vector2D &out )
+{
+	out.x = cos( radians );
+	out.y = -sin( radians );
+}
+
 inline void CreateTexturedRect( IMesh *pMesh, float x, float y, float width, float height )
 {
 	CMeshBuilder builder;
@@ -164,6 +170,78 @@ inline void CreateArcFaded( IMesh *pMesh, int subDivCount, float radius, float t
 		builder.Color4fv( color4 );
 		builder.AdvanceVertex();
 	}
+
+	builder.End();
+}
+
+inline void CreateMirroredArcFaded( IMesh *pMesh, float radius, float thickness,
+	float fadeStart, float fadeEnd )
+{
+	const int subDivCount = 33;
+	CMeshBuilder builder;
+	builder.Begin( pMesh, MATERIAL_TRIANGLE_STRIP, subDivCount * 4 + 2 );
+
+	float color4[] = { 1, 1, 1, RemapValClamped( 1.0f, fadeStart, fadeEnd, 1.0f, 0.0f ) };
+	const float angleStep = ( M_PI_F ) / (float)subDivCount;
+	const float toInnerRadius = ( radius - thickness ) / radius;
+
+	Vector2D dirs[ subDivCount + 1 ];
+	float alphas[ subDivCount + 1 ];
+
+	Vector2D initialDir( GetVector2DFromAngle( 0.0f ) * radius );
+	dirs[ 0 ] = initialDir;
+	alphas[ 0 ] = color4[ 3 ];
+
+	builder.Position3f( radius, 0.0f, 0.0f );
+	builder.Color4fv( color4 );
+	builder.AdvanceVertex();
+
+	builder.Position3f( radius - thickness, 0.0f, 0.0f );
+	builder.Color4fv( color4 );
+	builder.AdvanceVertex();
+
+	const int centerPosition = subDivCount / 2;
+	for ( int i = 0; i < subDivCount; ++i )
+	{
+		const float fadePosition = (i > centerPosition ? i - centerPosition : centerPosition - i - 1) / (float)centerPosition;
+		alphas[ i + 1 ] = RemapValClamped( fadePosition, fadeStart, fadeEnd, 1.0f, 0.0f );
+		color4[3] = alphas[ i + 1 ];
+
+		Vector2D &dir = dirs[ i + 1 ];
+		GetVector2DFromAngle( ( i + 1 ) * angleStep, dir );
+		dir *= radius;
+
+		builder.Position3f( dir.x, dir.y, 0.0f );
+		builder.Color4fv( color4 );
+		builder.AdvanceVertex();
+
+		builder.Position3f( dir.x * toInnerRadius, dir.y * toInnerRadius, 0.0f );
+		builder.Color4fv( color4 );
+		builder.AdvanceVertex();
+	}
+
+	for ( int i = subDivCount; i > 0; --i )
+	{
+		Vector2D &dir = dirs[ i ];
+		color4[3] = alphas[ i ];
+
+		builder.Position3f( dir.x, -dir.y, 0.0f );
+		builder.Color4fv( color4 );
+		builder.AdvanceVertex();
+
+		builder.Position3f( dir.x * toInnerRadius, -dir.y * toInnerRadius, 0.0f );
+		builder.Color4fv( color4 );
+		builder.AdvanceVertex();
+	}
+
+	color4[ 3 ] = alphas[ 0 ];
+	builder.Position3f( radius, 0.0f, 0.0f );
+	builder.Color4fv( color4 );
+	builder.AdvanceVertex();
+
+	builder.Position3f( radius - thickness, 0.0f, 0.0f );
+	builder.Color4fv( color4 );
+	builder.AdvanceVertex();
 
 	builder.End();
 }
@@ -448,6 +526,131 @@ inline void CreateRoundDamageIndicator( IMesh *pMesh, int subDivCount, float rad
 		color4[3] = 0;
 		builder.Position3f( 0.0f, dir.x * toInnerRadius, dir.y * toInnerRadius );
 		builder.Color4fv( color4 );
+		builder.AdvanceVertex();
+	}
+
+	builder.End();
+}
+
+inline void CreateAimPanelDecor( IMesh *pMesh, int subDivCountX, int subDivCountY,
+	const QAngle &mins, const QAngle &maxs, float radius, float alpha )
+{
+	QAngle delta(
+			AngleDistance(maxs.x, mins.x),
+			AngleDistance(maxs.y, mins.y),
+			AngleDistance(maxs.z, mins.z)
+		);
+
+	Vector *vectors = (Vector *)stackalloc( sizeof( Vector ) * ( subDivCountX + 1 ) * ( subDivCountY + 1 ) );
+	for ( int x = 0; x <= subDivCountX; ++x )
+	{
+		const float fractionX = x / float( subDivCountX );
+		for ( int y = 0; y <= subDivCountY; ++y )
+		{
+			const float fractionY = y / float( subDivCountY );
+			QAngle angle( mins.x + fractionX * delta.x,
+				mins.y + fractionY * delta.y,
+				mins.z );
+			AngleVectors( angle, &vectors[ x + y * ( subDivCountX + 1 ) ] );
+			vectors[ x + y * ( subDivCountX + 1 ) ] *= radius;
+		}
+	}
+
+	float color0[] = { 1, 1, 1, 1 };
+	float color1[] = { 1, 1, 1, 1 };
+	const float thickness = 0.03f;
+
+	CMeshBuilder builder;
+	builder.Begin( pMesh, MATERIAL_QUADS, subDivCountX * 2 + 2 + 4 );
+
+	// sides
+	for ( int i = 0; i <= subDivCountY; i += subDivCountY )
+	{
+		for ( int x = 3; x < subDivCountX; ++x )
+		{
+			color0[ 3 ] = ( x - 3 ) / float( subDivCountX - 3 );
+			color1[ 3 ] = ( x - 2 ) / float( subDivCountX - 3 );
+
+			const int direction = i == 0 ? 1 : -1;
+			const int topIndex = x + i * ( subDivCountX + 1 );
+			const int topIndexShifted = x + ( i + direction ) * ( subDivCountX + 1 );
+
+			builder.Position3fv( vectors[ topIndex ].Base() );
+			builder.Color4fv( color0 );
+			builder.AdvanceVertex();
+
+			builder.Position3fv( vectors[ topIndex + 1 ].Base() );
+			builder.Color4fv( color1 );
+			builder.AdvanceVertex();
+
+			Vector vec = vectors[ topIndexShifted + 1 ] - vectors[ topIndex + 1 ];
+			vec = vec * thickness + vectors[ topIndex + 1 ];
+			builder.Position3fv( vec.Base() );
+			builder.Color4fv( color1 );
+			builder.AdvanceVertex();
+
+			vec = vectors[ topIndexShifted ] - vectors[ topIndex ];
+			vec = vec * thickness + vectors[ topIndex ];
+			builder.Position3fv( vec.Base() );
+			builder.Color4fv( color0 );
+			builder.AdvanceVertex();
+		}
+	}
+
+	color0[ 3 ] = 0.0f;
+	color1[ 3 ] = 1.0f;
+
+	// bottom
+	for ( int y = 0; y <= subDivCountY; y += subDivCountY )
+	{
+		const int direction = y == 0 ? 1 : -1;
+		const int index0 = subDivCountX + y * ( subDivCountX + 1 );
+		const int index1 = subDivCountX + ( y + direction ) * ( subDivCountX + 1 );
+
+		builder.Position3fv( vectors[ index0 ].Base() );
+		builder.Color4fv( color1 );
+		builder.AdvanceVertex();
+		Vector vecDelta = vectors[ index0 - 1 ] - vectors[ index0 ];
+		vecDelta = vecDelta * thickness + vectors[ index0 ];
+		builder.Position3fv( vecDelta.Base() );
+		builder.Color4fv( color1 );
+		builder.AdvanceVertex();
+
+		vecDelta = vectors[ index1 - 1 ] - vectors[ index1 ];
+		vecDelta = vecDelta * thickness + vectors[ index1 ];
+		builder.Position3fv( vecDelta.Base() );
+		builder.Color4fv( color0 );
+		builder.AdvanceVertex();
+		builder.Position3fv( vectors[ index1 ].Base() );
+		builder.Color4fv( color0 );
+		builder.AdvanceVertex();
+	}
+
+	// top
+	const int iTopWidth = 4;
+	for ( int i = subDivCountY / 2 - iTopWidth; i < subDivCountY / 2 + iTopWidth; ++i )
+	{
+		const int index0 = 0 + i * ( subDivCountX + 1 );
+		const int index1 = 0 + ( i + 1 ) * ( subDivCountX + 1 );
+		color1[ 3 ] = 1.0f - abs( i - subDivCountY / 2 ) / float( iTopWidth );
+		color0[ 3 ] = 1.0f - abs( i + 1 - subDivCountY / 2 ) / float( iTopWidth );
+
+		builder.Position3fv( vectors[ index0 ].Base() );
+		builder.Color4fv( color1 );
+		builder.AdvanceVertex();
+		Vector vecDelta = vectors[ index0 + 1 ] - vectors[ index0 ];
+		vecDelta = vecDelta * thickness + vectors[ index0 ];
+		builder.Position3fv( vecDelta.Base() );
+		builder.Color4fv( color1 );
+		builder.AdvanceVertex();
+
+		vecDelta = vectors[ index1 + 1 ] - vectors[ index1 ];
+		vecDelta = vecDelta * thickness + vectors[ index1 ];
+		builder.Position3fv( vecDelta.Base() );
+		builder.Color4fv( color0 );
+		builder.AdvanceVertex();
+		builder.Position3fv( vectors[ index1 ].Base() );
+		builder.Color4fv( color0 );
 		builder.AdvanceVertex();
 	}
 

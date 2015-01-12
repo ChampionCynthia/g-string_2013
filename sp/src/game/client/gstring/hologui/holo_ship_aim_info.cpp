@@ -99,7 +99,8 @@ void CHoloShipAimInfo::Think( float frametime )
 
 	const float flWorldScaleInv = g_pGstringGlobals ? 1.0f / g_pGstringGlobals->GetWorldScale() : 1.0f;
 	const IHoloTarget *pAutoAimTarget = GetGstringInput()->GetAutoAimTarget();
-	const int iHealth = pAutoAimTarget ? ceil( pAutoAimTarget->GetHealthPercentage() * 100.0f ) : -1;
+	const float flHealth = pAutoAimTarget ? ceil( pAutoAimTarget->GetHealthPercentage() * 100.0f ) : -1;
+	const int iHealth = flHealth;
 	if ( m_pTarget != pAutoAimTarget )
 	{
 		m_pTarget = pAutoAimTarget;
@@ -116,7 +117,7 @@ void CHoloShipAimInfo::Think( float frametime )
 				SafeLocalizeInline( "holo_gui_target" ).Get(),
 				1, SafeLocalizeInline( pAutoAimTarget->GetName() ).Get() );
 			pwsTarget = wszTarget;
-			m_pLabelTarget->SetContentAlignment( iHealth >= 0 ? Label::a_west : Label::a_center );
+			m_pLabelTarget->SetContentAlignment( flHealth >= 0.0f ? Label::a_west : Label::a_center );
 		}
 		m_pLabelTarget->SetText( pwsTarget );
 		//m_pLabelDash->SetVisible( pAutoAimTarget != NULL );

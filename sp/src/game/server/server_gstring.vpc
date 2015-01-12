@@ -29,6 +29,12 @@ $Project "Server (G-String)"
 			$File	"gstring\cgstring_player.h"
 			$File	"gstring\cspacecraft_ai.h"
 			$File	"gstring\cspacecraft_ai.cpp"
+			
+			$Folder "Holo GUI"
+			{
+				$File	"gstring\hologui\point_holo_conversation.cpp"
+				$File	"gstring\hologui\point_holo_conversation.h"
+			}
 		}
 	
 		$File	"ai_eventresponse.cpp"

@@ -79,23 +79,20 @@ END_NETWORK_TABLE();
 LINK_ENTITY_TO_CLASS( env_holo_system, CEnvHoloSystem );
 
 CEnvHoloSystem::CEnvHoloSystem()
-#ifdef GAME_DLL
-#else
+#ifdef CLIENT_DLL
 	: m_iAttachment( -1 )
 	, m_iEyes( -1 )
 	, m_pAimPanel( NULL )
 #endif
 {
-#ifdef GAME_DLL
-#else
+#ifdef CLIENT_DLL
 	g_HoloSystems.AddToTail( this );
 #endif
 }
 
 CEnvHoloSystem::~CEnvHoloSystem()
 {
-#ifdef GAME_DLL
-#else
+#ifdef CLIENT_DLL
 	DestroyPanels();
 	g_HoloSystems.FindAndRemove( this );
 #endif

@@ -19,9 +19,9 @@ CHoloShipEngine::CHoloShipEngine( ISpacecraftData *pSpacecraftData ) :
 	SetIdentityMatrix( m_matrixUp );
 	SetIdentityMatrix( m_matrixCenterOffset );
 	SetIdentityMatrix( m_matrixEndOffset );
-	MatrixSetTranslation( Vector( 0, 0.0f, 0.45f ), m_matrixUp );
+	MatrixSetTranslation( Vector( 0, 0.0f, 0.36f ), m_matrixUp );
 	MatrixSetTranslation( Vector( 0, 0.0f, 0.15f ), m_matrixCenterOffset );
-	MatrixSetTranslation( Vector( 0, 0.0f, -0.15f ), m_matrixEndOffset );
+	//MatrixSetTranslation( Vector( 0, 0.0f, -0.15f ), m_matrixEndOffset );
 
 	m_pLabelEngine = new Label( this, "", "#holo_gui_engine" );
 	m_pLabelSpeedLabel = new Label( this, "", "#holo_gui_speed" );
@@ -29,9 +29,9 @@ CHoloShipEngine::CHoloShipEngine( ISpacecraftData *pSpacecraftData ) :
 	CMatRenderContextPtr pRenderContext( materials );
 	m_pMeshElement = pRenderContext->CreateStaticMesh( VERTEX_POSITION | VERTEX_TEXCOORD_SIZE( 0, 2 ),
 		TEXTURE_GROUP_MODEL, GetMaterial() );
-	CreateSlantedRect( m_pMeshElement, 0, 0, 1.2f, 0.35f, -0.125f );
+	CreateSlantedRect( m_pMeshElement, 0, 0, 1.0f, 0.35f, 0.0f );
 
-	SetOrigin( Vector( 0, -5.5f, -7.5f ) );
+	SetOrigin( Vector( 0, -5.8f, -7.5f ) );
 	SetAngles( QAngle( 0, 160, 0 ) );
 }
 
@@ -71,7 +71,7 @@ void CHoloShipEngine::PerformLayout()
 
 void CHoloShipEngine::Draw( IMatRenderContext *pRenderContext )
 {
-	m_vecPanelWorldOffset.x = -0.4f;
+	m_vecPanelWorldOffset.x = -0.7f;
 	BaseClass::Draw( pRenderContext );
 
 	matrix3x4_t mat;
@@ -88,7 +88,7 @@ void CHoloShipEngine::Draw( IMatRenderContext *pRenderContext )
 	const float flFadeRange = 1.0f / iElementCount;
 	const bool bDoPulse = m_flEngineStrength >= 0.9f;
 
-	MatrixSetTranslation( Vector( 0, 1.3f, 0 ), mat );
+	MatrixSetTranslation( Vector( 0, 1.04f, 0 ), mat );
 	for ( int i = 0; i < 3; ++i )
 	{
 		pRenderContext->PushMatrix();

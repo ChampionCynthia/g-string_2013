@@ -20,8 +20,9 @@ CHoloShipThruster::CHoloShipThruster( ISpacecraftData *pSpacecraftData ) :
 		TEXTURE_GROUP_MODEL, GetMaterial() );
 	CreateSlantedRect( m_pMeshElement, 0, 0, 0.2f, 0.3f );
 
-	SetOrigin( Vector( -1.2f, -9.5f, -7.0f ) );
-	SetAngles( QAngle( 0, 150, 0 ) );
+	//SetOrigin( Vector( -1.0f, -8.5f, -6.6f ) );
+	SetOrigin( Vector( -1.0f, -8.5f, -8.13f ) );
+	SetAngles( QAngle( 0, 160, 0 ) );
 	m_flScale = 0.015f;
 }
 
@@ -51,7 +52,7 @@ void CHoloShipThruster::Draw( IMatRenderContext *pRenderContext )
 	SetIdentityMatrix( mat );
 	SetIdentityMatrix( up );
 	MatrixSetTranslation( Vector( 0, 0.2f, 0.2f ), mat );
-	MatrixSetTranslation( Vector( 0, 0.0f, 0.4f ), up );
+	MatrixSetTranslation( Vector( 0, 0.0f, 0.31f ), up );
 	pRenderContext->MultMatrixLocal( mat );
 
 	GetColorVar()->SetVecValue( HOLO_COLOR_HIGHLIGHT );

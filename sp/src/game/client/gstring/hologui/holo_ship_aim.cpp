@@ -45,6 +45,8 @@ CHoloShipAim::CHoloShipAim( ISpacecraftData *pSpacecraftData ) :
 		TEXTURE_GROUP_MODEL, GetMaterial() );
 	m_pMeshDamagePanelOuter = pRenderContext->CreateStaticMesh( VERTEX_POSITION | VERTEX_COLOR | VERTEX_TEXCOORD_SIZE( 0, 2 ),
 		TEXTURE_GROUP_MODEL, GetMaterial() );
+	m_pMeshDamagePanelDecor = pRenderContext->CreateStaticMesh( VERTEX_POSITION | VERTEX_COLOR | VERTEX_TEXCOORD_SIZE( 0, 2 ),
+		TEXTURE_GROUP_MODEL, GetMaterial() );
 
 	m_iAttachmentGUI = pSpacecraftData->GetEntity()->LookupAttachment( "gui" );
 
@@ -52,11 +54,12 @@ CHoloShipAim::CHoloShipAim( ISpacecraftData *pSpacecraftData ) :
 	CreateRecticule( m_pMeshReticule, 0.3f, 0.05f, 0.3f * 0.707f, DEG2RAD( 45.0f ) );
 	CreateRecticule( m_pMeshTarget, 1.0f, 0.05f, 0.5f, 0.0f );
 	CreateRecticule( m_pMeshTargetThick, 1.04f, 0.13f, 0.5f, 0.0f );
-	CreateTargetArrows( m_pMeshTargetArrows, 45.0f, 8.0f, 0.25f, 1.0f, 0.12f );
+	CreateTargetArrows( m_pMeshTargetArrows, 45.0f, 8.0f, 0.25f, 0.8f, 0.12f );
 	CreateAimPanel( m_pMeshPanel, 10, 20, QAngle( -50, -80, 0 ), QAngle( 5, 80, 0 ), g_flPanelRadius, 0.1f );
 	CreateDamageIndicator( m_pMeshDamagePanel, 16, 4.5f, 1.2f, M_PI_F * -0.3f, M_PI_F * 0.3f, 0.0f, 1.0f );
 	CreateRoundDamageIndicator( m_pMeshDamagePanelInner, 32, 0.001f, 1.2f );
 	CreateRoundDamageIndicator( m_pMeshDamagePanelOuter, 32, 4.5f, -1.2f );
+	CreateAimPanelDecor( m_pMeshDamagePanelDecor, 10, 20, QAngle( -50, -80, 0 ), QAngle( 5, 80, 0 ), g_flPanelRadius, 0.1f );
 }
 
 CHoloShipAim::~CHoloShipAim()
@@ -71,6 +74,7 @@ CHoloShipAim::~CHoloShipAim()
 	pRenderContext->DestroyStaticMesh( m_pMeshDamagePanel );
 	pRenderContext->DestroyStaticMesh( m_pMeshDamagePanelInner );
 	pRenderContext->DestroyStaticMesh( m_pMeshDamagePanelOuter );
+	pRenderContext->DestroyStaticMesh( m_pMeshDamagePanelDecor );
 }
 
 void CHoloShipAim::MsgFuncSpacecraftDamage( bf_read &msg )
@@ -101,6 +105,7 @@ void CHoloShipAim::MsgFuncSpacecraftDamage( bf_read &msg )
 
 void CHoloShipAim::Think( float frametime )
 {
+	const C_BaseEntity *pAutoAimTarget = GetGstringInput()->GetAutoAimTargetEntity();
 	FOR_EACH_VEC( m_Targets, oldTargetIndex )
 	{
 		Target &target = m_Targets[ oldTargetIndex ];
@@ -108,6 +113,12 @@ void CHoloShipAim::Think( float frametime )
 		{
 			target.m_flBlinkTimer -= frametime;
 			target.m_flBlinkTimer = MAX( 0.0f, target.m_flBlinkTimer );
+		}
+
+		const float flDesiredFocus = pAutoAimTarget == target.m_Entity->GetEntity() ? 1.0f : 0.0f;
+		if ( flDesiredFocus != target.m_flFocusTimer )
+		{
+			target.m_flFocusTimer = Approach( flDesiredFocus, target.m_flFocusTimer, frametime * 10.0f );
 		}
 	}
 
@@ -243,8 +254,6 @@ static void FormatForViewSpace( const Vector &forward, const Vector &right, cons
 
 void CHoloShipAim::DrawTargets( IMatRenderContext *pRenderContext )
 {
-	pRenderContext->Bind( GetMaterial() );
-
 	// Find direction vectors
 	//pRenderContext->GetMatrix( MATERIAL_VIEW, &viewMatrix );
 	const matrix3x4_t &viewMatrix = CurrentHoloViewMatrix();
@@ -264,6 +273,20 @@ void CHoloShipAim::DrawTargets( IMatRenderContext *pRenderContext )
 
 	float flWorldSpaceScale = g_pGstringGlobals ? g_pGstringGlobals->GetWorldScale() : 1.0f;
 
+	pRenderContext->PushMatrix();
+
+	matrix3x4_t temp2;
+	SetIdentityMatrix( temp2 );
+	MatrixSetTranslation( g_vecPanelPosition, temp2 );
+	pRenderContext->MultMatrixLocal( temp2 );
+
+	// Draw deco
+	pRenderContext->Bind( GetMaterial( MATERIALTYPE_VERTEXCOLOR ) );
+	GetColorVar( MATERIALTYPE_VERTEXCOLOR )->SetVecValue( HOLO_COLOR_DEFAULT );
+	GetAlphaVar( MATERIALTYPE_VERTEXCOLOR )->SetFloatValue( 0.3f );
+	m_pMeshDamagePanelDecor->Draw();
+
+	pRenderContext->Bind( GetMaterial() );
 
 	pRenderContext->ClearBuffers( false, false, true );
 	pRenderContext->SetStencilEnable( true );
@@ -275,20 +298,12 @@ void CHoloShipAim::DrawTargets( IMatRenderContext *pRenderContext )
 	pRenderContext->SetStencilPassOperation( STENCILOPERATION_KEEP );
 	pRenderContext->SetStencilZFailOperation( STENCILOPERATION_KEEP );
 
-	pRenderContext->PushMatrix();
-
-	matrix3x4_t temp2;
-	SetIdentityMatrix( temp2 );
-	MatrixSetTranslation( g_vecPanelPosition, temp2 );
-	pRenderContext->MultMatrixLocal( temp2 );
 	m_pMeshPanel->Draw();
 
 	pRenderContext->PopMatrix();
 
 	pRenderContext->SetStencilCompareFunction( STENCILCOMPARISONFUNCTION_EQUAL );
 	pRenderContext->SetStencilWriteMask( 0 );
-
-
 
 	pRenderContext->PushMatrix();
 
@@ -362,11 +377,16 @@ void CHoloShipAim::DrawTargets( IMatRenderContext *pRenderContext )
 			else
 			{
 				m_pMeshTargetThick->Draw();
+			}
 
-				if ( pTarget->GetType() == IHoloTarget::ENEMY )
-				{
-					m_pMeshTargetArrows->Draw();
-				}
+			if ( target.m_flFocusTimer > 0.0f && pTarget->GetType() == IHoloTarget::ENEMY )
+			{
+				SetIdentityMatrix( rr );
+				MatrixScaleBy( 1.0f + 0.2f * target.m_flFocusTimer, rr );
+				pRenderContext->MultMatrixLocal( rr );
+
+				GetAlphaVar()->SetFloatValue( flAlpha * target.m_flFocusTimer );
+				m_pMeshTargetArrows->Draw();
 			}
 		}
 	}
@@ -378,7 +398,7 @@ void CHoloShipAim::DrawTargets( IMatRenderContext *pRenderContext )
 	{
 		//const CViewSetup *pMonoSetup = view->GetPlayerViewSetup();
 
-		Vector guiForward, guiRight, guiUp;
+		Vector guiForward/*, guiRight, guiUp*/;
 		//AngleVectors( pMonoSetup->angles, &guiForward, &guiRight, &guiUp );
 		//Vector start = eyePosition + guiForward * flWorldSpaceScale * 5.0f;
 		//Vector delta = start - pMonoSetup->origin;

@@ -291,7 +291,7 @@ void CSpacecraft::PhysicsSimulate()
 			m_pAI->Run( gpGlobals->frametime );
 		}
 
-		if ( GetShield() < GetMaxShield() )
+		if ( GetShield() < GetMaxShield() && m_Settings.m_flShieldRegenerationRate > 0 )
 		{
 			if ( m_flShieldRegenerationTimer > 0.0f )
 			{
@@ -311,7 +311,7 @@ void CSpacecraft::PhysicsSimulate()
 			}
 		}
 
-		if ( GetHealth() < GetMaxHealth() )
+		if ( GetHealth() < GetMaxHealth() && m_Settings.m_flHealthRegenerationRate > 0 )
 		{
 			if ( m_flHealthRegenerationTimer > 0.0f )
 			{

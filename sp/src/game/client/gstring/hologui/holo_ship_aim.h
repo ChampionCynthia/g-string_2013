@@ -23,10 +23,12 @@ private:
 	{
 		Target() :
 			m_Entity( NULL ),
-			m_flBlinkTimer( 0.0f )
+			m_flBlinkTimer( 0.0f ),
+			m_flFocusTimer( 0.0f )
 		{}
 		IHoloTarget *m_Entity;
 		float m_flBlinkTimer;
+		float m_flFocusTimer;
 	};
 
 	struct DamagePanel
@@ -52,6 +54,7 @@ private:
 	IMesh *m_pMeshTargetArrows;
 	IMesh *m_pMeshPanel;
 	IMesh *m_pMeshDamagePanel;
+	IMesh *m_pMeshDamagePanelDecor;
 	IMesh *m_pMeshDamagePanelInner;
 	IMesh *m_pMeshDamagePanelOuter;
 };

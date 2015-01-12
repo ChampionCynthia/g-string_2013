@@ -199,17 +199,17 @@ void CSpacecraftProjectile::OnDataChanged( DataUpdateType_t t )
 	{
 		m_hTrailParticle = ParticleProp()->Create( "projectile_red", PATTACH_ABSORIGIN_FOLLOW );
 
-		dlight_t *el = effects->CL_AllocElight( entindex() );
-		el->origin = GetAbsOrigin();
+		//dlight_t *el = effects->CL_AllocElight( entindex() );
+		//el->origin = GetAbsOrigin();
 
-		el->color.r = 255;
-		el->color.g = 96;
-		el->color.b = 32;
-		el->color.exponent = 5.0f;
+		//el->color.r = 255;
+		//el->color.g = 96;
+		//el->color.b = 32;
+		//el->color.exponent = 5.0f;
 
-		el->radius = random->RandomFloat( 30.0f, 100.0f );
-		el->decay = el->radius / 0.05f;
-		el->die = gpGlobals->curtime + 0.1f;
+		//el->radius = random->RandomFloat( 30.0f, 100.0f );
+		//el->decay = el->radius / 0.05f;
+		//el->die = gpGlobals->curtime + 0.1f;
 
 		// FX_TracerSound(  )
 		extern bool FX_AffectRagdolls( Vector vecOrigin, Vector vecStart, int iDamageType );

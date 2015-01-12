@@ -13,43 +13,46 @@ CHoloShipHealthText::CHoloShipHealthText( ISpacecraftData *pSpacecraftData ) :
 	m_iShield( -1 ),
 	m_iHull( -1 )
 {
-	m_pLabelShieldText = new Label( this, "", "#holo_gui_shield" );
-	m_pLabelHullText = new Label( this, "", "#holo_gui_hull" );
+	//m_pLabelShieldText = new Label( this, "", "#holo_gui_shield" );
+	//m_pLabelHullText = new Label( this, "", "#holo_gui_hull" );
 	m_pLabelShieldValue = new Label( this, "", "" );
 	m_pLabelHullValue = new Label( this, "", "" );
 
-	m_flScale = 0.02f;
+	m_flScale = 0.025f;
 
 	SetAngles( QAngle( 0, 200, 0 ) );
-	//SetOrigin( Vector( -4.5f, 14, -8.5f ) );
-	SetOrigin( Vector( -4.3f, 14.5f, -7.0f ) );
+	//SetOrigin( Vector( -4.3f, 14.5f, -7.0f ) );
+	SetOrigin( Vector( -4.0f, 9.7f, -7.7f ) );
 }
 
 void CHoloShipHealthText::PerformLayout()
 {
 	BaseClass::PerformLayout();
 
-	m_pLabelShieldText->SetFgColor( Color( HOLO_COLOR255_HIGHLIGHT, 255 ) );
-	m_pLabelHullText->SetFgColor( Color( HOLO_COLOR255_DEFAULT, 127 ) );
+	//m_pLabelShieldText->SetFgColor( Color( HOLO_COLOR255_HIGHLIGHT, 255 ) );
+	//m_pLabelHullText->SetFgColor( Color( HOLO_COLOR255_DEFAULT, 127 ) );
 	m_pLabelShieldValue->SetFgColor( Color( HOLO_COLOR255_HIGHLIGHT, 255 ) );
 	m_pLabelHullValue->SetFgColor( Color( HOLO_COLOR255_DEFAULT, 127 ) );
 
 	const int iFontTall = surface()->GetFontTall( m_FontLarge );
-	m_pLabelShieldText->SetFont( m_FontLarge );
-	m_pLabelHullText->SetFont( m_FontLarge );
-	m_pLabelShieldValue->SetFont( m_FontLarge );
-	m_pLabelHullValue->SetFont( m_FontLarge );
+	//m_pLabelShieldText->SetFont( m_FontLarge );
+	//m_pLabelHullText->SetFont( m_FontLarge );
+	m_pLabelShieldValue->SetFont( m_FontSmallMono );
+	m_pLabelHullValue->SetFont( m_FontSmallMono );
 
-	m_pLabelShieldText->SizeToContents();
-	m_pLabelHullText->SizeToContents();
+	//m_pLabelShieldText->SizeToContents();
+	//m_pLabelHullText->SizeToContents();
 
-	m_pLabelShieldText->SetPos( 5, 0 );
-	m_pLabelHullText->SetPos( 5, iFontTall );
+	//m_pLabelShieldText->SetPos( 5, 0 );
+	//m_pLabelHullText->SetPos( 5, iFontTall );
 	m_pLabelShieldValue->SetContentAlignment( Label::a_east );
 	m_pLabelHullValue->SetContentAlignment( Label::a_east );
-	m_pLabelHullValue->SetPos( 0, iFontTall );
+	//m_pLabelHullValue->SetPos( 0, iFontTall );
+
+	m_pLabelHullValue->SetContentAlignment( Label::a_west );
 
 	SetBounds( 0, 0, iFontTall * 6, iFontTall * 2 );
+	SetBounds( 0, 0, iFontTall * 7, iFontTall );
 }
 
 void CHoloShipHealthText::Think( float frametime )
@@ -61,9 +64,9 @@ void CHoloShipHealthText::Think( float frametime )
 		MakeReadyForUse();
 
 		int shieldPercentage = int(iShield / (float)m_pSpacecraftData->GetMaxShield() * 100.0f);
-		m_pLabelShieldValue->SetText( VarArgs( "%i", shieldPercentage ) );
+		m_pLabelShieldValue->SetText( VarArgs( "%i%%", shieldPercentage ) );
 		m_pLabelShieldValue->MakeReadyForUse();
-		m_pLabelShieldValue->SetSize( GetWide(), GetTall() / 2 );
+		m_pLabelShieldValue->SetSize( GetWide(), GetTall() );
 	}
 
 	const int iHull = m_pSpacecraftData->GetHull();
@@ -73,9 +76,9 @@ void CHoloShipHealthText::Think( float frametime )
 		MakeReadyForUse();
 
 		int hullPercentage = int(iHull / (float)m_pSpacecraftData->GetMaxHull() * 100.0f);
-		m_pLabelHullValue->SetText( VarArgs( "%i", hullPercentage ) );
+		m_pLabelHullValue->SetText( VarArgs( "%i%%", hullPercentage ) );
 		m_pLabelHullValue->MakeReadyForUse();
-		m_pLabelHullValue->SetSize( GetWide(), GetTall() / 2 );
+		m_pLabelHullValue->SetSize( GetWide(), GetTall() );
 	}
 }
 

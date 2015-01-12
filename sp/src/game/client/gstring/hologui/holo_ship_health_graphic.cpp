@@ -20,7 +20,7 @@ CHoloShipHealthGraphic::CHoloShipHealthGraphic( ISpacecraftData *pSpacecraftData
 	m_pHullElement = pRenderContext->CreateStaticMesh( VERTEX_POSITION | VERTEX_TEXCOORD_SIZE( 0, 2 ),
 		TEXTURE_GROUP_MODEL, GetMaterial() );
 
-	CreateArc( m_pHullElement, 8, 3.0f, 0.5f, DEG2RAD( 0.5f ), DEG2RAD( flStepAngle - 0.5f ) );
+	CreateArc( m_pHullElement, 8, 2.8f, 0.5f, DEG2RAD( 0.2f ), DEG2RAD( flStepAngle - 0.2f ) );
 }
 
 CHoloShipHealthGraphic::~CHoloShipHealthGraphic()
@@ -70,14 +70,10 @@ void CHoloShipHealthGraphic::Draw( IMatRenderContext *pRenderContext )
 		const float flFadeRange = 0.5f * m_flShieldFraction * ( 1.0f - m_flShieldFraction * 0.9f );
 
 		IMesh *pMesh = pRenderContext->GetDynamicMesh( true, 0, 0, GetMaterial( MATERIALTYPE_VERTEXCOLOR ) );
-		CreateArcFaded( pMesh, 25, 3.4f, 0.1f, 0.0f, DEG2RAD( 180.0f ), m_flShieldFraction - 0.001f, m_flShieldFraction + flFadeRange );
+		//CreateArcFaded( pMesh, 25, 3.0f, 0.1f, 0.0f, DEG2RAD( 180.0f ), m_flShieldFraction - 0.001f, m_flShieldFraction + flFadeRange );
+		CreateMirroredArcFaded( pMesh, 3.1f, 0.2f, m_flShieldFraction - 0.001f, m_flShieldFraction + flFadeRange );
 		GetColorVar( MATERIALTYPE_VERTEXCOLOR )->SetVecValue( HOLO_COLOR_HIGHLIGHT );
 		GetAlphaVar( MATERIALTYPE_VERTEXCOLOR )->SetFloatValue( 1.0f );
-
-		pMesh->Draw();
-
-		MatrixBuildRotationAboutAxis( Vector( 0, 0, 1 ), 180, dst );
-		pRenderContext->MultMatrixLocal(dst);
 		pMesh->Draw();
 	}
 }
