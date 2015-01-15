@@ -9,6 +9,8 @@
 
 #include "materialsystem/imaterialvar.h"
 
+#define STATIC_RADAR_GRID 0
+
 void GetHoloTargetTypeColor( IHoloTarget::TargetType type, Vector &color, float &alpha )
 {
 	switch ( type )
@@ -55,10 +57,45 @@ CHoloShipRadar::CHoloShipRadar( ISpacecraftData *pSpacecraftData ) :
 
 	const float flFOVRadians = DEG2RAD( g_flRadarFOV );
 
+#if STATIC_RADAR_GRID
+	m_pMeshRingGrid = pRenderContext->CreateStaticMesh( VERTEX_POSITION | VERTEX_COLOR | VERTEX_TEXCOORD_SIZE( 0, 2 ),
+		TEXTURE_GROUP_MODEL, GetMaterial() );
+
+	float colorDefault[] = { HOLO_COLOR_DEFAULT, 0.5f };
+	float colorHighlight[] = { HOLO_COLOR_HIGHLIGHT, 1.0f };
+	const float flRadarFalloff = 0.85f;
+
+	colorDefault[0] = GammaToLinear( colorDefault[0] );
+	colorDefault[1] = GammaToLinear( colorDefault[1] );
+	colorDefault[2] = GammaToLinear( colorDefault[2] );
+	colorHighlight[0] = GammaToLinear( colorHighlight[0] );
+	colorHighlight[1] = GammaToLinear( colorHighlight[1] );
+	colorHighlight[2] = GammaToLinear( colorHighlight[2] );
+
+	CMeshBuilder builder;
+	builder.Begin( m_pMeshRingGrid, MATERIAL_QUADS, ( 64 * 2 * 4 ) + ( 2 ) + ( 16 * 2 * 4 ) + ( 16 ) );
+	CreateArc( builder, 64, g_flRadarSize, 0.1f, flFOVRadians, (M_PI_F * 2.0f - flFOVRadians), colorDefault );
+	CreateArc( builder, 64, g_flRadarSize * flRadarFalloff, 0.1f * flRadarFalloff, flFOVRadians, (M_PI_F * 2.0f - flFOVRadians), colorDefault );
+	CreateArc( builder, 64, g_flRadarSize * powf( flRadarFalloff, 3.0f ), 0.1f * powf( flRadarFalloff, 3.0f ), flFOVRadians, (M_PI_F * 2.0f - flFOVRadians), colorDefault );
+	CreateArc( builder, 64, g_flRadarSize * powf( flRadarFalloff, 6.0f ), 0.1f * powf( flRadarFalloff, 6.0f ), flFOVRadians, (M_PI_F * 2.0f - flFOVRadians), colorDefault );
+
+	CreateArc( builder, 1, g_flRadarSize, g_flRadarSize, M_PI_F * -0.005f - DEG2RAD(g_flRadarFOV), M_PI_F * 0.005f - DEG2RAD(g_flRadarFOV), colorHighlight );
+	CreateArc( builder, 1, g_flRadarSize, g_flRadarSize, M_PI_F * -0.005f + DEG2RAD(g_flRadarFOV), M_PI_F * 0.005f + DEG2RAD(g_flRadarFOV), colorHighlight );
+
+	CreateArc( builder, 16, g_flRadarSize, 0.1f, -flFOVRadians, flFOVRadians, colorHighlight );
+	CreateArc( builder, 16, g_flRadarSize * flRadarFalloff, 0.1f * flRadarFalloff, -flFOVRadians, flFOVRadians, colorHighlight );
+	CreateArc( builder, 16, g_flRadarSize * powf( flRadarFalloff, 3.0f ), 0.1f * powf( flRadarFalloff, 3.0f ), -flFOVRadians, flFOVRadians, colorHighlight );
+	CreateArc( builder, 16, g_flRadarSize * powf( flRadarFalloff, 6.0f ), 0.1f * powf( flRadarFalloff, 6.0f ), -flFOVRadians, flFOVRadians, colorHighlight );
+
+	CreateArc( builder, 16, 0.1f, 0.1f, 0.0f, M_PI_F * 2.0f, colorHighlight );
+	builder.End();
+#endif
+
 	CreateArc( m_pMeshRingLarge, 64, g_flRadarSize, 0.1f, flFOVRadians, (M_PI_F * 2.0f - flFOVRadians) );
 	CreateArc( m_pMeshRingSmall, 16, g_flRadarSize, 0.1f, -flFOVRadians, flFOVRadians );
-	CreateArc( m_pMeshRingCenter, 16, 0.1f, 0.1f, 0.0f, M_PI_F * 2.0f );
 	CreateArc( m_pMeshRingLine, 1, g_flRadarSize, g_flRadarSize, M_PI_F * -0.005f, M_PI_F * 0.005f );
+	CreateArc( m_pMeshRingCenter, 16, 0.1f, 0.1f, 0.0f, M_PI_F * 2.0f );
+
 	CreateArc( m_pMeshCircle, 64, g_flRadarSize, g_flRadarSize, 0, M_PI_F * 2.0f );
 
 	SetOrigin( Vector( 2.0f, 0, -8.0f ) );
@@ -70,6 +107,9 @@ CHoloShipRadar::~CHoloShipRadar()
 	CMatRenderContextPtr pRenderContext( materials );
 	pRenderContext->DestroyStaticMesh( m_pMeshRingLarge );
 	pRenderContext->DestroyStaticMesh( m_pMeshRingSmall );
+#if STATIC_RADAR_GRID
+	pRenderContext->DestroyStaticMesh( m_pMeshRingGrid );
+#endif
 	pRenderContext->DestroyStaticMesh( m_pMeshRingCenter );
 	pRenderContext->DestroyStaticMesh( m_pMeshRingLine );
 	pRenderContext->DestroyStaticMesh( m_pMeshCircle );
@@ -77,12 +117,12 @@ CHoloShipRadar::~CHoloShipRadar()
 
 void CHoloShipRadar::Draw( IMatRenderContext *pRenderContext )
 {
-	const int iRingCount = 4;
-
 	// Draw rings
 	matrix3x4_t matrixTemp;
 	SetIdentityMatrix( matrixTemp );
 
+#if STATIC_RADAR_GRID == 0
+	const int iRingCount = 4;
 	pRenderContext->PushMatrix();
 	pRenderContext->Bind( GetMaterial() );
 	for ( int i = 0; i < iRingCount; ++i )
@@ -115,6 +155,14 @@ void CHoloShipRadar::Draw( IMatRenderContext *pRenderContext )
 	pRenderContext->MultMatrixLocal( matrixTemp );
 	m_pMeshRingLine->Draw();
 	pRenderContext->PopMatrix();
+#else
+	pRenderContext->Bind( GetMaterial( MATERIALTYPE_VERTEXCOLOR ) );
+	GetColorVar( MATERIALTYPE_VERTEXCOLOR )->SetVecValue( 1, 1, 1, 1 );
+	GetAlphaVar( MATERIALTYPE_VERTEXCOLOR )->SetFloatValue( 1.0f );
+	m_pMeshRingGrid->Draw();
+
+	pRenderContext->Bind( GetMaterial() );
+#endif
 
 	// Draw blips
 	GetAlphaVar()->SetFloatValue( 1.0f );

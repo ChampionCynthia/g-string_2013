@@ -24,6 +24,7 @@ private:
 
 	IMesh *m_pMeshRingLarge;
 	IMesh *m_pMeshRingSmall;
+	IMesh *m_pMeshRingGrid;
 	IMesh *m_pMeshRingCenter;
 	IMesh *m_pMeshRingLine;
 	IMesh *m_pMeshCircle;

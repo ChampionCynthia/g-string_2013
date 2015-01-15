@@ -70,7 +70,6 @@ void CHoloShipHealthGraphic::Draw( IMatRenderContext *pRenderContext )
 		const float flFadeRange = 0.5f * m_flShieldFraction * ( 1.0f - m_flShieldFraction * 0.9f );
 
 		IMesh *pMesh = pRenderContext->GetDynamicMesh( true, 0, 0, GetMaterial( MATERIALTYPE_VERTEXCOLOR ) );
-		//CreateArcFaded( pMesh, 25, 3.0f, 0.1f, 0.0f, DEG2RAD( 180.0f ), m_flShieldFraction - 0.001f, m_flShieldFraction + flFadeRange );
 		CreateMirroredArcFaded( pMesh, 3.1f, 0.2f, m_flShieldFraction - 0.001f, m_flShieldFraction + flFadeRange );
 		GetColorVar( MATERIALTYPE_VERTEXCOLOR )->SetVecValue( HOLO_COLOR_HIGHLIGHT );
 		GetAlphaVar( MATERIALTYPE_VERTEXCOLOR )->SetFloatValue( 1.0f );

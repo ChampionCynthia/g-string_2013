@@ -26,6 +26,8 @@ public:
 	virtual int UpdateTransmitState();
 
 private:
+	void AdvanceConversation();
+
 	KeyValues *m_pConversation;
 	KeyValues *m_pMessage;
 

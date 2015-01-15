@@ -12,7 +12,7 @@ public:
 	CHoloShipAim( ISpacecraftData *pSpacecraftData );
 	virtual ~CHoloShipAim();
 
-	void MsgFuncSpacecraftDamage( bf_read &msg );
+	void MsgFunc_SpacecraftDamage( bf_read &msg );
 
 protected:
 	virtual void Think( float frametime );

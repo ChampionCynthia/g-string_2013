@@ -62,6 +62,49 @@ inline void CreateSlantedRect( IMesh *pMesh, float x, float y, float width, floa
 	builder.End();
 }
 
+inline void CreateSlantedRect( CMeshBuilder &builder, float x, float y, float width, float height, float offset = 0.0f )
+{
+	builder.Position3f( 0.0f, x, y );
+	builder.AdvanceVertex();
+
+	builder.Position3f( 0.0f, x + width, y + offset );
+	builder.AdvanceVertex();
+
+	builder.Position3f( 0.0f, x + width, y + offset + height );
+	builder.AdvanceVertex();
+
+	builder.Position3f( 0.0f, x, y + height );
+	builder.AdvanceVertex();
+}
+
+// quads * subDivCount
+inline void CreateArc( CMeshBuilder &builder, int subDivCount, float radius, float thickness,
+	float startAngle, float endAngle, const float *color4 )
+{
+	const float angleStep = ( endAngle - startAngle ) / (float)subDivCount;
+	const float toInnerRadius = ( radius - thickness ) / radius;
+	for ( int i = 0; i < subDivCount; ++i )
+	{
+		Vector2D dir( GetVector2DFromAngle( startAngle + i * angleStep ) * radius );
+		builder.Position3f( dir.x, dir.y, 0.0f );
+		builder.Color4fv( color4 );
+		builder.AdvanceVertex();
+
+		builder.Position3f( dir.x * toInnerRadius, dir.y * toInnerRadius, 0.0f );
+		builder.Color4fv( color4 );
+		builder.AdvanceVertex();
+
+		dir = GetVector2DFromAngle( startAngle + ( i + 1 ) * angleStep ) * radius;
+		builder.Position3f( dir.x * toInnerRadius, dir.y * toInnerRadius, 0.0f );
+		builder.Color4fv( color4 );
+		builder.AdvanceVertex();
+
+		builder.Position3f( dir.x, dir.y, 0.0f );
+		builder.Color4fv( color4 );
+		builder.AdvanceVertex();
+	}
+}
+
 inline void CreateArc( IMesh *pMesh, int subDivCount, float radius, float thickness,
 	float startAngle, float endAngle )
 {
@@ -317,8 +360,7 @@ inline void CreateRecticule( IMesh *pMesh, float scale, float thickness, float l
 		builder.Position3fv( v.Base() );
 		builder.AdvanceVertex();
 
-		const float lineSizeRatio = lineSize / scale;
-		v += offset * thickness + dir * thickness * lineSizeRatio;
+		v += offset * thickness + dir * thickness * 0.707f;
 		builder.Position3fv( v.Base() );
 		builder.AdvanceVertex();
 	}

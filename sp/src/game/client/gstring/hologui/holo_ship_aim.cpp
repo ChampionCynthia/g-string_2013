@@ -14,6 +14,7 @@
 #include "view_scene.h"
 #include "collisionutils.h"
 #include "sourcevr/isourcevirtualreality.h"
+#include "c_user_message_register.h"
 
 extern void GetHoloTargetTypeColor( IHoloTarget::TargetType type, Vector &color, float &alpha );
 
@@ -22,6 +23,8 @@ namespace
 	const float g_flPanelRadius = 13.0f;
 	const Vector g_vecPanelPosition = Vector( -7, 0, -4 );
 }
+
+DECLARE_HOLO_MESSAGE( SpacecraftDamage, CHoloShipAim );
 
 CHoloShipAim::CHoloShipAim( ISpacecraftData *pSpacecraftData ) :
 	m_pSpacecraftData( pSpacecraftData )
@@ -60,10 +63,14 @@ CHoloShipAim::CHoloShipAim( ISpacecraftData *pSpacecraftData ) :
 	CreateRoundDamageIndicator( m_pMeshDamagePanelInner, 32, 0.001f, 1.2f );
 	CreateRoundDamageIndicator( m_pMeshDamagePanelOuter, 32, 4.5f, -1.2f );
 	CreateAimPanelDecor( m_pMeshDamagePanelDecor, 10, 20, QAngle( -50, -80, 0 ), QAngle( 5, 80, 0 ), g_flPanelRadius, 0.1f );
+
+	ADD_HOLO_MESSAGE( SpacecraftDamage );
 }
 
 CHoloShipAim::~CHoloShipAim()
 {
+	REMOVE_HOLO_MESSAGE( SpacecraftDamage );
+
 	CMatRenderContextPtr pRenderContext( materials );
 	pRenderContext->DestroyStaticMesh( m_pMeshLargeReticule );
 	pRenderContext->DestroyStaticMesh( m_pMeshReticule );
@@ -77,7 +84,7 @@ CHoloShipAim::~CHoloShipAim()
 	pRenderContext->DestroyStaticMesh( m_pMeshDamagePanelDecor );
 }
 
-void CHoloShipAim::MsgFuncSpacecraftDamage( bf_read &msg )
+void CHoloShipAim::MsgFunc_SpacecraftDamage( bf_read &msg )
 {
 	Vector vecFrom;
 	msg.ReadBitVec3Coord( vecFrom );

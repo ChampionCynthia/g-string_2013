@@ -1,6 +1,8 @@
 
 #include "cbase.h"
 #include "point_holo_conversation.h"
+#include "gstring/cgstring_player.h"
+
 #include "filesystem.h"
 
 namespace
@@ -9,9 +11,11 @@ namespace
 	int g_iConversationReferenceCounter;
 }
 
+extern ISoundEmitterSystemBase *soundemitterbase;
+
 BEGIN_DATADESC( CPointHoloConversation )
 
-	//DEFINE_THINKFUNC( Update ),
+	DEFINE_THINKFUNC( AdvanceConversation ),
 	//DEFINE_FIELD( m_hHealthProxy, FIELD_EHANDLE ),
 	//DEFINE_FIELD( m_hPositionProxy, FIELD_EHANDLE ),
 
@@ -25,7 +29,7 @@ BEGIN_DATADESC( CPointHoloConversation )
 	//DEFINE_KEYFIELD( m_strHealthProxyName, FIELD_STRING, "HealthProxy" ),
 	//DEFINE_KEYFIELD( m_strPositionProxyName, FIELD_STRING, "PositionProxy" ),
 
-	//DEFINE_INPUTFUNC( FIELD_VOID, "Enable", InputEnable ),
+	DEFINE_INPUTFUNC( FIELD_VOID, "Start", InputStart ),
 	//DEFINE_INPUTFUNC( FIELD_VOID, "Disable", InputDisable ),
 
 	//DEFINE_OUTPUT( m_OnEnabled, "OnEnabled" ),
@@ -60,6 +64,22 @@ CPointHoloConversation::~CPointHoloConversation()
 
 void CPointHoloConversation::InputStart( inputdata_t &inputdata )
 {
+	if ( m_pConversation )
+	{
+		m_pMessage = m_pConversation->GetFirstTrueSubKey();
+		if ( m_pMessage )
+		{
+			AdvanceConversation();
+		}
+		else
+		{
+			Warning( "No messages found in conversation (%s)!\n", STRING( m_strConversationName ) );
+		}
+	}
+	else
+	{
+		Warning( "Conversation not found (%s)!\n", STRING( m_strConversationName ) );
+	}
 }
 
 void CPointHoloConversation::Spawn()
@@ -67,10 +87,7 @@ void CPointHoloConversation::Spawn()
 	BaseClass::Spawn();
 
 	m_pConversation = g_pConversations->FindKey( STRING( m_strConversationName ) );
-	if ( m_pConversation )
-	{
-		m_pMessage = m_pConversation->GetFirstTrueSubKey();
-	}
+	Precache();
 }
 
 void CPointHoloConversation::Precache()
@@ -86,7 +103,7 @@ void CPointHoloConversation::Precache()
 			const char *pszSoundName = pMessage->GetString( "soundname" );
 			if ( *pszSoundName )
 			{
-				PrecacheSound( pszSoundName );
+				PrecacheScriptSound( pszSoundName );
 			}
 		}
 	}
@@ -95,4 +112,41 @@ void CPointHoloConversation::Precache()
 int CPointHoloConversation::UpdateTransmitState()
 {
 	return SetTransmitState( FL_EDICT_DONTSEND );
+}
+
+void CPointHoloConversation::AdvanceConversation()
+{
+	Assert( m_pMessage );
+
+	CGstringPlayer *pLocal = LocalGstringPlayer();
+
+	const char *pszSoundName = m_pMessage->GetString( "soundname" );
+	const char *pszDisplayName = m_pMessage->GetString( "displayname" );
+	float flDuration = 0.0f;
+
+	CSingleUserRecipientFilter filter( pLocal );
+	EmitSound( filter, pLocal->entindex(), pszSoundName, 0, 0, &flDuration );
+
+	CSoundParameters params;
+	soundemitterbase->GetParametersForSound( pszSoundName, params, GENDER_NONE );
+
+	CSingleUserRecipientFilter user( pLocal );
+	user.MakeReliable();
+	UserMessageBegin( user, "HoloMessage" );
+		WRITE_STRING( pszDisplayName );
+		WRITE_STRING( params.soundname );
+		WRITE_FLOAT( flDuration );
+	MessageEnd();
+
+	m_pMessage = m_pMessage->GetNextTrueSubKey();
+	if ( m_pMessage )
+	{
+		const float flDelay = m_pMessage->GetFloat( "delay" ) + flDuration;
+		SetThink( &CPointHoloConversation::AdvanceConversation );
+		SetNextThink( gpGlobals->curtime + flDelay );
+	}
+	else
+	{
+		SetThink( NULL );
+	}
 }

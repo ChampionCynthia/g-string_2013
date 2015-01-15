@@ -37,7 +37,6 @@ public:
 	virtual int UpdateTransmitState();
 #else
 	void DestroyPanels();
-	void MsgFuncSpacecraftDamage( bf_read &msg );
 
 	virtual void OnDataChanged( DataUpdateType_t type );
 
@@ -61,7 +60,9 @@ private:
 	int m_iAttachment;
 	int m_iEyes;
 	CUtlVector< CHoloPanel* > m_Panels;
-	CHoloShipAim *m_pAimPanel;
+
+	int m_iViewportWidth;
+	int m_iViewportHeight;
 #endif
 
 	CNetworkString( m_szAttachment, 16 );

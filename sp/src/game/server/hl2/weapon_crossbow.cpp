@@ -164,7 +164,7 @@ void CCrossbowBolt::Spawn( void )
 	Precache( );
 
 	SetModel( "models/crossbow_bolt.mdl" );
-	SetMoveType( MOVETYPE_FLYGRAVITY, MOVECOLLIDE_FLY_CUSTOM );
+	SetMoveType( MOVETYPE_FLY, MOVECOLLIDE_FLY_CUSTOM ); // GSTRINGMIGRATION
 	UTIL_SetSize( this, -Vector(0.3f,0.3f,0.3f), Vector(0.3f,0.3f,0.3f) );
 	SetSolid( SOLID_BBOX );
 	SetGravity( 0.05f );
@@ -282,16 +282,18 @@ void CCrossbowBolt::BoltTouch( CBaseEntity *pOther )
 //			NDebugOverlay::Box( tr2.endpos, Vector( -16, -16, -16 ), Vector( 16, 16, 16 ), 0, 255, 0, 0, 10 );
 //			NDebugOverlay::Box( GetAbsOrigin(), Vector( -16, -16, -16 ), Vector( 16, 16, 16 ), 0, 0, 255, 0, 10 );
 
-			if ( tr2.m_pEnt == NULL || ( tr2.m_pEnt && tr2.m_pEnt->GetMoveType() == MOVETYPE_NONE ) )
-			{
-				CEffectData	data;
+			// GSTRINGMIGRATION
+			//if ( tr2.m_pEnt == NULL || ( tr2.m_pEnt && tr2.m_pEnt->GetMoveType() == MOVETYPE_NONE ) )
+			//{
+			//	CEffectData	data;
 
-				data.m_vOrigin = tr2.endpos;
-				data.m_vNormal = vForward;
-				data.m_nEntIndex = tr2.fraction != 1.0f;
-			
-				DispatchEffect( "BoltImpact", data );
-			}
+			//	data.m_vOrigin = tr2.endpos;
+			//	data.m_vNormal = vForward;
+			//	data.m_nEntIndex = tr2.fraction != 1.0f;
+			//
+			//	DispatchEffect( "BoltImpact", data );
+			//}
+			// END GSTRINGMIGRATION
 		}
 		
 		SetTouch( NULL );
@@ -319,7 +321,7 @@ void CCrossbowBolt::BoltTouch( CBaseEntity *pOther )
 			// See if we should reflect off this surface
 			float hitDot = DotProduct( tr.plane.normal, -vecDir );
 			
-			if ( ( hitDot < 0.5f ) && ( speed > 100 ) )
+			if ( false && ( hitDot < 0.5f ) && ( speed > 100 ) ) // GSTRINGMIGRATION
 			{
 				Vector vReflection = 2.0f * tr.plane.normal * hitDot + vecDir;
 				
@@ -347,13 +349,15 @@ void CCrossbowBolt::BoltTouch( CBaseEntity *pOther )
 				AngleVectors( GetAbsAngles(), &vForward );
 				VectorNormalize ( vForward );
 
-				CEffectData	data;
+				// GSTRINGMIGRATION
+				//CEffectData	data;
 
-				data.m_vOrigin = tr.endpos;
-				data.m_vNormal = vForward;
-				data.m_nEntIndex = 0;
+				//data.m_vOrigin = tr.endpos;
+				//data.m_vNormal = vForward;
+				//data.m_nEntIndex = 0;
 			
-				DispatchEffect( "BoltImpact", data );
+				//DispatchEffect( "BoltImpact", data );
+				// END GSTRINGMIGRATION
 				
 				UTIL_ImpactTrace( &tr, DMG_BULLET );
 

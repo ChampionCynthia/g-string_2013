@@ -20,6 +20,7 @@ public:
 protected:
 	virtual void Draw( IMatRenderContext *pRenderContext );
 	virtual void Think( float frametime );
+	virtual void PerformLayout3D( int width, int height, bool useVR );
 	virtual void OnTick();
 
 private:

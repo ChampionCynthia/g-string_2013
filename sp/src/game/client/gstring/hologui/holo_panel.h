@@ -13,6 +13,24 @@
 #define HOLO_COLOR_WARNING 1.0f, 0.294f, 0.176f
 #define HOLO_COLOR255_WARNING 1.0f * 255.0f, 0.294f * 255.0f, 0.176f * 255.0f
 
+#define DECLARE_HOLO_MESSAGE( message, className ) \
+	static CUtlVector< className* > __g_MsgVector_ ## message; \
+	static void __MsgFunc_ ## message( bf_read &msg ) \
+	{ \
+		FOR_EACH_VEC( __g_MsgVector_ ## message, i ) \
+		{ \
+			__g_MsgVector_ ## message[ i ]->MsgFunc_ ## message( msg ); \
+			msg.Reset(); \
+		} \
+	} \
+	USER_MESSAGE_REGISTER( message )
+
+#define ADD_HOLO_MESSAGE( message ) \
+	__g_MsgVector_ ## message.AddToTail( this )
+
+#define REMOVE_HOLO_MESSAGE( message ) \
+	__g_MsgVector_ ## message.FindAndRemove( this )
+
 class CHoloPanel
 {
 public:
@@ -26,11 +44,13 @@ public:
 	void PreRenderHierarchy( IMatRenderContext *pRenderContext, Rect_t &position, int maxWidth, int maxHeight );
 	void DrawHierarchy( IMatRenderContext *pRenderContext );
 	void ThinkHierarchy( float frametime );
+	void PerformLayout3DHierarchy( int width, int height, bool useVR );
 
 protected:
 	virtual void PreRender( IMatRenderContext *pRenderContext, Rect_t &position, int maxWidth, int maxHeight );
 	virtual void Draw( IMatRenderContext *pRenderContext );
 	virtual void Think( float frametime );
+	virtual void PerformLayout3D( int width, int height, bool useVR );
 
 	enum MaterialType
 	{

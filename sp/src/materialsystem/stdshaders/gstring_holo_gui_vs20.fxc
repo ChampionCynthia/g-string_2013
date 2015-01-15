@@ -14,6 +14,7 @@ struct VS_INPUT
 struct VS_OUTPUT
 {
 	float4 vProjPos		: POSITION;
+	float3 vWorldPos	: TEXCOORD0;
 	float4 vColor		: COLOR0;
 };
 
@@ -23,6 +24,7 @@ VS_OUTPUT main( const VS_INPUT v )
 	float3 worldPos = mul4x3( v.vPos, cModel[0] );
 
 	o.vProjPos = mul( float4( worldPos, 1 ), cViewProj );
+	o.vWorldPos = worldPos;
 	o.vColor.rgb = GammaToLinear(cModulationColor.rgb);
 	o.vColor.a = cModulationColor.a;
 #if VERTEXCOLOR

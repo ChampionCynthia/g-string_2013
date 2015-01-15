@@ -44,7 +44,7 @@ void CHoloShipAimInfo::PerformLayout()
 	BaseClass::PerformLayout();
 
 	m_pLabelTarget->SetFont( m_FontSmall );
-	m_pLabelTarget->SetFgColor( Color( HOLO_COLOR255_DEFAULT, 127 ) );
+	m_pLabelTarget->SetFgColor( Color( HOLO_COLOR255_DEFAULT, 255 ) );
 	m_pLabelTarget->SizeToContents();
 	m_pLabelDash->SetFont( m_FontSmall );
 	m_pLabelDash->SetFgColor( Color( HOLO_COLOR255_DEFAULT, 127 ) );

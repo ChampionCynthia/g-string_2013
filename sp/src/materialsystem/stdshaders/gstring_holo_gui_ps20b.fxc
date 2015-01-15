@@ -3,6 +3,7 @@
 
 struct PS_INPUT
 {
+	float3 vWorldPos	: TEXCOORD0;
 	float4 vColor		: COLOR0;
 };
 
@@ -24,5 +25,7 @@ float4 FinalOutputConst( const float4 vShaderColor, const int iTONEMAP_SCALE_TYP
 
 float4 main( PS_INPUT i ) : COLOR
 {
-	return FinalOutputConst( i.vColor, TONEMAP_SCALE_LINEAR );
+	float4 color = i.vColor;
+	//color.a *= frac( i.vWorldPos.z * 5.0 ) * 0.5 + 0.5;
+	return FinalOutputConst( color, TONEMAP_SCALE_LINEAR );
 }

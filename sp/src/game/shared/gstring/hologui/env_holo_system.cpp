@@ -26,6 +26,8 @@
 #include "c_user_message_register.h"
 
 #include "materialsystem/itexture.h"
+#include "vgui/ISurface.h"
+#include "sourcevr/isourcevirtualreality.h"
 #endif
 
 #ifdef GAME_DLL
@@ -37,6 +39,9 @@ BEGIN_DATADESC( CEnvHoloSystem )
 
 END_DATADESC()
 #else
+
+static ConVar gstring_holoui_draw( "gstring_holoui_draw", "1" );
+
 static Vector g_vecHoloViewOrigin;
 static matrix3x4_t g_matView;
 static matrix3x4_t g_matViewInverted;
@@ -55,15 +60,6 @@ const matrix3x4_t &CurrentHoloViewMatrixInverted()
 	return g_matViewInverted;
 }
 
-CUtlVector< CEnvHoloSystem* > g_HoloSystems;
-void __MsgFunc_SpacecraftDamage( bf_read &msg )
-{
-	FOR_EACH_VEC( g_HoloSystems, i )
-	{
-		g_HoloSystems[ i ]->MsgFuncSpacecraftDamage( msg );
-	}
-}
-USER_MESSAGE_REGISTER( SpacecraftDamage );
 #endif
 
 IMPLEMENT_NETWORKCLASS_DT( CEnvHoloSystem, CEnvHoloSystem_DT )
@@ -82,19 +78,16 @@ CEnvHoloSystem::CEnvHoloSystem()
 #ifdef CLIENT_DLL
 	: m_iAttachment( -1 )
 	, m_iEyes( -1 )
-	, m_pAimPanel( NULL )
+	, m_iViewportWidth( 0 )
+	, m_iViewportHeight( 0 )
 #endif
 {
-#ifdef CLIENT_DLL
-	g_HoloSystems.AddToTail( this );
-#endif
 }
 
 CEnvHoloSystem::~CEnvHoloSystem()
 {
 #ifdef CLIENT_DLL
 	DestroyPanels();
-	g_HoloSystems.FindAndRemove( this );
 #endif
 }
 
@@ -119,7 +112,8 @@ int CEnvHoloSystem::DrawModel( int flags )
 	if ( ( flags & STUDIO_SHADOWDEPTHTEXTURE ) != 0 ||
 		( flags & STUDIO_SSAODEPTHTEXTURE ) != 0 ||
 		( flags & STUDIO_TRANSPARENCY ) == 0 ||
-		!GetOwnerEntity() )
+		!GetOwnerEntity() ||
+		!gstring_holoui_draw.GetBool() )
 	{
 		return 0;
 	}
@@ -230,6 +224,19 @@ void CEnvHoloSystem::ClientThink()
 	}
 	else if ( gpGlobals->frametime > 0.0f )
 	{
+		int x, y, width, height;
+		vgui::surface()->GetFullscreenViewport( x, y, width, height );
+
+		if ( width != m_iViewportWidth || height != m_iViewportHeight )
+		{
+			m_iViewportWidth = width;
+			m_iViewportHeight = height;
+			FOR_EACH_VEC( m_Panels, i )
+			{
+				m_Panels[ i ]->PerformLayout3DHierarchy( width, height, UseVR() );
+			}
+		}
+
 		FOR_EACH_VEC( m_Panels, i )
 		{
 			m_Panels[ i ]->ThinkHierarchy( gpGlobals->frametime );
@@ -295,11 +302,18 @@ void CEnvHoloSystem::CreatePanels()
 	m_Panels.AddToTail( new CHoloShipEngine( pSpacecraft ) );
 	m_Panels.AddToTail( new CHoloShipThruster( pSpacecraft ) );
 	m_Panels.AddToTail( new CHoloShipRadar( pSpacecraft ) );
-	m_pAimPanel = new CHoloShipAim( pSpacecraft );
-	m_Panels.AddToTail( m_pAimPanel );
+	m_Panels.AddToTail( new CHoloShipAim( pSpacecraft ) );
 	m_Panels.AddToTail( new CHoloShipObjectives( pSpacecraft ) );
 	m_Panels.AddToTail( new CHoloShipComm( pSpacecraft ) );
 	m_Panels.AddToTail( new CHoloShipAimInfo( pSpacecraft ) );
+
+	int x, y, width, height;
+	vgui::surface()->GetFullscreenViewport( x, y, width, height );
+
+	FOR_EACH_VEC( m_Panels, i )
+	{
+		m_Panels[ i ]->PerformLayout3DHierarchy( width, height, UseVR() );
+	}
 
 	FOR_EACH_VEC( m_Panels, i )
 	{
@@ -309,16 +323,7 @@ void CEnvHoloSystem::CreatePanels()
 
 void CEnvHoloSystem::DestroyPanels()
 {
-	m_pAimPanel = NULL;
 	m_Panels.PurgeAndDeleteElements();
-}
-
-void CEnvHoloSystem::MsgFuncSpacecraftDamage( bf_read &msg )
-{
-	if ( m_pAimPanel && GetOwnerEntity() )
-	{
-		m_pAimPanel->MsgFuncSpacecraftDamage( msg );
-	}
 }
 
 void CEnvHoloSystem::PreRenderPanels()

@@ -17,7 +17,6 @@ CHoloShipObjectives::CHoloShipObjectives( ISpacecraftData *pSpacecraftData ) :
 {
 	m_pLabelHeader = new Label( this, "", "" );
 
-	SetOrigin( Vector( -10.0f, 11.0f, 5.9f ) );
 	SetAngles( QAngle( 0, 200, 0 ) );
 
 	m_flScale = 0.018f;
@@ -90,6 +89,20 @@ void CHoloShipObjectives::Think( float frametime )
 	}
 
 	LayoutObjectives();
+}
+
+void CHoloShipObjectives::PerformLayout3D( int width, int height, bool useVR )
+{
+	float flYPos = 11.0f;
+	if ( !useVR )
+	{
+		const float flAspectRatio = width / float( height );
+		if ( flAspectRatio < 16.0f / 9.0f )
+		{
+			flYPos -= 6.25f * ( 16.0f / 9.0f - flAspectRatio );
+		}
+	}
+	SetOrigin( Vector( -10.0f, flYPos, 5.9f ) );
 }
 
 void CHoloShipObjectives::OnTick()

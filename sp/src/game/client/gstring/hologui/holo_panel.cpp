@@ -80,6 +80,11 @@ void CHoloPanel::ThinkHierarchy( float frametime )
 	Think( frametime );
 }
 
+void CHoloPanel::PerformLayout3DHierarchy( int width, int height, bool useVR )
+{
+	PerformLayout3D( width, height, useVR );
+}
+
 void CHoloPanel::PreRender( IMatRenderContext *pRenderContext, Rect_t &position, int maxWidth, int maxHeight )
 {
 }
@@ -89,6 +94,10 @@ void CHoloPanel::Draw( IMatRenderContext *pRenderContext )
 }
 
 void CHoloPanel::Think( float frametime )
+{
+}
+
+void CHoloPanel::PerformLayout3D( int width, int height, bool useVR )
 {
 }
 
