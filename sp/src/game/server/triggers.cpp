@@ -655,6 +655,10 @@ BEGIN_DATADESC( CTriggerHurt )
 	DEFINE_OUTPUT( m_OnHurt, "OnHurt" ),
 	DEFINE_OUTPUT( m_OnHurtPlayer, "OnHurtPlayer" ),
 
+	// GSTRINGMIGRATION
+	DEFINE_FIELD( m_bTraceDamage, FIELD_BOOLEAN ),
+	// END GSTRINGMIGRATION
+
 END_DATADESC()
 
 

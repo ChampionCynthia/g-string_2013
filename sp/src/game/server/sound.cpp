@@ -159,6 +159,8 @@ class CAmbientGeneric : public CPointEntity
 public:
 	DECLARE_CLASS( CAmbientGeneric, CPointEntity );
 
+	CAmbientGeneric();
+
 	bool KeyValue( const char *szKeyName, const char *szValue );
 	void Spawn( void );
 	void Precache( void );
@@ -187,6 +189,7 @@ public:
 
 	float m_radius;
 	float m_flMaxRadius;
+	float m_ccDuration;
 	soundlevel_t m_iSoundLevel;		// dB value
 	dynpitchvol_t m_dpv;	
 
@@ -206,6 +209,7 @@ BEGIN_DATADESC( CAmbientGeneric )
 	DEFINE_KEYFIELD( m_iszSound, FIELD_SOUNDNAME, "message" ),
 	DEFINE_KEYFIELD( m_radius,			FIELD_FLOAT, "radius" ),
 	DEFINE_KEYFIELD( m_sSourceEntName,	FIELD_STRING, "SourceEntityName" ),
+	DEFINE_KEYFIELD( m_ccDuration,			FIELD_FLOAT, "ccduration" ),
 	// recomputed in Activate()
 	// DEFINE_FIELD( m_hSoundSource, EHANDLE ),
 	// DEFINE_FIELD( m_nSoundSourceEntIndex, FIELD_INTERGER ),
@@ -241,6 +245,10 @@ END_DATADESC()
 #define SF_AMBIENT_SOUND_START_SILENT		16
 #define SF_AMBIENT_SOUND_NOT_LOOPING		32
 
+CAmbientGeneric::CAmbientGeneric()
+{
+	m_ccDuration = 0.0f;
+}
 
 //-----------------------------------------------------------------------------
 // Spawn
@@ -890,6 +898,16 @@ void CAmbientGeneric::SendSound( SoundFlags_t flags)
 		{
 			UTIL_EmitAmbientSound(pSoundSource->GetSoundSourceIndex(), pSoundSource->GetAbsOrigin(), szSoundFile, 
 				(m_dpv.vol * 0.01), m_iSoundLevel, flags, m_dpv.pitch);
+
+			// GSTRINGMIGRATION
+			float duration = m_ccDuration > 0.0f ? m_ccDuration : enginesound->GetSoundDuration( szSoundFile );
+			CSingleUserRecipientFilter filter(UTIL_GetLocalPlayer());
+			UserMessageBegin( filter, "CloseCaption" );
+				WRITE_STRING( szSoundFile );
+				WRITE_SHORT( MIN( 255, (int)( duration * 10.0f ) ) ),
+				WRITE_BYTE( 0 ),
+			MessageEnd();
+			// END GSTRINGMIGRATION
 		}
 	}	
 	else

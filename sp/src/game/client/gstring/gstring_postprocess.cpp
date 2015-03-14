@@ -413,7 +413,7 @@ void DrawMotionBlur( int x, int y, int w, int h )
 			speed_dot = DotProduct( delta_normalized, MainViewForward() );
 			amount_forward = RemapValClamped( speed_interp_blur, 0, 0.4f, 0, 1 ) * abs( speed_dot );
 
-			const float side_amount = RemapValClamped( speed, 0, 500, 0, 1 );
+			const float side_amount = RemapValClamped( speed, 250, 500, 0, 1 );
 
 			forward_linear_x = DotProduct( delta_normalized, MainViewRight() ) * (1.0f + falling_percentage) * side_amount;
 			forward_linear_y = DotProduct( delta_normalized, MainViewUp() ) * (1.0f + falling_percentage) * side_amount;

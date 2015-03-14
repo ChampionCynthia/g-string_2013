@@ -35,6 +35,8 @@ BEGIN_DATADESC( CGstringInteraction )
 	DEFINE_OUTPUT( m_ObjectEvents[ 2 ], "OnObjectEvent3" ),
 	DEFINE_OUTPUT( m_ObjectEvents[ 3 ], "OnObjectEvent4" ),
 	DEFINE_OUTPUT( m_ObjectEvents[ 4 ], "OnObjectEvent5" ),
+	DEFINE_OUTPUT( m_InteractionStartEvent, "OnInteractionStart" ),
+	DEFINE_OUTPUT( m_InteractionEndEvent, "OnInteractionEnd" ),
 
 END_DATADESC()
 
@@ -149,6 +151,8 @@ void CGstringInteraction::InputStartInteraction( inputdata_t &inputdata )
 
 	pFirstpersonBody->SetInteractionEntity( this );
 	m_bInteractionActive = true;
+
+	m_InteractionStartEvent.FireOutput( inputdata.pActivator, inputdata.pCaller );
 }
 
 void CGstringInteraction::OnObjectEvent( int iEventIndex )
@@ -184,6 +188,7 @@ void CGstringInteraction::OnBodyAnimationFinished()
 		}
 	}
 	m_bInteractionActive = false;
+	m_InteractionEndEvent.FireOutput( this, this );
 }
 
 #else

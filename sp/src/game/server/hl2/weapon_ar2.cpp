@@ -266,32 +266,32 @@ void CWeaponAR2::DelayedAttack( void )
 //-----------------------------------------------------------------------------
 void CWeaponAR2::SecondaryAttack( void )
 {
-	if ( m_bShotDelayed )
-		return;
+	//if ( m_bShotDelayed )
+	//	return;
 
-	// Cannot fire underwater
-	if ( GetOwner() && GetOwner()->GetWaterLevel() == 3 )
-	{
-		SendWeaponAnim( ACT_VM_DRYFIRE );
-		BaseClass::WeaponSound( EMPTY );
-		m_flNextSecondaryAttack = gpGlobals->curtime + 0.5f;
-		return;
-	}
+	//// Cannot fire underwater
+	//if ( GetOwner() && GetOwner()->GetWaterLevel() == 3 )
+	//{
+	//	SendWeaponAnim( ACT_VM_DRYFIRE );
+	//	BaseClass::WeaponSound( EMPTY );
+	//	m_flNextSecondaryAttack = gpGlobals->curtime + 0.5f;
+	//	return;
+	//}
 
-	m_bShotDelayed = true;
-	m_flNextPrimaryAttack = m_flNextSecondaryAttack = m_flDelayedFire = gpGlobals->curtime + 0.5f;
+	//m_bShotDelayed = true;
+	//m_flNextPrimaryAttack = m_flNextSecondaryAttack = m_flDelayedFire = gpGlobals->curtime + 0.5f;
 
-	CBasePlayer *pPlayer = ToBasePlayer( GetOwner() );
-	if( pPlayer )
-	{
-		pPlayer->RumbleEffect(RUMBLE_AR2_ALT_FIRE, 0, RUMBLE_FLAG_RESTART );
-	}
+	//CBasePlayer *pPlayer = ToBasePlayer( GetOwner() );
+	//if( pPlayer )
+	//{
+	//	pPlayer->RumbleEffect(RUMBLE_AR2_ALT_FIRE, 0, RUMBLE_FLAG_RESTART );
+	//}
 
-	SendWeaponAnim( ACT_VM_FIDGET );
-	WeaponSound( SPECIAL1 );
+	//SendWeaponAnim( ACT_VM_FIDGET );
+	//WeaponSound( SPECIAL1 );
 
-	m_iSecondaryAttacks++;
-	gamestats->Event_WeaponFired( pPlayer, false, GetClassname() );
+	//m_iSecondaryAttacks++;
+	//gamestats->Event_WeaponFired( pPlayer, false, GetClassname() );
 }
 
 //-----------------------------------------------------------------------------
@@ -357,67 +357,67 @@ void CWeaponAR2::FireNPCPrimaryAttack( CBaseCombatCharacter *pOperator, bool bUs
 //-----------------------------------------------------------------------------
 void CWeaponAR2::FireNPCSecondaryAttack( CBaseCombatCharacter *pOperator, bool bUseWeaponAngles )
 {
-	WeaponSound( WPN_DOUBLE );
+	//WeaponSound( WPN_DOUBLE );
 
-	if ( !GetOwner() )
-		return;
-		
-	CAI_BaseNPC *pNPC = GetOwner()->MyNPCPointer();
-	if ( !pNPC )
-		return;
-	
-	// Fire!
-	Vector vecSrc;
-	Vector vecAiming;
+	//if ( !GetOwner() )
+	//	return;
+	//	
+	//CAI_BaseNPC *pNPC = GetOwner()->MyNPCPointer();
+	//if ( !pNPC )
+	//	return;
+	//
+	//// Fire!
+	//Vector vecSrc;
+	//Vector vecAiming;
 
-	if ( bUseWeaponAngles )
-	{
-		QAngle	angShootDir;
-		GetAttachment( LookupAttachment( "muzzle" ), vecSrc, angShootDir );
-		AngleVectors( angShootDir, &vecAiming );
-	}
-	else 
-	{
-		vecSrc = pNPC->Weapon_ShootPosition( );
-		
-		Vector vecTarget;
+	//if ( bUseWeaponAngles )
+	//{
+	//	QAngle	angShootDir;
+	//	GetAttachment( LookupAttachment( "muzzle" ), vecSrc, angShootDir );
+	//	AngleVectors( angShootDir, &vecAiming );
+	//}
+	//else 
+	//{
+	//	vecSrc = pNPC->Weapon_ShootPosition( );
+	//	
+	//	Vector vecTarget;
 
-		CNPC_Combine *pSoldier = dynamic_cast<CNPC_Combine *>( pNPC );
-		if ( pSoldier )
-		{
-			// In the distant misty past, elite soldiers tried to use bank shots.
-			// Therefore, we must ask them specifically what direction they are shooting.
-			vecTarget = pSoldier->GetAltFireTarget();
-		}
-		else
-		{
-			// All other users of the AR2 alt-fire shoot directly at their enemy.
-			if ( !pNPC->GetEnemy() )
-				return;
-				
-			vecTarget = pNPC->GetEnemy()->BodyTarget( vecSrc );
-		}
+	//	CNPC_Combine *pSoldier = dynamic_cast<CNPC_Combine *>( pNPC );
+	//	if ( pSoldier )
+	//	{
+	//		// In the distant misty past, elite soldiers tried to use bank shots.
+	//		// Therefore, we must ask them specifically what direction they are shooting.
+	//		vecTarget = pSoldier->GetAltFireTarget();
+	//	}
+	//	else
+	//	{
+	//		// All other users of the AR2 alt-fire shoot directly at their enemy.
+	//		if ( !pNPC->GetEnemy() )
+	//			return;
+	//			
+	//		vecTarget = pNPC->GetEnemy()->BodyTarget( vecSrc );
+	//	}
 
-		vecAiming = vecTarget - vecSrc;
-		VectorNormalize( vecAiming );
-	}
+	//	vecAiming = vecTarget - vecSrc;
+	//	VectorNormalize( vecAiming );
+	//}
 
-	Vector impactPoint = vecSrc + ( vecAiming * MAX_TRACE_LENGTH );
+	//Vector impactPoint = vecSrc + ( vecAiming * MAX_TRACE_LENGTH );
 
-	float flAmmoRatio = 1.0f;
-	float flDuration = RemapValClamped( flAmmoRatio, 0.0f, 1.0f, 0.5f, sk_weapon_ar2_alt_fire_duration.GetFloat() );
-	float flRadius = RemapValClamped( flAmmoRatio, 0.0f, 1.0f, 4.0f, sk_weapon_ar2_alt_fire_radius.GetFloat() );
+	//float flAmmoRatio = 1.0f;
+	//float flDuration = RemapValClamped( flAmmoRatio, 0.0f, 1.0f, 0.5f, sk_weapon_ar2_alt_fire_duration.GetFloat() );
+	//float flRadius = RemapValClamped( flAmmoRatio, 0.0f, 1.0f, 4.0f, sk_weapon_ar2_alt_fire_radius.GetFloat() );
 
-	// Fire the bullets
-	Vector vecVelocity = vecAiming * 1000.0f;
+	//// Fire the bullets
+	//Vector vecVelocity = vecAiming * 1000.0f;
 
-	// Fire the combine ball
-	CreateCombineBall(	vecSrc, 
-		vecVelocity, 
-		flRadius, 
-		sk_weapon_ar2_alt_fire_mass.GetFloat(),
-		flDuration,
-		pNPC );
+	//// Fire the combine ball
+	//CreateCombineBall(	vecSrc, 
+	//	vecVelocity, 
+	//	flRadius, 
+	//	sk_weapon_ar2_alt_fire_mass.GetFloat(),
+	//	flDuration,
+	//	pNPC );
 }
 
 //-----------------------------------------------------------------------------
@@ -427,7 +427,7 @@ void CWeaponAR2::Operator_ForceNPCFire( CBaseCombatCharacter *pOperator, bool bS
 {
 	if ( bSecondary )
 	{
-		FireNPCSecondaryAttack( pOperator, true );
+		//FireNPCSecondaryAttack( pOperator, true );
 	}
 	else
 	{
@@ -453,11 +453,11 @@ void CWeaponAR2::Operator_HandleAnimEvent( animevent_t *pEvent, CBaseCombatChara
 			}
 			break;
 
-		case EVENT_WEAPON_AR2_ALTFIRE:
-			{
-				FireNPCSecondaryAttack( pOperator, false );
-			}
-			break;
+		//case EVENT_WEAPON_AR2_ALTFIRE:
+		//	{
+		//		FireNPCSecondaryAttack( pOperator, false );
+		//	}
+		//	break;
 
 		default:
 			CBaseCombatWeapon::Operator_HandleAnimEvent( pEvent, pOperator );

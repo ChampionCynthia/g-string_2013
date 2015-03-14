@@ -51,6 +51,8 @@ private:
 
 	COutputEvent m_PlayerEvents[ 5 ];
 	COutputEvent m_ObjectEvents[ 5 ];
+	COutputEvent m_InteractionStartEvent;
+	COutputEvent m_InteractionEndEvent;
 #endif
 
 	CNetworkHandle( CBaseAnimating, m_hInteractiveObject );

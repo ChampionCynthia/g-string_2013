@@ -1705,16 +1705,16 @@ int CNPC_Combine::SelectSchedule( void )
 		{
 			Vector vecTarget = m_hForcedGrenadeTarget->WorldSpaceCenter();
 
-			if ( IsElite() )
-			{
-				if ( FVisible( m_hForcedGrenadeTarget ) )
-				{
-					m_vecAltFireTarget = vecTarget;
-					m_hForcedGrenadeTarget = NULL;
-					return SCHED_COMBINE_AR2_ALTFIRE;
-				}
-			}
-			else
+			//if ( IsElite() )
+			//{
+			//	if ( FVisible( m_hForcedGrenadeTarget ) )
+			//	{
+			//		m_vecAltFireTarget = vecTarget;
+			//		m_hForcedGrenadeTarget = NULL;
+			//		return SCHED_COMBINE_AR2_ALTFIRE;
+			//	}
+			//}
+			//else
 			{
 				// If we can, throw a grenade at the target. 
 				// Ignore grenade count / distance / etc
@@ -2155,12 +2155,12 @@ int CNPC_Combine::TranslateSchedule( int scheduleType )
 			// always assume standing
 			// Stand();
 
-			if( CanAltFireEnemy(true) && OccupyStrategySlot(SQUAD_SLOT_SPECIAL_ATTACK) )
-			{
-				// If an elite in the squad could fire a combine ball at the player's last known position,
-				// do so!
-				return SCHED_COMBINE_AR2_ALTFIRE;
-			}
+			//if( CanAltFireEnemy(true) && OccupyStrategySlot(SQUAD_SLOT_SPECIAL_ATTACK) )
+			//{
+			//	// If an elite in the squad could fire a combine ball at the player's last known position,
+			//	// do so!
+			//	return SCHED_COMBINE_AR2_ALTFIRE;
+			//}
 
 			if( IsUsingTacticalVariant( TACTICAL_VARIANT_PRESSURE_ENEMY ) && !IsRunningBehavior() )
 			{
@@ -2200,13 +2200,13 @@ int CNPC_Combine::TranslateSchedule( int scheduleType )
 				return TranslateSchedule( SCHED_HIDE_AND_RELOAD );
 			}
 
-			if( CanAltFireEnemy(true) && OccupyStrategySlot(SQUAD_SLOT_SPECIAL_ATTACK) )
-			{
-				// Since I'm holding this squadslot, no one else can try right now. If I die before the shot 
-				// goes off, I won't have affected anyone else's ability to use this attack at their nearest
-				// convenience.
-				return SCHED_COMBINE_AR2_ALTFIRE;
-			}
+			//if( CanAltFireEnemy(true) && OccupyStrategySlot(SQUAD_SLOT_SPECIAL_ATTACK) )
+			//{
+			//	// Since I'm holding this squadslot, no one else can try right now. If I die before the shot 
+			//	// goes off, I won't have affected anyone else's ability to use this attack at their nearest
+			//	// convenience.
+			//	return SCHED_COMBINE_AR2_ALTFIRE;
+			//}
 
 			if ( IsCrouching() || ( CrouchIsDesired() && !HasCondition( COND_HEAVY_DAMAGE ) ) )
 			{

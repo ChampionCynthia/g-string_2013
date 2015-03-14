@@ -2291,8 +2291,13 @@ void CHudCloseCaption::ProcessAsyncWork()
 			}
 		}
 
-		m_AsyncWork.Remove( i );
-		delete item;
+		// GSTRINGMIGRATION Valve...
+		if ( m_AsyncWork.Count() > 0 )
+		{
+			m_AsyncWork.Remove( i );
+			delete item;
+		}
+		// END GSTRINGMIGRATION
 
 		i = n;
 	}
@@ -2616,6 +2621,7 @@ void CHudCloseCaption::InitCaptionDictionary( const char *dbfile )
 			entry.m_CaptionDirectory.RedoSort( true );
 
 			entry.m_DataBaseFile = fullpath;
+			break;
 		}
 	}
 
