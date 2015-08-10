@@ -2,6 +2,7 @@
 #include "cbase.h"
 #include "point_holo_conversation.h"
 #include "gstring/cgstring_player.h"
+#include "gstring/cspacecraft.h"
 
 #include "filesystem.h"
 
@@ -30,6 +31,7 @@ BEGIN_DATADESC( CPointHoloConversation )
 	//DEFINE_KEYFIELD( m_strPositionProxyName, FIELD_STRING, "PositionProxy" ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "Start", InputStart ),
+	DEFINE_INPUTFUNC( FIELD_VOID, "Interrupt", InputInterrupt ),
 	//DEFINE_INPUTFUNC( FIELD_VOID, "Disable", InputDisable ),
 
 	//DEFINE_OUTPUT( m_OnEnabled, "OnEnabled" ),
@@ -43,7 +45,11 @@ PRECACHE_REGISTER( point_holo_conversation );
 
 CPointHoloConversation::CPointHoloConversation() :
 	m_pConversation( NULL ),
-	m_pMessage( NULL )
+	m_pMessage( NULL ),
+	m_pCurrentMessage( NULL ),
+	m_flNextMessage( 0.0f ),
+	m_flCurrentDuration( 0.0f ),
+	m_bCanInterrupt( false )
 {
 	if ( g_iConversationReferenceCounter == 0 )
 	{
@@ -69,6 +75,14 @@ void CPointHoloConversation::InputStart( inputdata_t &inputdata )
 		m_pMessage = m_pConversation->GetFirstTrueSubKey();
 		if ( m_pMessage )
 		{
+			CSpacecraft *pSpacecraftCaller = dynamic_cast<CSpacecraft*>(inputdata.pCaller);
+			CSpacecraft *pSpacecraftActivator = dynamic_cast<CSpacecraft*>(inputdata.pActivator);
+			m_bCanInterrupt = pSpacecraftCaller != NULL || pSpacecraftActivator != NULL;
+			if (m_bCanInterrupt)
+			{
+				m_hEmittingEntity = pSpacecraftCaller ? pSpacecraftCaller : pSpacecraftActivator;
+			}
+
 			AdvanceConversation();
 		}
 		else
@@ -79,6 +93,22 @@ void CPointHoloConversation::InputStart( inputdata_t &inputdata )
 	else
 	{
 		Warning( "Conversation not found (%s)!\n", STRING( m_strConversationName ) );
+	}
+}
+
+void CPointHoloConversation::InputInterrupt( inputdata_t &inputdata )
+{
+	SetThink( NULL );
+	m_bCanInterrupt = false;
+
+	if ( m_pCurrentMessage != NULL )
+	{
+		const char *pszInterruptName = m_pCurrentMessage->GetString( "interrupt" );
+		const char *pszDisplayName = m_pCurrentMessage->GetString( "displayname" );
+		if ( pszInterruptName != NULL )
+		{
+			PlayHoloSound( pszInterruptName, pszDisplayName );
+		}
 	}
 }
 
@@ -105,6 +135,12 @@ void CPointHoloConversation::Precache()
 			{
 				PrecacheScriptSound( pszSoundName );
 			}
+			
+			pszSoundName = pMessage->GetString( "interrupt" );
+			if ( *pszSoundName )
+			{
+				PrecacheScriptSound( pszSoundName );
+			}
 		}
 	}
 }
@@ -116,37 +152,94 @@ int CPointHoloConversation::UpdateTransmitState()
 
 void CPointHoloConversation::AdvanceConversation()
 {
+	// Check interrupt
+	if ( m_flCurrentDuration > gpGlobals->curtime )
+	{
+		if (!m_bCanInterrupt)
+		{
+			SetNextThink( gpGlobals->curtime + 0.1f );
+			return;
+		}
+
+		CBaseEntity *pEmittingEntity = m_hEmittingEntity.Get();
+		if (pEmittingEntity == NULL ||
+			m_hEmittingEntity->GetHealth() <= 0)
+		{
+			// Do interrupt and end.
+			SetThink( NULL );
+			m_bCanInterrupt = false;
+
+			if ( m_pCurrentMessage != NULL )
+			{
+				const char *pszInterruptName = m_pCurrentMessage->GetString( "interrupt" );
+				const char *pszDisplayName = m_pCurrentMessage->GetString( "displayname" );
+				if ( pszInterruptName != NULL )
+				{
+					PlayHoloSound( pszInterruptName, pszDisplayName );
+				}
+			}
+			return;
+		}
+		SetNextThink( gpGlobals->curtime + 0.1f );
+	}
+
+	// No further message, stop thinking
+	if ( m_pMessage == NULL )
+	{
+		if ( m_flCurrentDuration <= gpGlobals->curtime )
+		{
+			SetThink( NULL );
+		}
+		return;
+	}
+
+	// Wait for next message
+	if ( m_flNextMessage > gpGlobals->curtime )
+	{
+		SetNextThink( gpGlobals->curtime + 0.1f );
+		return;
+	}
+
 	Assert( m_pMessage );
 
-	CGstringPlayer *pLocal = LocalGstringPlayer();
-
+	m_pCurrentMessage = m_pMessage;
 	const char *pszSoundName = m_pMessage->GetString( "soundname" );
 	const char *pszDisplayName = m_pMessage->GetString( "displayname" );
-	float flDuration = 0.0f;
-
-	CSingleUserRecipientFilter filter( pLocal );
-	EmitSound( filter, pLocal->entindex(), pszSoundName, 0, 0, &flDuration );
-
-	CSoundParameters params;
-	soundemitterbase->GetParametersForSound( pszSoundName, params, GENDER_NONE );
-
-	CSingleUserRecipientFilter user( pLocal );
-	user.MakeReliable();
-	UserMessageBegin( user, "HoloMessage" );
-		WRITE_STRING( pszDisplayName );
-		WRITE_STRING( params.soundname );
-		WRITE_FLOAT( flDuration );
-	MessageEnd();
+	
+	float flDuration = PlayHoloSound( pszSoundName, pszDisplayName );
 
 	m_pMessage = m_pMessage->GetNextTrueSubKey();
 	if ( m_pMessage )
 	{
 		const float flDelay = m_pMessage->GetFloat( "delay" ) + flDuration;
-		SetThink( &CPointHoloConversation::AdvanceConversation );
-		SetNextThink( gpGlobals->curtime + flDelay );
+		m_flNextMessage = gpGlobals->curtime + flDelay;
 	}
-	else
+
+	SetThink( &CPointHoloConversation::AdvanceConversation );
+	SetNextThink( gpGlobals->curtime + 0.1f );
+}
+
+float CPointHoloConversation::PlayHoloSound( const char *pszSoundName, const char *pszDisplayName )
+{
+	float flDuration = 0.0f;
+	CGstringPlayer *pLocal = LocalGstringPlayer();
+
+	if ( pLocal != NULL )
 	{
-		SetThink( NULL );
+		CSingleUserRecipientFilter filter( pLocal );
+		EmitSound( filter, pLocal->entindex(), pszSoundName, 0, 0, &flDuration );
+		m_flCurrentDuration = gpGlobals->curtime + flDuration;
+
+		CSoundParameters params;
+		soundemitterbase->GetParametersForSound( pszSoundName, params, GENDER_NONE );
+
+		CSingleUserRecipientFilter user( pLocal );
+		user.MakeReliable();
+		UserMessageBegin( user, "HoloMessage" );
+			WRITE_STRING( pszDisplayName );
+			WRITE_STRING( params.soundname );
+			WRITE_FLOAT( flDuration );
+		MessageEnd();
 	}
+	return flDuration;
 }

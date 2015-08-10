@@ -4,13 +4,17 @@
 #ifdef CLIENT_DLL
 #include "c_baseanimating.h"
 #define CBaseAnimating C_BaseAnimating
+#include "hologui/point_holo_target.h"
 #else
 #include "baseanimating.h"
+#include "pathtrack.h"
 #endif
 
 #include "igamemovement.h"
 #include "gstring_player_shared_forward.h"
 #include "cspacecraft_config.h"
+
+#define SPACECRAFT_SPAWNFLAG_IGNORE_PLAYER (1 << 0)
 
 class CEnvHoloSystem;
 #ifdef CLIENT_DLL
@@ -19,9 +23,19 @@ class CHudCrosshair;
 class ISpacecraftAI
 {
 public:
+
+	enum AISTATE_e
+	{
+		AISTATE_IDLE = 0,
+		AISTATE_ATTACK_AND_CHASE,
+		AISTATE_ATTACK_AND_IDLE,
+		AISTATE_APPROACH_TARGET
+	};
+
 	virtual ~ISpacecraftAI() {}
 
-	virtual void Run( float flFrametime ) = 0;
+	virtual void Run(float flFrametime) = 0;
+	virtual void EnterState(AISTATE_e state) = 0;
 };
 #endif
 
@@ -56,8 +70,11 @@ public:
 };
 
 class CSpacecraft : public CBaseAnimating, public ISpacecraftData
+#ifdef CLIENT_DLL
+	, public IHoloTarget
+#endif
 {
-	DECLARE_CLASS( CSpacecraft, CBaseAnimating );
+	DECLARE_CLASS(CSpacecraft, CBaseAnimating);
 	DECLARE_NETWORKCLASS();
 
 #ifdef GAME_DLL
@@ -67,6 +84,25 @@ class CSpacecraft : public CBaseAnimating, public ISpacecraftData
 public:
 	CSpacecraft();
 	virtual ~CSpacecraft();
+
+	// IHoloTarget
+#ifdef CLIENT_DLL
+	virtual const char *GetName() const;
+	virtual float GetSize() const;
+	virtual float GetHealthPercentage() const;
+	virtual IHoloTarget::TargetType GetType() const;
+	virtual float GetMaxDistance() const;
+	virtual bool IsActive() const;
+	virtual const C_BaseEntity *GetEntity() const;
+#endif
+
+	enum AITEAM_e
+	{
+		AITEAM_MARTIAN = 0,
+		AITEAM_NATO,
+
+		AITEAM_BITS = 1
+	};
 
 	bool IsPlayerControlled() const;
 
@@ -78,34 +114,37 @@ public:
 	virtual CBaseEntity *GetEntity() { return this; }
 	virtual const QAngle &GetAngularImpulse() const { return m_AngularImpulse.Get(); }
 	virtual const Vector &GetPhysVelocity() const { return m_PhysVelocity.Get(); }
-	virtual EngineLevel_e GetEngineLevel() const { return ( EngineLevel_e )m_iEngineLevel.Get(); }
+	virtual EngineLevel_e GetEngineLevel() const { return (EngineLevel_e) m_iEngineLevel.Get(); }
 #ifdef CLIENT_DLL
 	virtual int GetThrusterCount() const { return m_ThrusterAttachments.Count(); }
 	virtual float GetThrusterPower( int index ) const { return m_flThrusterPower[ index ]; }
 #endif
 
 #ifdef GAME_DLL
-	void SetAI( ISpacecraftAI *pSpacecraftAI );
+	void SetAI(ISpacecraftAI *pSpacecraftAI);
+	ISpacecraftAI *GetAI() { return m_pAI; };
 
+	AITEAM_e GetTeam() { return (AITEAM_e)m_iAITeam.Get(); };
 
-	virtual int UpdateTransmitState() { return SetTransmitState( FL_EDICT_ALWAYS ); } // GSTRING_INF
+	virtual int UpdateTransmitState() { return SetTransmitState(FL_EDICT_ALWAYS); } // GSTRING_INF
 
 	virtual void Precache();
 	virtual void Activate();
-	void OnPlayerEntered( CGstringPlayer *pPlayer );
+	void OnPlayerEntered(CGstringPlayer *pPlayer);
 
-	void InputEnterVehicle( inputdata_t &inputdata );
+	void InputEnterVehicle(inputdata_t &inputdata);
 	virtual void PhysicsSimulate();
-	virtual void VPhysicsCollision( int index, gamevcollisionevent_t *pEvent );
+	virtual void VPhysicsCollision(int index, gamevcollisionevent_t *pEvent);
 	virtual bool WillSimulateGamePhysics() { return true; }
-	virtual int OnTakeDamage( const CTakeDamageInfo &info );
-	virtual void Event_Killed( const CTakeDamageInfo &info );
+	virtual int OnTakeDamage(const CTakeDamageInfo &info);
+	virtual void Event_Killed(const CTakeDamageInfo &info);
 
 	CBaseEntity *GetEnemy() const;
-	void SetEnemy( CBaseEntity *pEnemy );
-	void InputSetEnemy( inputdata_t &inputdata );
+	void SetEnemy(CBaseEntity *pEnemy);
+	void InputSetEnemy(inputdata_t &inputdata);
 	void InputClearEnemy( inputdata_t &inputdata );
 #else
+	virtual void NotifyShouldTransmit( ShouldTransmitState_t state );
 	virtual int GetHealth() const { return m_iHealth; }
 	virtual int GetMaxHealth() const { return m_iMaxHealth; }
 
@@ -129,11 +168,12 @@ public:
 #endif
 
 	virtual CStudioHdr *OnNewModel();
-	virtual void SimulateMove( CMoveData &moveData, float flFrametime );
+	virtual void SimulateMove(CMoveData &moveData, float flFrametime);
 
 private:
 #ifdef GAME_DLL
-	void SimulateFire( CMoveData &moveData, float flFrametime );
+	void SimulateFire(CMoveData &moveData, float flFrametime);
+	void OnPlayerTeamAttack(const CTakeDamageInfo &info);
 
 	string_t m_strSettingsName;
 
@@ -146,17 +186,24 @@ private:
 	EHANDLE m_hEnemy;
 
 	int m_iAIControlled;
-	int m_iAIAttackState;
-	int m_iAITeam;
+	int m_iAIState;
 	string_t m_strPathStartName;
-	EHANDLE m_hPathEntity;
+	CHandle<CPathTrack> m_hPathEntity;
 
-	IMPLEMENT_NETWORK_VAR_FOR_DERIVED( m_iMaxHealth );
+	float m_flPlayerTeamAttackCooldown;
+	float m_flPlayerTeamAttackToleration;
+	bool m_bShouldTeamkillPlayer;
+
+	IMPLEMENT_NETWORK_VAR_FOR_DERIVED(m_iMaxHealth);
 	float m_flCollisionDamageProtection;
 	float m_flShieldRegenerationTimer;
 	float m_flShieldRegeneratedTimeStamp;
 	float m_flHealthRegenerationTimer;
 	float m_flHealthRegeneratedTimeStamp;
+
+	COutputEvent m_OnKilled;
+	COutputEvent m_OnPlayerTeamAttack;
+	COutputEvent m_OnPlayerTeamAttackRetaliation;
 #else
 	CUtlVector< int > m_ThrusterAttachments;
 	CUtlVector< int > m_ThrusterSounds;
@@ -179,23 +226,26 @@ private:
 	float m_flEngineVolume;
 	float m_flShakeTimer;
 #endif
-	IMPLEMENT_NETWORK_VAR_FOR_DERIVED( m_iHealth );
+	IMPLEMENT_NETWORK_VAR_FOR_DERIVED(m_iHealth);
 
 	CUtlVector< int > m_WeaponAttachments;
 
-	CNetworkVar( int, m_iShield );
-	CNetworkVar( int, m_iMaxShield );
-	CNetworkQAngle( m_AngularImpulse );
-	CNetworkVector( m_PhysVelocity );
-	CNetworkVar( int, m_iEngineLevel );
-	CNetworkVar( int, m_iProjectileParity );
-	CNetworkVar( float, m_flMoveX );
-	CNetworkVar( float, m_flMoveY );
+	CNetworkVar(int, m_iShield);
+	CNetworkVar(int, m_iMaxShield);
+	CNetworkQAngle(m_AngularImpulse);
+	CNetworkVector(m_PhysVelocity);
+	CNetworkVar(int, m_iEngineLevel);
+	CNetworkVar(int, m_iProjectileParity);
+	CNetworkVar(float, m_flMoveX);
+	CNetworkVar(float, m_flMoveY);
 
-	CNetworkVar( UtlSymId_t, m_iSettingsIndex );
+	// AI
+	CNetworkVar(int, m_iAITeam);
+
+	CNetworkVar(UtlSymId_t, m_iSettingsIndex);
 	SpacecraftSettings_t m_Settings;
 
-	CNetworkHandle( CEnvHoloSystem, m_hHoloSystem );
+	CNetworkHandle(CEnvHoloSystem, m_hHoloSystem);
 };
 
 

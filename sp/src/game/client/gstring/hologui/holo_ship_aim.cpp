@@ -112,23 +112,6 @@ void CHoloShipAim::MsgFunc_SpacecraftDamage( bf_read &msg )
 
 void CHoloShipAim::Think( float frametime )
 {
-	const C_BaseEntity *pAutoAimTarget = GetGstringInput()->GetAutoAimTargetEntity();
-	FOR_EACH_VEC( m_Targets, oldTargetIndex )
-	{
-		Target &target = m_Targets[ oldTargetIndex ];
-		if ( target.m_flBlinkTimer > 0.0f )
-		{
-			target.m_flBlinkTimer -= frametime;
-			target.m_flBlinkTimer = MAX( 0.0f, target.m_flBlinkTimer );
-		}
-
-		const float flDesiredFocus = pAutoAimTarget == target.m_Entity->GetEntity() ? 1.0f : 0.0f;
-		if ( flDesiredFocus != target.m_flFocusTimer )
-		{
-			target.m_flFocusTimer = Approach( flDesiredFocus, target.m_flFocusTimer, frametime * 10.0f );
-		}
-	}
-
 	const CUtlVector< IHoloTarget* > &targets = GetHoloTargets();
 	if ( m_KnownTargetEntities.Count() != targets.Count() ||
 		Q_memcmp( m_KnownTargetEntities.Base(), targets.Base(), sizeof( IHoloTarget* ) * m_KnownTargetEntities.Count() ) != 0 )
@@ -169,6 +152,23 @@ void CHoloShipAim::Think( float frametime )
 			target.m_Entity = newTargets[ newTargetIndex ];
 			target.m_flBlinkTimer = 0.5f;
 			m_Targets.AddToTail( target );
+		}
+	}
+
+	const C_BaseEntity *pAutoAimTarget = GetGstringInput()->GetAutoAimTargetEntity();
+	FOR_EACH_VEC( m_Targets, oldTargetIndex )
+	{
+		Target &target = m_Targets[ oldTargetIndex ];
+		if ( target.m_flBlinkTimer > 0.0f )
+		{
+			target.m_flBlinkTimer -= frametime;
+			target.m_flBlinkTimer = MAX( 0.0f, target.m_flBlinkTimer );
+		}
+
+		const float flDesiredFocus = pAutoAimTarget == target.m_Entity->GetEntity() ? 1.0f : 0.0f;
+		if ( flDesiredFocus != target.m_flFocusTimer )
+		{
+			target.m_flFocusTimer = Approach( flDesiredFocus, target.m_flFocusTimer, frametime * 10.0f );
 		}
 	}
 
@@ -332,6 +332,10 @@ void CHoloShipAim::DrawTargets( IMatRenderContext *pRenderContext )
 			continue;
 		}
 
+		//if (i != 1) {
+		//	continue;
+		//}
+
 		Vector position = pTarget->GetEntity()->GetAbsOrigin() - eyePosition;
 
 		if ( position.LengthSqr() > HOLO_TARGET_MAX_DISTANCE * HOLO_TARGET_MAX_DISTANCE )
@@ -349,6 +353,12 @@ void CHoloShipAim::DrawTargets( IMatRenderContext *pRenderContext )
 		if ( IntersectInfiniteRayWithSphere( holoEyePos, sphereRay, g_vecPanelPosition, g_flPanelRadius, &pT1, &pT2 ) && pT2 > 0.0f )
 		{
 			vecGUISpace = sphereRay * pT2 + holoEyePos;
+
+			//engine->Con_NPrintf(10, "%f %f %f", XYZ(vecGUISpace));
+			//Vector sphereDelta = vecGUISpace - g_vecPanelPosition;
+			//float dotFwd = DotProduct(sphereDelta.Normalized(), Vector(0, 1, 0));
+			//float dotUp = DotProduct(sphereDelta.Normalized(), Vector(0, 0, 1));
+			//engine->Con_NPrintf(11, "fwd %f up %f", dotFwd , dotUp);
 
 			Vector color;
 			float flAlphaScale;

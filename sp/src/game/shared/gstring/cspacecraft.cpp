@@ -17,6 +17,7 @@
 #include "gstring_cvars.h"
 #else
 #include "cspacecraftprojectile.h"
+#include "cspacecraft_ai.h"
 #include "datacache/imdlcache.h"
 #include "cgstring_globals.h"
 #endif
@@ -88,7 +89,7 @@ BEGIN_DATADESC( CSpacecraft )
 
 	// AI
 	DEFINE_KEYFIELD( m_iAIControlled, FIELD_INTEGER, "aicontrolled" ),
-	DEFINE_KEYFIELD( m_iAIAttackState, FIELD_INTEGER, "aiattackstate" ),
+	DEFINE_KEYFIELD( m_iAIState, FIELD_INTEGER, "aistate" ),
 	DEFINE_KEYFIELD( m_iAITeam, FIELD_INTEGER, "aiteam" ),
 
 	DEFINE_KEYFIELD( m_strInitialEnemy, FIELD_STRING, "initialenemy" ),
@@ -100,6 +101,11 @@ BEGIN_DATADESC( CSpacecraft )
 
 	// Player
 	DEFINE_INPUTFUNC( FIELD_VOID, "EnterVehicle", InputEnterVehicle ),
+
+	// Events
+	DEFINE_OUTPUT( m_OnKilled, "OnKilled" ),
+	DEFINE_OUTPUT( m_OnPlayerTeamAttack, "OnPlayerTeamAttack" ),
+	DEFINE_OUTPUT( m_OnPlayerTeamAttackRetaliation, "OnPlayerTeamAttackRetaliation" ),
 
 END_DATADESC()
 #endif
@@ -121,6 +127,7 @@ IMPLEMENT_NETWORKCLASS_DT( CSpacecraft, CSpacecraft_DT )
 
 	SendPropFloat( SENDINFO( m_flMoveX ) ),
 	SendPropFloat( SENDINFO( m_flMoveY ) ),
+	SendPropInt( SENDINFO( m_iAITeam ), CSpacecraft::AITEAM_BITS, SPROP_UNSIGNED ),
 	SendPropEHandle( SENDINFO( m_hHoloSystem ) ),
 #else
 	RecvPropInt( RECVINFO( m_iHealth ) ),
@@ -137,6 +144,7 @@ IMPLEMENT_NETWORKCLASS_DT( CSpacecraft, CSpacecraft_DT )
 
 	RecvPropFloat( RECVINFO( m_flMoveX ) ),
 	RecvPropFloat( RECVINFO( m_flMoveY ) ),
+	RecvPropInt( RECVINFO( m_iAITeam ) ),
 	RecvPropEHandle( RECVINFO( m_hHoloSystem ) ),
 #endif
 
@@ -150,13 +158,15 @@ CSpacecraft::CSpacecraft()
 	, m_bAlternatingWeapons( false )
 	, m_pAI( NULL )
 	, m_iAIControlled( 0 )
-	, m_iAIAttackState( 0 )
-	, m_iAITeam( 0 )
+	, m_iAIState( 0 )
 	, m_flCollisionDamageProtection( 0.0f )
 	, m_flShieldRegenerationTimer( 0.0f )
 	, m_flShieldRegeneratedTimeStamp( 0.0f )
 	, m_flHealthRegenerationTimer( 0.0f )
 	, m_flHealthRegeneratedTimeStamp( 0.0f )
+	, m_flPlayerTeamAttackCooldown( 0.0f )
+	, m_flPlayerTeamAttackToleration( 0.0f )
+	, m_bShouldTeamkillPlayer( false )
 #else
 	: m_iMaxHealth( 0 )
 	, m_iEngineLevelLast( ENGINELEVEL_STALLED )
@@ -170,6 +180,7 @@ CSpacecraft::CSpacecraft()
 	, m_iAttachmentGUI( 0 )
 #endif
 {
+	m_iAITeam = AITEAM_MARTIAN;
 	m_iSettingsIndex = UTL_INVAL_SYMBOL;
 }
 
@@ -183,6 +194,7 @@ CSpacecraft::~CSpacecraft()
 	}
 	delete m_pAI;
 #else
+	RemoveHoloTarget( this );
 	if ( m_hHoloSystem.Get() != NULL )
 	{
 		m_hHoloSystem->DestroyPanels();
@@ -200,6 +212,43 @@ CSpacecraft::~CSpacecraft()
 	}
 #endif
 }
+
+#ifdef CLIENT_DLL
+const char *CSpacecraft::GetName() const
+{
+	return "Enemy";
+}
+
+float CSpacecraft::GetSize() const
+{
+	return 1.0f;
+}
+
+float CSpacecraft::GetHealthPercentage() const
+{
+	return ( GetHull() + GetShield() ) / float( GetMaxHull() + GetMaxShield() );
+}
+
+IHoloTarget::TargetType CSpacecraft::GetType() const
+{
+	return (m_iAITeam == AITEAM_NATO) ? IHoloTarget::ENEMY : IHoloTarget::FRIENDLY;
+}
+
+float CSpacecraft::GetMaxDistance() const
+{
+	return 2048.0f;
+}
+
+bool CSpacecraft::IsActive() const
+{
+	return !IsPlayerControlled();
+}
+
+const C_BaseEntity *CSpacecraft::GetEntity() const
+{
+	return this;
+}
+#endif
 
 bool CSpacecraft::IsPlayerControlled() const
 {
@@ -224,6 +273,17 @@ void CSpacecraft::Activate()
 {
 	Precache();
 
+	if ( m_iAIControlled == 1 )
+	{
+		CSpacecraftAIBase *pAI = new CSpacecraftAIBase( this );
+		SetAI( pAI );
+	}
+
+	if ( m_pAI != NULL )
+	{
+		m_pAI->EnterState((ISpacecraftAI::AISTATE_e) m_iAIState);
+	}
+
 	const CSpacecraftConfig *pConfig = CSpacecraftConfig::GetInstance();
 	m_iSettingsIndex = pConfig->GetSettingsIndex( STRING( m_strSettingsName ) );
 	m_Settings = pConfig->GetSettings( m_iSettingsIndex );
@@ -233,7 +293,7 @@ void CSpacecraft::Activate()
 	SetMoveType( MOVETYPE_VPHYSICS );
 	SetSolid( SOLID_VPHYSICS );
 
-	m_hPathEntity = gEntList.FindEntityByName( NULL, m_strPathStartName, this );
+	m_hPathEntity = dynamic_cast<CPathTrack*>(gEntList.FindEntityByName( NULL, m_strPathStartName, this ));
 	m_hEnemy = gEntList.FindEntityByName( NULL, m_strInitialEnemy, this );
 
 	if ( g_pGstringGlobals != NULL )
@@ -400,6 +460,16 @@ int CSpacecraft::OnTakeDamage( const CTakeDamageInfo &info )
 			WRITE_VEC3COORD( newDamage.GetDamagePosition() );
 		MessageEnd();
 	}
+
+	// Check for friendly fire
+	CBaseEntity *pAttacker = info.GetAttacker();
+	if ( ret > 0 &&
+		pAttacker != NULL &&
+		pAttacker->IsPlayer() &&
+		GetTeam() == AITEAM_MARTIAN )
+	{
+		OnPlayerTeamAttack(info);
+	}
 	return ret;
 }
 
@@ -440,7 +510,7 @@ void CSpacecraft::Event_Killed( const CTakeDamageInfo &info )
 		params.particleChance = 0.5f;
 		params.velocityScale = info.GetDamageForce().Length() / 100.0f;
 		params.velocityScale = MIN( 1.0f, params.velocityScale );
-		params.velocityScale = powf( params.velocityScale, 3.0f );
+		params.velocityScale = powf( params.velocityScale, 1.2f );
 
 		const int iDamageType = info.GetDamageType();
 		if ( ( iDamageType & DMG_DIRECT ) != 0 )
@@ -475,6 +545,8 @@ void CSpacecraft::Event_Killed( const CTakeDamageInfo &info )
 	UTIL_ScreenShake( GetAbsOrigin(), 8.0f, 8.0f, 1.2f, 96.0f, SHAKE_START_NORUMBLE, true );
 	UTIL_ScreenShake( GetAbsOrigin(), 40.0f * flRumbleScale, 5.0f * flRumbleScale, 1.2f,
 		96.0f * flRumbleScale, SHAKE_START_RUMBLEONLY, true );
+
+	m_OnKilled.FireOutput(info.GetAttacker(), this);
 }
 
 CBaseEntity *CSpacecraft::GetEnemy() const
@@ -615,7 +687,61 @@ void CSpacecraft::SimulateFire( CMoveData &moveData, float flFrametime )
 		m_flFireDelay = 0.1f;
 	}
 }
+
+void CSpacecraft::OnPlayerTeamAttack(const CTakeDamageInfo &info)
+{
+	// Already team attacking player as penalty
+	if ( m_bShouldTeamkillPlayer )
+	{
+		return;
+	}
+
+	// Tolerate immediate follow ups
+	if ( m_flPlayerTeamAttackToleration > gpGlobals->curtime )
+	{
+		return;
+	}
+
+	m_flPlayerTeamAttackToleration = gpGlobals->curtime + 3.0f;
+
+	// Two attacks, fight back
+	if ( m_flPlayerTeamAttackCooldown > gpGlobals->curtime )
+	{
+		m_OnPlayerTeamAttackRetaliation.FireOutput( this, this );
+
+		CGstringPlayer *pPlayer = dynamic_cast<CGstringPlayer*>(info.GetAttacker());
+		if (pPlayer != NULL &&
+			pPlayer->GetSpacecraft() != NULL &&
+			m_pAI != NULL)
+		{
+			m_bShouldTeamkillPlayer = true;
+			SetEnemy(pPlayer->GetSpacecraft());
+			m_pAI->EnterState(ISpacecraftAI::AISTATE_ATTACK_AND_CHASE);
+		}
+	}
+	else
+	{
+		// First attack, wait
+		m_flPlayerTeamAttackCooldown = gpGlobals->curtime + 5.0f;
+		m_OnPlayerTeamAttack.FireOutput( this, this );
+	}
+}
 #else
+void CSpacecraft::NotifyShouldTransmit( ShouldTransmitState_t state )
+{
+	BaseClass::NotifyShouldTransmit( state );
+	switch( state )
+	{
+	case SHOULDTRANSMIT_START:
+		AddHoloTarget( this );
+		break;
+
+	case SHOULDTRANSMIT_END:
+		RemoveHoloTarget( this );
+		break;
+	}
+}
+
 RenderGroup_t CSpacecraft::GetRenderGroup()
 {
 	if ( IsViewModel() )
@@ -730,9 +856,12 @@ void CSpacecraft::ClientThink()
 		}
 	}
 
-	const int iActiveThrustersSoundsDesired = ( iActiveThrusters > 0 && iActiveThrusters < 2 ||
-		!bIsPlayerControlled ) ?
+	int iActiveThrustersSoundsDesired = ( iActiveThrusters > 0 && iActiveThrusters < 2 ) ?
 			1 : MIN( 2, iActiveThrusters / 2 );
+	if (!bIsPlayerControlled)
+	{
+		iActiveThrustersSoundsDesired = 0;
+	}
 	const int iActiveThrusterSounds = m_ThrusterSounds.Count();
 	if ( iActiveThrustersSoundsDesired > iActiveThrusterSounds )
 	{

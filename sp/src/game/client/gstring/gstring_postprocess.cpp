@@ -123,7 +123,7 @@ void DrawBarsAndGrain( int x, int y, int w, int h )
 	if ( /*cvar_gstring_drawbars.GetBool()
 		&&*/ flBarScale > 0.0f )
 	{
-		static CMaterialReference grain( "effects/black", TEXTURE_GROUP_OTHER );
+		static CMaterialReference blackMaterial( "effects/black", TEXTURE_GROUP_OTHER );
 
 		const float flBarSize = h * flBarScale;
 
@@ -132,10 +132,10 @@ void DrawBarsAndGrain( int x, int y, int w, int h )
 		ITexture *pTexture = GetFullFrameFrameBufferTexture( 0 );
 		CMatRenderContextPtr renderContext( materials );
 
-		renderContext->DrawScreenSpaceRectangle(	grain, x, y, w, flBarSize,
+		renderContext->DrawScreenSpaceRectangle(blackMaterial, x, y, w, flBarSize,
 												0, 0, w-1, h-1,
 												pTexture->GetActualWidth(), pTexture->GetActualHeight() );
-		renderContext->DrawScreenSpaceRectangle(	grain, x, y + h - flBarSize, w, h,
+		renderContext->DrawScreenSpaceRectangle(blackMaterial, x, y + h - flBarSize, w, h,
 												0, 0, w-1, h-1,
 												pTexture->GetActualWidth(), pTexture->GetActualHeight() );
 	}

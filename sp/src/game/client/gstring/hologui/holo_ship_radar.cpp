@@ -225,6 +225,10 @@ void CHoloShipRadar::DrawBlips( IMatRenderContext *pRenderContext )
 	FOR_EACH_VEC( targets, i )
 	{
 		const IHoloTarget *pTarget = targets[ i ];
+		if (pTarget == NULL || !pTarget->IsActive())
+		{
+			continue;
+		}
 		const C_BaseEntity *pEntity = pTarget->GetEntity();
 
 		Vector vecDelta;

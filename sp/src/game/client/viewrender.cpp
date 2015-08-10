@@ -2684,7 +2684,7 @@ void CViewRender::RenderView( const CViewSetup &view, int nClearFlags, int whatT
 			g_ShaderEditorSystem->UpdateSkymask( bDrew3dSkybox, view.x, view.y, view.width, view.height );
 		// END GSTRINGMIGRATION
 
-		DrawUnderwaterOverlay();
+		//DrawUnderwaterOverlay();
 
 		PixelVisibility_EndScene();
 

@@ -47,7 +47,10 @@
 #include "client_virtualreality.h"
 #include "shadereditor/shadereditorsystem.h"
 
-#include "gstring/gstring_postprocess.h" // GSTRINGMIGRATION
+// GSTRINGMIGRATION
+#include "gstring/gstring_postprocess.h"
+#include "gstring/cgstring_globals.h"
+// END GSTRINGMIGRATION
 
 #if defined( REPLAY_ENABLED )
 #include "replay/ireplaysystem.h"
@@ -70,6 +73,9 @@ void ToolFramework_AdjustEngineViewport( int& x, int& y, int& width, int& height
 bool ToolFramework_SetupEngineView( Vector &origin, QAngle &angles, float &fov );
 bool ToolFramework_SetupEngineMicrophone( Vector &origin, QAngle &angles );
 
+// GSTRINGMIGRATION
+ConVar v_viewmodel_fov_space( "viewmodel_fov_space", "54", FCVAR_CHEAT );
+// END GSTRINGMIGRATION
 
 extern ConVar default_fov;
 extern bool g_bRenderingScreenshot;
@@ -743,6 +749,11 @@ void CViewRender::SetUpViews()
 
 	//Adjust the viewmodel's FOV to move with any FOV offsets on the viewer's end
 	view.fovViewmodel = g_pClientMode->GetViewModelFOV() - flFOVOffset;
+
+	if ( g_pGstringGlobals && g_pGstringGlobals->IsSpaceMap() )
+	{
+		view.fovViewmodel = v_viewmodel_fov_space.GetFloat();
+	}
 
 	if ( UseVR() )
 	{

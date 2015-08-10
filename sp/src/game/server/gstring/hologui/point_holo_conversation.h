@@ -13,6 +13,7 @@ public:
 	virtual ~CPointHoloConversation();
 
 	void InputStart( inputdata_t &inputdata );
+	void InputInterrupt( inputdata_t &inputdata );
 
 	virtual void Spawn();
 	//virtual void Activate();
@@ -27,11 +28,18 @@ public:
 
 private:
 	void AdvanceConversation();
+	float PlayHoloSound( const char *pszSoundName, const char *pszDisplayName );
 
 	KeyValues *m_pConversation;
 	KeyValues *m_pMessage;
+	KeyValues *m_pCurrentMessage;
 
 	string_t m_strConversationName;
+
+	float m_flNextMessage;
+	float m_flCurrentDuration;
+	bool m_bCanInterrupt;
+	EHANDLE m_hEmittingEntity;
 //#ifdef GAME_DLL
 //	void Update();
 //
