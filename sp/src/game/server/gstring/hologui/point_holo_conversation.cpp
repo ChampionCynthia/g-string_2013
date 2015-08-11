@@ -109,6 +109,10 @@ void CPointHoloConversation::InputInterrupt( inputdata_t &inputdata )
 		{
 			PlayHoloSound( pszInterruptName, pszDisplayName );
 		}
+		else
+		{
+			Warning( "No interrupt defined in current message of conversation (%s)!\n", STRING( m_strConversationName ) );
+		}
 	}
 }
 

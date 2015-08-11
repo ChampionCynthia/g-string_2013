@@ -93,8 +93,8 @@ BEGIN_DATADESC( CSpacecraft )
 	DEFINE_KEYFIELD( m_iAITeam, FIELD_INTEGER, "aiteam" ),
 
 	DEFINE_KEYFIELD( m_strInitialEnemy, FIELD_STRING, "initialenemy" ),
-	DEFINE_INPUTFUNC( FIELD_VOID, "setenemy", InputSetEnemy ),
-	DEFINE_INPUTFUNC( FIELD_VOID, "clearenemy", InputClearEnemy ),
+	DEFINE_INPUTFUNC( FIELD_VOID, "SetEnemy", InputSetEnemy ),
+	DEFINE_INPUTFUNC( FIELD_VOID, "ClearEnemy", InputClearEnemy ),
 
 	DEFINE_FIELD( m_hPathEntity, FIELD_EHANDLE ),
 	DEFINE_KEYFIELD( m_strPathStartName, FIELD_STRING, "pathstartname" ),
@@ -570,6 +570,16 @@ void CSpacecraft::InputSetEnemy( inputdata_t &inputdata )
 void CSpacecraft::InputClearEnemy( inputdata_t &inputdata )
 {
 	SetEnemy( NULL );
+}
+
+CPathTrack *CSpacecraft::GetPathEntity() const
+{
+	return m_hPathEntity;
+}
+
+void CSpacecraft::SetPathEntity(CPathTrack *pPathEntity)
+{
+	m_hPathEntity.Set( pPathEntity );
 }
 
 void CSpacecraft::SimulateFire( CMoveData &moveData, float flFrametime )

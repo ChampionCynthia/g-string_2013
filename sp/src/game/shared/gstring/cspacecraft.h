@@ -143,6 +143,9 @@ public:
 	void SetEnemy(CBaseEntity *pEnemy);
 	void InputSetEnemy(inputdata_t &inputdata);
 	void InputClearEnemy( inputdata_t &inputdata );
+
+	CPathTrack *GetPathEntity() const;
+	void SetPathEntity(CPathTrack *pPathEntity);
 #else
 	virtual void NotifyShouldTransmit( ShouldTransmitState_t state );
 	virtual int GetHealth() const { return m_iHealth; }

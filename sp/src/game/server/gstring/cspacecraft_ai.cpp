@@ -101,21 +101,23 @@ void CSpacecraftAIBase::EnterState(AISTATE_e state)
 	switch (state)
 	{
 	case AISTATE_IDLE:
-			SetNextThink(RandomFloat(0.25f, 0.6f), &CSpacecraftAIBase::Think_Idle);
-			SetMove(&CSpacecraftAIBase::Move_Idle);
+		SetNextThink(RandomFloat(0.25f, 0.6f), &CSpacecraftAIBase::Think_Idle);
+		SetMove(&CSpacecraftAIBase::Move_Idle);
 		break;
 
 	case AISTATE_ATTACK_AND_CHASE:
-			SetNextThink(0.0f, &CSpacecraftAIBase::Think_ShootSalvoes);
-			SetMove(&CSpacecraftAIBase::Move_Pursuit);
+		SetNextThink(0.0f, &CSpacecraftAIBase::Think_ShootSalvoes);
+		SetMove(&CSpacecraftAIBase::Move_Pursuit);
 		break;
 
 	case AISTATE_ATTACK_AND_IDLE:
-			SetNextThink(0.0f, &CSpacecraftAIBase::Think_ShootSalvoes);
-			SetMove(&CSpacecraftAIBase::Move_AttackStationary);
+		SetNextThink(0.0f, &CSpacecraftAIBase::Think_ShootSalvoes);
+		SetMove(&CSpacecraftAIBase::Move_AttackStationary);
 		break;
 
 	case AISTATE_APPROACH_TARGET:
+		SetNextThink(RandomFloat(0.25f, 0.6f), &CSpacecraftAIBase::Think_Idle);
+		SetMove(&CSpacecraftAIBase::Move_FollowPath);
 		break;
 
 	default:
@@ -437,7 +439,61 @@ void CSpacecraftAIBase::Move_AttackStationary(float flFrametime)
 	moveData.m_flUpMove = 0.0f;
 
 	const float flDistanceTargetToEnemy = vecEnemy.Length();
-	moveData.m_flForwardMove = RemapValClamped( flDistanceTargetToEnemy, 196.0f, 380.0f, -100.0f, 200.0f );
+	moveData.m_flForwardMove = RemapValClamped(flDistanceTargetToEnemy, 196.0f, 380.0f, -100.0f, 200.0f);
+}
+
+void CSpacecraftAIBase::Move_FollowPath(float flFrametime)
+{
+	CPathTrack *pPathTrack = m_pShip->GetPathEntity();
+	if (pPathTrack == NULL)
+	{
+		EnterState(ISpacecraftAI::AISTATE_IDLE);
+		return;
+	}
+
+	Vector vecOrigin = m_pShip->GetAbsOrigin();
+	Vector vecEnemy = pPathTrack->GetAbsOrigin() - vecOrigin;
+
+	DebugDrawLine(vecOrigin, vecOrigin + Vector(0,0,1), 255, 0, 0, true, 1);
+	DebugDrawLine(pPathTrack->GetAbsOrigin(), pPathTrack->GetAbsOrigin() + Vector(0,0,5), 0, 255, 0, true, 1);
+
+	QAngle angMove;
+	VectorAngles(vecEnemy, angMove);
+
+	Quaternion qMoveDesired, qMoveCurrent;
+	AngleQuaternion(angMove, qMoveDesired);
+	AngleQuaternion(moveData.m_vecViewAngles, qMoveCurrent);
+	QuaternionSlerp(qMoveCurrent, qMoveDesired, MIN(1.0f, gpGlobals->frametime * m_flRotationSpeedBlend * 250.0f), qMoveCurrent);
+	QuaternionAngles(qMoveCurrent, moveData.m_vecViewAngles);
+
+	moveData.m_nButtons &= ~IN_ATTACK;
+	moveData.m_nButtons &= ~IN_SPEED;
+
+	moveData.m_flUpMove = 0.0f;
+
+	const float flDistanceTargetToEnemy = vecEnemy.Length();
+	CPathTrack *pNext = pPathTrack->GetNext();
+
+	if (pNext == NULL)
+	{
+		moveData.m_flForwardMove = RemapValClamped(flDistanceTargetToEnemy, 0.0f, 400.0f, 0.0f, 1.0f);
+		moveData.m_flForwardMove *= moveData.m_flForwardMove;
+		moveData.m_flForwardMove *= 200.0f;
+
+		if (flDistanceTargetToEnemy < 32.0f)
+		{
+			m_pShip->SetPathEntity(NULL);
+		}
+	}
+	else if (flDistanceTargetToEnemy < 32.0f)
+	{
+		moveData.m_flForwardMove = 200.0f;
+		m_pShip->SetPathEntity(pNext);
+	}
+	else
+	{
+		moveData.m_flForwardMove = 200.0f;
+	}
 }
 
 //void CSpacecraftAIBase::Move_FollowLeader(float flFrametime)
@@ -453,7 +509,7 @@ void CSpacecraftAIBase::Fire_UpdateProjectilePosition(float frametime)
 	}
 
 	Vector vecOpponent = pEnemy->GetAbsOrigin() - m_pShip->GetAbsOrigin();
-	
+
 	float flMinOffset = 1.0f;
 	float flMaxOffset = 2.0f;
 	const CSpacecraft *pEnemySpacecraft = dynamic_cast<const CSpacecraft*>(pEnemy);
@@ -466,14 +522,14 @@ void CSpacecraftAIBase::Fire_UpdateProjectilePosition(float frametime)
 	Vector vecTarget = pEnemy->WorldSpaceCenter();
 	Vector vecPredictedTarget, vecVelocity = pEnemy->GetAbsVelocity();
 
-	IPhysicsObject *pPhysicsObject( pEnemy->VPhysicsGetObject() );
-	if ( pPhysicsObject != NULL )
+	IPhysicsObject *pPhysicsObject(pEnemy->VPhysicsGetObject());
+	if (pPhysicsObject != NULL)
 	{
-		pPhysicsObject->GetVelocity( &vecVelocity, NULL );
+		pPhysicsObject->GetVelocity(&vecVelocity, NULL);
 	}
 
-	if ( UTIL_PredictProjectileTarget( m_pShip->GetAbsOrigin(), vecTarget, vecVelocity,
-		4000.0f, vecPredictedTarget ) )
+	if (UTIL_PredictProjectileTarget(m_pShip->GetAbsOrigin(), vecTarget, vecVelocity,
+		4000.0f, vecPredictedTarget))
 	{
 		vecTarget = vecPredictedTarget;
 	}

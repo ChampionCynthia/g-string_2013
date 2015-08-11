@@ -35,6 +35,7 @@ private:
 	void Move_Pursuit(float flFrametime);
 	void Move_AttackStationary(float flFrametime);
 	//void Move_FollowLeader(float flFrametime);
+	void Move_FollowPath(float flFrametime);
 
 	void Fire_UpdateProjectilePosition(float frametime);
 
