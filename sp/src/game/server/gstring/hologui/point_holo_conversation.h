@@ -15,8 +15,7 @@ public:
 	void InputStart( inputdata_t &inputdata );
 	void InputInterrupt( inputdata_t &inputdata );
 
-	virtual void Spawn();
-	//virtual void Activate();
+	virtual void Activate();
 	virtual void Precache();
 
 	virtual int ObjectCaps()

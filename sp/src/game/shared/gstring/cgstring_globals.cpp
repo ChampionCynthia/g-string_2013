@@ -82,6 +82,11 @@ void CGstringGlobals::Spawn()
 	SetUserLightSourceEnabled( HasSpawnFlags( GSTRINGGLOBALSFLAGS_USERLIGHTSOURCE_ENABLED ) );
 	SetNightvisionEnabled( HasSpawnFlags( GSTRINGGLOBALSFLAGS_NIGHTVISION_ENABLED ) );
 	m_bIsSpaceMap = HasSpawnFlags( GSTRINGGLOBALSFLAGS_SPACE_MAP );
+}
+
+void CGstringGlobals::Activate()
+{
+	BaseClass::Activate();
 
 	if ( m_bIsSpaceMap && physenv )
 	{

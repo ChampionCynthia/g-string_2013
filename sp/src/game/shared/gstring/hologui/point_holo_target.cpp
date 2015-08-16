@@ -80,6 +80,7 @@ CPointHoloTarget::CPointHoloTarget()
 {
 #ifdef GAME_DLL
 	m_bEnabled = true;
+	//m_bIsRestoring = false;
 #endif
 }
 
@@ -91,6 +92,12 @@ CPointHoloTarget::~CPointHoloTarget()
 }
 
 #ifdef GAME_DLL
+
+//void CPointHoloTarget::OnRestore()
+//{
+//	BaseClass::OnRestore();
+//	m_bIsRestoring = true;
+//}
 
 void CPointHoloTarget::InputEnable( inputdata_t &inputdata )
 {
@@ -112,15 +119,20 @@ void CPointHoloTarget::InputDisable( inputdata_t &inputdata )
 	}
 }
 
+void CPointHoloTarget::Spawn()
+{
+	BaseClass::Spawn();
+
+	m_bEnabled = HasSpawnFlags( 1 );
+	m_flHealth = -1.0f;
+}
+
 void CPointHoloTarget::Activate()
 {
 	BaseClass::Activate();
 
 	m_hHealthProxy = gEntList.FindEntityByName( NULL, m_strHealthProxyName, this );
 	m_hPositionProxy = gEntList.FindEntityByName( NULL, m_strPositionProxyName, this );
-	m_flHealth = -1.0f;
-
-	m_bEnabled = HasSpawnFlags( 1 );
 
 	Q_strncpy( m_szTargetName.GetForModify(), STRING( m_strTargetName ), 32 );
 

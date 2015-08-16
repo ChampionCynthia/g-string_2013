@@ -42,6 +42,8 @@ class CPointHoloTarget : public CBaseEntity
 #ifdef GAME_DLL
 	DECLARE_DATADESC();
 
+	//void OnRestore();
+
 	void InputEnable( inputdata_t &inputdata );
 	void InputDisable( inputdata_t &inputdata );
 #else
@@ -61,7 +63,7 @@ public:
 	virtual ~CPointHoloTarget();
 
 #ifdef GAME_DLL
-	//virtual void Spawn();
+	virtual void Spawn();
 	virtual void Activate();
 
 	virtual int ObjectCaps()
@@ -81,6 +83,7 @@ private:
 #ifdef GAME_DLL
 	void Update();
 
+	//bool m_bIsRestoring;
 	string_t m_strTargetName;
 	string_t m_strHealthProxyName;
 	string_t m_strPositionProxyName;

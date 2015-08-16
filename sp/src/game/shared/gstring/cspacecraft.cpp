@@ -88,6 +88,7 @@ BEGIN_DATADESC( CSpacecraft )
 
 	DEFINE_FIELD( m_iShield, FIELD_INTEGER ),
 	DEFINE_FIELD( m_iMaxShield, FIELD_INTEGER ),
+	DEFINE_FIELD( m_hHoloSystem, FIELD_EHANDLE ),
 	DEFINE_KEYFIELD( m_strSettingsName, FIELD_STRING, "settingsname" ),
 
 	// AI
@@ -326,6 +327,16 @@ void CSpacecraft::Activate()
 
 	m_iMaxShield = m_Settings.m_iShield;
 	m_iShield = m_iMaxShield;
+
+	// Not called when restoring...
+	OnNewModel();
+
+	// Restore controlling player
+	if ( GetOwnerEntity() && GetOwnerEntity()->IsPlayer() )
+	{
+		inputdata_t d;
+		InputEnterVehicle( d );
+	}
 }
 
 void CSpacecraft::OnPlayerEntered( CGstringPlayer *pPlayer )

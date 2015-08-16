@@ -21,6 +21,7 @@ public:
 
 #ifdef GAME_DLL
 	virtual void Spawn();
+	virtual void Activate();
 
 	virtual int ObjectCaps()
 	{

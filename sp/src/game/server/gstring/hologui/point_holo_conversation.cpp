@@ -17,18 +17,13 @@ extern ISoundEmitterSystemBase *soundemitterbase;
 BEGIN_DATADESC( CPointHoloConversation )
 
 	DEFINE_THINKFUNC( AdvanceConversation ),
-	//DEFINE_FIELD( m_hHealthProxy, FIELD_EHANDLE ),
-	//DEFINE_FIELD( m_hPositionProxy, FIELD_EHANDLE ),
+
+	DEFINE_FIELD( m_flNextMessage, FIELD_FLOAT ),
+	DEFINE_FIELD( m_flCurrentDuration, FIELD_FLOAT ),
+	DEFINE_FIELD( m_bCanInterrupt, FIELD_BOOLEAN ),
+	DEFINE_FIELD( m_hEmittingEntity, FIELD_EHANDLE ),
 
 	DEFINE_KEYFIELD( m_strConversationName, FIELD_STRING, "Conversation" ),
-
-	//DEFINE_KEYFIELD( m_iTargetType, FIELD_INTEGER, "TargetType" ),
-	//DEFINE_KEYFIELD( m_flSize, FIELD_FLOAT, "Size" ),
-	//DEFINE_KEYFIELD( m_flHealth, FIELD_FLOAT, "TargetHealth" ),
-	//DEFINE_KEYFIELD( m_flMaxDistance, FIELD_FLOAT, "MaxDistance" ),
-	//DEFINE_KEYFIELD( m_bEnabled, FIELD_BOOLEAN, "Enabled" ),
-	//DEFINE_KEYFIELD( m_strHealthProxyName, FIELD_STRING, "HealthProxy" ),
-	//DEFINE_KEYFIELD( m_strPositionProxyName, FIELD_STRING, "PositionProxy" ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "Start", InputStart ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Interrupt", InputInterrupt ),
@@ -116,10 +111,9 @@ void CPointHoloConversation::InputInterrupt( inputdata_t &inputdata )
 	}
 }
 
-void CPointHoloConversation::Spawn()
+void CPointHoloConversation::Activate()
 {
-	BaseClass::Spawn();
-
+	BaseClass::Activate();
 	m_pConversation = g_pConversations->FindKey( STRING( m_strConversationName ) );
 	Precache();
 }
