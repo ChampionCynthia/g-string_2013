@@ -4,16 +4,6 @@
 
 #include "materialsystem/imaterialvar.h"
 
-#define LOAD_SHARED_MATERIAL_REFERENCE( reference, material ) \
-	if ( reference.IsValid() ) \
-	{ \
-		reference->IncrementReferenceCount(); \
-	} \
-	else \
-	{ \
-		reference.Init( material ); \
-	}
-
 CMaterialReference CHoloPanel::m_Materials[ MATERIALTYPE_COUNT ];
 
 CHoloPanel::CHoloPanel() :
@@ -24,7 +14,9 @@ CHoloPanel::CHoloPanel() :
 	SetIdentityMatrix( m_Transformation );
 
 	LOAD_SHARED_MATERIAL_REFERENCE( m_Materials[ MATERIALTYPE_NORMAL ], materials->FindMaterial( "engine/hologui", TEXTURE_GROUP_OTHER ) );
+	LOAD_SHARED_MATERIAL_REFERENCE( m_Materials[ MATERIALTYPE_NORMAL_SCANLINES ], materials->FindMaterial( "engine/hologui_scanlines", TEXTURE_GROUP_OTHER ) );
 	LOAD_SHARED_MATERIAL_REFERENCE( m_Materials[ MATERIALTYPE_VERTEXCOLOR ], materials->FindMaterial( "engine/hologui_vertexcolor", TEXTURE_GROUP_OTHER ) );
+	LOAD_SHARED_MATERIAL_REFERENCE( m_Materials[ MATERIALTYPE_SCANLINES_VERTEXCOLOR ], materials->FindMaterial( "engine/hologui_scanlines_vertexcolor", TEXTURE_GROUP_OTHER ) );
 	//LOAD_SHARED_MATERIAL_REFERENCE( m_Materials[ MATERIALTYPE_VERTEXCOLOR_LINEAR ], materials->FindMaterial( "engine/hologui_vertexcolor_linear", TEXTURE_GROUP_OTHER ) );
 	LOAD_SHARED_MATERIAL_REFERENCE( m_Materials[ MATERIALTYPE_GLOW ], materials->FindMaterial( "engine/linear_glow", TEXTURE_GROUP_OTHER ) );
 }

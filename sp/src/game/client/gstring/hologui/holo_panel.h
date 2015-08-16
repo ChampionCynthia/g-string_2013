@@ -31,6 +31,16 @@
 #define REMOVE_HOLO_MESSAGE( message ) \
 	__g_MsgVector_ ## message.FindAndRemove( this )
 
+#define LOAD_SHARED_MATERIAL_REFERENCE( reference, material ) \
+	if ( reference.IsValid() ) \
+	{ \
+		reference->IncrementReferenceCount(); \
+	} \
+	else \
+	{ \
+		reference.Init( material ); \
+	}
+
 class CHoloPanel
 {
 public:
@@ -55,7 +65,9 @@ protected:
 	enum MaterialType
 	{
 		MATERIALTYPE_NORMAL = 0,
+		MATERIALTYPE_NORMAL_SCANLINES,
 		MATERIALTYPE_VERTEXCOLOR,
+		MATERIALTYPE_SCANLINES_VERTEXCOLOR,
 		//MATERIALTYPE_VERTEXCOLOR_LINEAR,
 		MATERIALTYPE_GLOW,
 		MATERIALTYPE_COUNT

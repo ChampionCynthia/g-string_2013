@@ -514,7 +514,12 @@ void CHudMessage::MessageDrawScan( ExtendedClientMessage_t &pExtendedMessage, fl
 		}
 
 		pText = g_pVGuiLocalize->Find( localString );
-		if ( !pText ) 
+		if ( pText && wcschr( pText, L'%' ) > 0 )
+		{
+			UTIL_ReplaceKeyBindings( pText, 0, textBuf, sizeof( textBuf ) );
+			pText = textBuf;
+		}
+		else if ( !pText )
 		{
 			g_pVGuiLocalize->ConvertANSIToUnicode( pMessage->pMessage, textBuf, sizeof( textBuf ) );
 			pText = textBuf;

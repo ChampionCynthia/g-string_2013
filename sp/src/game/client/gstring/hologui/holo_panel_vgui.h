@@ -11,6 +11,7 @@ class CHoloPanelVGUI : public CHoloPanel, public vgui::Panel
 
 public:
 	CHoloPanelVGUI();
+	virtual ~CHoloPanelVGUI();
 	virtual void Setup();
 
 	virtual void Paint();
@@ -32,7 +33,7 @@ protected:
 	float m_flHeight;
 
 private:
-	CMaterialReference m_MaterialVGUI;
+	static CMaterialReference m_MaterialVGUI;
 
 };
 

@@ -52,6 +52,7 @@ private:
 	IMesh *m_pMeshTarget;
 	IMesh *m_pMeshTargetThick;
 	IMesh *m_pMeshTargetArrows;
+	IMesh *m_pMeshTargetOffScreen;
 	IMesh *m_pMeshPanel;
 	IMesh *m_pMeshDamagePanel;
 	IMesh *m_pMeshDamagePanelDecor;

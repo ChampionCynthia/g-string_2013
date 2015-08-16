@@ -9,6 +9,8 @@
 
 using namespace vgui;
 
+CMaterialReference CHoloPanelVGUI::m_MaterialVGUI;
+
 CHoloPanelVGUI::CHoloPanelVGUI() :
 	m_FontLarge( 0 ),
 	m_FontSmall( 0 ),
@@ -20,7 +22,12 @@ CHoloPanelVGUI::CHoloPanelVGUI() :
 {
 	m_vecUVs[ 0 ].Init();
 	m_vecUVs[ 1 ].Init();
-	m_MaterialVGUI.Init( materials->FindMaterial( "engine/hologui_vgui", TEXTURE_GROUP_OTHER ) );
+	LOAD_SHARED_MATERIAL_REFERENCE( m_MaterialVGUI, materials->FindMaterial( "engine/hologui_vgui", TEXTURE_GROUP_OTHER ) );
+}
+
+CHoloPanelVGUI::~CHoloPanelVGUI()
+{
+	m_MaterialVGUI->DecrementReferenceCount();
 }
 
 void CHoloPanelVGUI::Setup()

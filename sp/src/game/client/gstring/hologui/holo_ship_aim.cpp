@@ -35,19 +35,21 @@ CHoloShipAim::CHoloShipAim( ISpacecraftData *pSpacecraftData ) :
 	m_pMeshReticule = pRenderContext->CreateStaticMesh( VERTEX_POSITION | VERTEX_TEXCOORD_SIZE( 0, 2 ),
 		TEXTURE_GROUP_MODEL, GetMaterial() );
 	m_pMeshTarget = pRenderContext->CreateStaticMesh( VERTEX_POSITION | VERTEX_TEXCOORD_SIZE( 0, 2 ),
-		TEXTURE_GROUP_MODEL, GetMaterial() );
+		TEXTURE_GROUP_MODEL, GetMaterial( MATERIALTYPE_NORMAL_SCANLINES ) );
 	m_pMeshTargetThick = pRenderContext->CreateStaticMesh( VERTEX_POSITION | VERTEX_TEXCOORD_SIZE( 0, 2 ),
-		TEXTURE_GROUP_MODEL, GetMaterial() );
+		TEXTURE_GROUP_MODEL, GetMaterial( MATERIALTYPE_NORMAL_SCANLINES ) );
 	m_pMeshTargetArrows = pRenderContext->CreateStaticMesh( VERTEX_POSITION | VERTEX_TEXCOORD_SIZE( 0, 2 ),
-		TEXTURE_GROUP_MODEL, GetMaterial() );
+		TEXTURE_GROUP_MODEL, GetMaterial( MATERIALTYPE_NORMAL_SCANLINES ) );
+	m_pMeshTargetOffScreen = pRenderContext->CreateStaticMesh( VERTEX_POSITION | VERTEX_TEXCOORD_SIZE( 0, 2 ),
+		TEXTURE_GROUP_MODEL, GetMaterial( MATERIALTYPE_NORMAL_SCANLINES ) );
 	m_pMeshPanel = pRenderContext->CreateStaticMesh( VERTEX_POSITION | VERTEX_COLOR | VERTEX_TEXCOORD_SIZE( 0, 2 ),
-		TEXTURE_GROUP_MODEL, GetMaterial() );
+		TEXTURE_GROUP_MODEL, GetMaterial( MATERIALTYPE_SCANLINES_VERTEXCOLOR ) );
 	m_pMeshDamagePanel = pRenderContext->CreateStaticMesh( VERTEX_POSITION | VERTEX_COLOR | VERTEX_TEXCOORD_SIZE( 0, 2 ),
-		TEXTURE_GROUP_MODEL, GetMaterial() );
+		TEXTURE_GROUP_MODEL, GetMaterial( MATERIALTYPE_SCANLINES_VERTEXCOLOR ) );
 	m_pMeshDamagePanelInner = pRenderContext->CreateStaticMesh( VERTEX_POSITION | VERTEX_COLOR | VERTEX_TEXCOORD_SIZE( 0, 2 ),
-		TEXTURE_GROUP_MODEL, GetMaterial() );
+		TEXTURE_GROUP_MODEL, GetMaterial( MATERIALTYPE_SCANLINES_VERTEXCOLOR ) );
 	m_pMeshDamagePanelOuter = pRenderContext->CreateStaticMesh( VERTEX_POSITION | VERTEX_COLOR | VERTEX_TEXCOORD_SIZE( 0, 2 ),
-		TEXTURE_GROUP_MODEL, GetMaterial() );
+		TEXTURE_GROUP_MODEL, GetMaterial( MATERIALTYPE_SCANLINES_VERTEXCOLOR ) );
 	m_pMeshDamagePanelDecor = pRenderContext->CreateStaticMesh( VERTEX_POSITION | VERTEX_COLOR | VERTEX_TEXCOORD_SIZE( 0, 2 ),
 		TEXTURE_GROUP_MODEL, GetMaterial() );
 
@@ -58,6 +60,7 @@ CHoloShipAim::CHoloShipAim( ISpacecraftData *pSpacecraftData ) :
 	CreateRecticule( m_pMeshTarget, 1.0f, 0.05f, 0.5f, 0.0f );
 	CreateRecticule( m_pMeshTargetThick, 1.04f, 0.13f, 0.5f, 0.0f );
 	CreateTargetArrows( m_pMeshTargetArrows, 45.0f, 8.0f, 0.25f, 0.8f, 0.12f );
+	CreateRecticuleOffScreen( m_pMeshTargetOffScreen, 1.0f, 0.05f, 0.5f, 0.0f );
 	CreateAimPanel( m_pMeshPanel, 10, 20, QAngle( -50, -80, 0 ), QAngle( 5, 80, 0 ), g_flPanelRadius, 0.1f );
 	CreateDamageIndicator( m_pMeshDamagePanel, 16, 4.5f, 1.2f, M_PI_F * -0.3f, M_PI_F * 0.3f, 0.0f, 1.0f );
 	CreateRoundDamageIndicator( m_pMeshDamagePanelInner, 32, 0.001f, 1.2f );
@@ -77,6 +80,7 @@ CHoloShipAim::~CHoloShipAim()
 	pRenderContext->DestroyStaticMesh( m_pMeshTarget );
 	pRenderContext->DestroyStaticMesh( m_pMeshTargetThick );
 	pRenderContext->DestroyStaticMesh( m_pMeshTargetArrows );
+	pRenderContext->DestroyStaticMesh( m_pMeshTargetOffScreen );
 	pRenderContext->DestroyStaticMesh( m_pMeshPanel );
 	pRenderContext->DestroyStaticMesh( m_pMeshDamagePanel );
 	pRenderContext->DestroyStaticMesh( m_pMeshDamagePanelInner );
@@ -288,9 +292,9 @@ void CHoloShipAim::DrawTargets( IMatRenderContext *pRenderContext )
 	pRenderContext->MultMatrixLocal( temp2 );
 
 	// Draw deco
-	pRenderContext->Bind( GetMaterial( MATERIALTYPE_VERTEXCOLOR ) );
-	GetColorVar( MATERIALTYPE_VERTEXCOLOR )->SetVecValue( HOLO_COLOR_DEFAULT );
-	GetAlphaVar( MATERIALTYPE_VERTEXCOLOR )->SetFloatValue( 0.3f );
+	pRenderContext->Bind( GetMaterial() );
+	GetColorVar()->SetVecValue( HOLO_COLOR_DEFAULT );
+	GetAlphaVar()->SetFloatValue( 0.3f );
 	m_pMeshDamagePanelDecor->Draw();
 
 	pRenderContext->Bind( GetMaterial() );
@@ -322,6 +326,8 @@ void CHoloShipAim::DrawTargets( IMatRenderContext *pRenderContext )
 
 	const C_BaseEntity *pAutoAimTarget = GetGstringInput()->GetAutoAimTargetEntity();
 
+	pRenderContext->Bind( GetMaterial( MATERIALTYPE_NORMAL_SCANLINES ) );
+
 	const Vector &holoEyePos = CurrentHoloViewOrigin();
 	FOR_EACH_VEC( m_Targets, i )
 	{
@@ -350,15 +356,56 @@ void CHoloShipAim::DrawTargets( IMatRenderContext *pRenderContext )
 		Vector sphereRay = vecGUISpace - holoEyePos;
 
 		float pT1, pT2;
+		
+		//if ( !IntersectInfiniteRayWithSphere( holoEyePos, sphereRay, g_vecPanelPosition, g_flPanelRadius, &pT1, &pT2 ) || pT2 <= 0.0f )
+		//{
+		//	pT2 = 0.0001f;
+		//}
+
 		if ( IntersectInfiniteRayWithSphere( holoEyePos, sphereRay, g_vecPanelPosition, g_flPanelRadius, &pT1, &pT2 ) && pT2 > 0.0f )
 		{
 			vecGUISpace = sphereRay * pT2 + holoEyePos;
+			//engine->Con_NPrintf( 20, "%f", pT2);
 
 			//engine->Con_NPrintf(10, "%f %f %f", XYZ(vecGUISpace));
 			//Vector sphereDelta = vecGUISpace - g_vecPanelPosition;
-			//float dotFwd = DotProduct(sphereDelta.Normalized(), Vector(0, 1, 0));
+			//float dotFwd = DotProduct(sphereDelta.Normalized(), Vector(1, 0, 0));
+			//float dotRight = DotProduct(sphereDelta.Normalized(), Vector(0, 1, 0));
 			//float dotUp = DotProduct(sphereDelta.Normalized(), Vector(0, 0, 1));
-			//engine->Con_NPrintf(11, "fwd %f up %f", dotFwd , dotUp);
+			//engine->Con_NPrintf(11, "fwd %f right %f up %f", dotFwd , dotRight, dotUp);
+
+			Vector normal = ( vecGUISpace - g_vecPanelPosition ).Normalized();
+
+			QAngle an;
+			VectorAngles( normal, an );
+			an.x = AngleNormalize( an.x );
+			an.y = AngleNormalize( an.y );
+
+			//engine->Con_NPrintf(9, "%f %f %f", XYZ(normal));
+			//engine->Con_NPrintf(10, "%f %f %f", XYZ(an));
+
+			bool bOffScreen = false;
+
+#if 0
+			const float g_flTargetPitchMin = -49.0f;
+			const float g_flTargetPitchMax = 4.5f;
+			const float g_flTargetYawMin = -78.6f;
+			const float g_flTargetYawMax = 78.6f;
+
+			if ( an.x < g_flTargetPitchMin || an.x > g_flTargetPitchMax ||
+				an.y < g_flTargetYawMin || an.y > g_flTargetYawMax )
+			{
+				an.x = clamp( an.x, g_flTargetPitchMin, g_flTargetPitchMax );
+				an.y = clamp( an.y, g_flTargetYawMin, g_flTargetYawMax );
+
+				Vector vecEyeTarget = ( vecGUISpace - holoEyePos ).Normalized();
+				an.z = RAD2DEG( atan2f( -vecEyeTarget.y, vecEyeTarget.z ) );
+				bOffScreen = true;
+
+				AngleVectors( an, &vecGUISpace );
+				vecGUISpace = g_vecPanelPosition + vecGUISpace * g_flPanelRadius;
+			}
+#endif
 
 			Vector color;
 			float flAlphaScale;
@@ -371,23 +418,24 @@ void CHoloShipAim::DrawTargets( IMatRenderContext *pRenderContext )
 				flAlpha *= flAlpha;
 			}
 
-			GetColorVar()->SetVecValue( XYZ( color ) );
-			GetAlphaVar()->SetFloatValue( flAlpha );
+			GetColorVar( MATERIALTYPE_NORMAL_SCANLINES )->SetVecValue( XYZ( color ) );
+			GetAlphaVar( MATERIALTYPE_NORMAL_SCANLINES )->SetFloatValue( flAlpha );
 
 			matrix3x4_t temp, mat;
 			SetIdentityMatrix( temp );
 			MatrixSetTranslation( vecGUISpace, temp );
-
-			Vector normal = ( vecGUISpace - g_vecPanelPosition ).Normalized();
-			QAngle an;
-			VectorAngles( normal, an );
 			matrix3x4_t rr;
+			//an.z = gpGlobals->curtime * 100;
 			AngleMatrix( an, rr );
 			ConcatTransforms( temp, rr, mat );
 
 			pRenderContext->LoadMatrix( mat );
 
-			if ( pAutoAimTarget != pTarget->GetEntity() )
+			if ( bOffScreen )
+			{
+				m_pMeshTargetOffScreen->Draw();
+			}
+			else if ( pAutoAimTarget != pTarget->GetEntity() )
 			{
 				m_pMeshTarget->Draw();
 			}
@@ -402,12 +450,14 @@ void CHoloShipAim::DrawTargets( IMatRenderContext *pRenderContext )
 				MatrixScaleBy( 1.0f + 0.2f * target.m_flFocusTimer, rr );
 				pRenderContext->MultMatrixLocal( rr );
 
-				GetAlphaVar()->SetFloatValue( flAlpha * target.m_flFocusTimer );
+				GetAlphaVar( MATERIALTYPE_NORMAL_SCANLINES )->SetFloatValue( flAlpha * target.m_flFocusTimer );
 				m_pMeshTargetArrows->Draw();
 			}
 		}
 	}
 	pRenderContext->PopMatrix();
+
+	pRenderContext->Bind( GetMaterial() );
 
 	// Draw projected center reticule
 	pRenderContext->PushMatrix();
@@ -486,9 +536,9 @@ void CHoloShipAim::DrawTargets( IMatRenderContext *pRenderContext )
 	pRenderContext->SetStencilEnable( false );
 
 	// Draw the panel
-	pRenderContext->Bind( GetMaterial( MATERIALTYPE_VERTEXCOLOR ) );
-	GetColorVar( MATERIALTYPE_VERTEXCOLOR )->SetVecValue( HOLO_COLOR_DEFAULT );
-	GetAlphaVar( MATERIALTYPE_VERTEXCOLOR )->SetFloatValue( 0.1f );
+	pRenderContext->Bind( GetMaterial( MATERIALTYPE_SCANLINES_VERTEXCOLOR ) );
+	GetColorVar( MATERIALTYPE_SCANLINES_VERTEXCOLOR )->SetVecValue( HOLO_COLOR_DEFAULT );
+	GetAlphaVar( MATERIALTYPE_SCANLINES_VERTEXCOLOR )->SetFloatValue( 0.1f );
 
 	pRenderContext->PushMatrix();
 
@@ -515,8 +565,8 @@ void CHoloShipAim::DrawReticule( IMatRenderContext *pRenderContext )
 	// damage indicator
 	if ( m_DamagePanels.Count() > 0 )
 	{
-		GetColorVar( MATERIALTYPE_VERTEXCOLOR )->SetVecValue( 0.9f, 0.2f, 0.05f );
-		pRenderContext->Bind( GetMaterial( MATERIALTYPE_VERTEXCOLOR ) );
+		GetColorVar( MATERIALTYPE_SCANLINES_VERTEXCOLOR )->SetVecValue( 0.9f, 0.2f, 0.05f );
+		pRenderContext->Bind( GetMaterial( MATERIALTYPE_SCANLINES_VERTEXCOLOR ) );
 		FOR_EACH_VEC( m_DamagePanels, i )
 		{
 			const DamagePanel &panel = m_DamagePanels[ i ];
@@ -525,7 +575,7 @@ void CHoloShipAim::DrawReticule( IMatRenderContext *pRenderContext )
 			{
 				flAlpha *= 0.3f;
 			}
-			GetAlphaVar( MATERIALTYPE_VERTEXCOLOR )->SetFloatValue( flAlpha );
+			GetAlphaVar( MATERIALTYPE_SCANLINES_VERTEXCOLOR )->SetFloatValue( flAlpha );
 			pRenderContext->PushMatrix();
 			MatrixBuildRotationAboutAxis( Vector( 1, 0, 0 ), panel.m_flAngle, matrixTemp );
 			pRenderContext->MultMatrixLocal( matrixTemp );

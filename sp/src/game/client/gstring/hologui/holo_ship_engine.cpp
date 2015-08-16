@@ -14,7 +14,9 @@ using namespace vgui;
 
 CHoloShipEngine::CHoloShipEngine( ISpacecraftData *pSpacecraftData ) :
 	m_pSpacecraftData( pSpacecraftData ),
-	m_flEngineStrength( 0.0f )
+	m_flEngineStrength( 0.0f ),
+	m_flBoostSuspendedTimer( 0.0f ),
+	m_bIsBoostSuspended( false )
 {
 	SetIdentityMatrix( m_matrixUp );
 	SetIdentityMatrix( m_matrixCenterOffset );
@@ -23,13 +25,19 @@ CHoloShipEngine::CHoloShipEngine( ISpacecraftData *pSpacecraftData ) :
 	MatrixSetTranslation( Vector( 0, 0.0f, 0.15f ), m_matrixCenterOffset );
 	//MatrixSetTranslation( Vector( 0, 0.0f, -0.15f ), m_matrixEndOffset );
 
+	m_MaterialHeatIcon.Init( materials->FindMaterial( "hud/holo_heat_icon", TEXTURE_GROUP_OTHER ) );
+
 	m_pLabelEngine = new Label( this, "", "#holo_gui_engine" );
 	m_pLabelSpeedLabel = new Label( this, "", "#holo_gui_speed" );
 	m_pLabelSpeedValue = new Label( this, "", "" );
+
 	CMatRenderContextPtr pRenderContext( materials );
 	m_pMeshElement = pRenderContext->CreateStaticMesh( VERTEX_POSITION | VERTEX_TEXCOORD_SIZE( 0, 2 ),
 		TEXTURE_GROUP_MODEL, GetMaterial() );
 	CreateSlantedRect( m_pMeshElement, 0, 0, 1.0f, 0.35f, 0.0f );
+	m_pMeshIcon = pRenderContext->CreateStaticMesh( VERTEX_POSITION | VERTEX_TEXCOORD_SIZE( 0, 2 ),
+		TEXTURE_GROUP_MODEL, m_MaterialHeatIcon );
+	CreateTexturedRectHolo( m_pMeshIcon, 0, 0, 0.9f, 0.9f );
 
 	SetOrigin( Vector( 0, -5.8f, -7.5f ) );
 	SetAngles( QAngle( 0, 160, 0 ) );
@@ -39,6 +47,7 @@ CHoloShipEngine::~CHoloShipEngine()
 {
 	CMatRenderContextPtr pRenderContext( materials );
 	pRenderContext->DestroyStaticMesh( m_pMeshElement );
+	pRenderContext->DestroyStaticMesh( m_pMeshIcon );
 }
 
 void CHoloShipEngine::PerformLayout()
@@ -79,7 +88,29 @@ void CHoloShipEngine::Draw( IMatRenderContext *pRenderContext )
 	MatrixSetTranslation( Vector( 0, -0.6f, 0.2f ), mat );
 	pRenderContext->MultMatrixLocal( mat );
 
-	GetColorVar()->SetVecValue( HOLO_COLOR_DEFAULT );
+	Vector vecColor( HOLO_COLOR_DEFAULT );
+	if ( m_bIsBoostSuspended )
+	{
+		const float flColorAnimation = sin( m_flBoostSuspendedTimer * 10.0f ) * 0.25f + 0.25f;
+		vecColor = Lerp( flColorAnimation, vecColor, Vector( HOLO_COLOR_WARNING ) );
+	
+		pRenderContext->PushMatrix();
+
+		MatrixSetTranslation( Vector( 0, 1.09f, 2.1f ), mat );
+		pRenderContext->MultMatrixLocal( mat );
+
+		pRenderContext->Bind( m_MaterialHeatIcon );
+		Vector vecIconColor = Lerp( flColorAnimation * 2.0f, vec3_origin, Vector( HOLO_COLOR_WARNING ) );
+
+		static unsigned int siHeatIconColor = 0;
+		IMaterialVar *pIconColorVar = m_MaterialHeatIcon->FindVarFast( "$color", &siHeatIconColor );
+		pIconColorVar->SetVecValue( vecIconColor.Base(), 3 );
+		m_pMeshIcon->Draw();
+
+		pRenderContext->PopMatrix();
+	}
+
+	GetColorVar()->SetVecValue( vecColor.Base(), 3 );
 	IMaterialVar *pAlpha = GetAlphaVar();
 
 	const int iElementCount = 5;
@@ -124,7 +155,7 @@ void CHoloShipEngine::Draw( IMatRenderContext *pRenderContext )
 	MatrixSetTranslation( Vector( -1, -2, 0.8f ), viewMatrixInv );
 	pRenderContext->MultMatrixLocal( viewMatrixInv );
 
-	GetColorVar( MATERIALTYPE_GLOW )->SetVecValue( HOLO_COLOR_DEFAULT );
+	GetColorVar( MATERIALTYPE_GLOW )->SetVecValue( vecColor.Base(), 3 );
 	GetAlphaVar( MATERIALTYPE_GLOW )->SetFloatValue( 0.02f + 0.03f * m_flEngineStrength );
 
 	const float flScale = 6.0f;
@@ -161,4 +192,15 @@ void CHoloShipEngine::Think( float frametime )
 	const float flSpeed = UNITS2METERS( m_pSpacecraftData->GetPhysVelocity().Length() ) * flWorldScaleInv * flMetersPerSecondToKmH;
 	m_pLabelSpeedValue->SetText( VarArgs( "%.0f km/h", flSpeed ) );
 	m_pLabelSpeedValue->MakeReadyForUse();
+
+	if ( m_pSpacecraftData->IsBoostSuspended() )
+	{
+		m_flBoostSuspendedTimer += gpGlobals->frametime;
+		m_bIsBoostSuspended = true;
+	}
+	else if ( m_bIsBoostSuspended )
+	{
+		m_flBoostSuspendedTimer = 0.0f;
+		m_bIsBoostSuspended = false;
+	}
 }

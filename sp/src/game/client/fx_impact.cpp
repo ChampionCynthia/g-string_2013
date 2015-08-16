@@ -19,6 +19,7 @@
 
 // GSTRINGMIGRATION
 #include "gstring/c_clientpartialragdoll.h"
+#include "gstring/cgstring_globals.h"
 // END GSTRINGMIGRATION
 
 // memdbgon must be the last include file in a .cpp file!!!
@@ -402,6 +403,17 @@ void PerformCustomEffects( const Vector &vecOrigin, trace_t &tr, const Vector &s
 //-----------------------------------------------------------------------------
 void PlayImpactSound( CBaseEntity *pEntity, trace_t &tr, Vector &vecServerOrigin, int nServerSurfaceProp )
 {
+	// GSTRINGMIGRATION
+	if (g_pGstringGlobals && !g_pGstringGlobals->ShouldPlayExteriorSpaceSounds())
+	{
+		CBaseEntity *pOwner = pEntity ? pEntity->GetOwnerEntity() : NULL;
+		if (!pOwner || !pOwner->IsPlayer())
+		{
+			return;
+		}
+	}
+	// END GSTRINGMIGRATION
+
 	VPROF( "PlayImpactSound" );
 	surfacedata_t *pdata;
 	Vector vecOrigin;

@@ -60,6 +60,63 @@ const matrix3x4_t &CurrentHoloViewMatrixInverted()
 	return g_matViewInverted;
 }
 
+class CSpacecraftDataStub : public ISpacecraftData
+{
+	virtual int GetShield() const
+	{
+		return 0;
+	}
+
+	virtual int GetMaxShield() const
+	{
+		return 0;
+	}
+
+	virtual int GetHull() const
+	{
+		return 0;
+	}
+
+	virtual int GetMaxHull() const
+	{
+		return 0;
+	}
+
+	virtual CBaseEntity *GetEntity()
+	{
+		return NULL;
+	}
+
+	virtual const QAngle &GetAngularImpulse() const
+	{
+		return vec3_angle;
+	}
+
+	virtual const Vector &GetPhysVelocity() const
+	{
+		return vec3_origin;
+	}
+
+	virtual EngineLevel_e GetEngineLevel() const
+	{
+		return ISpacecraftData::ENGINELEVEL_NORMAL;
+	}
+
+	virtual bool IsBoostSuspended() const
+	{
+		return false;
+	}
+
+	virtual int GetThrusterCount() const
+	{
+		return 0;
+	}
+
+	virtual float GetThrusterPower( int index ) const
+	{
+		return 0.0f;
+	}
+};
 #endif
 
 IMPLEMENT_NETWORKCLASS_DT( CEnvHoloSystem, CEnvHoloSystem_DT )
@@ -294,7 +351,13 @@ void CEnvHoloSystem::CreatePanels()
 {
 	DestroyPanels();
 
-	CSpacecraft *pSpacecraft = assert_cast< CSpacecraft* >( GetOwnerEntity() );
+	ISpacecraftData *pSpacecraft = dynamic_cast< CSpacecraft* >( GetOwnerEntity() );
+
+	if (pSpacecraft == NULL)
+	{
+		static CSpacecraftDataStub _data;
+		pSpacecraft = &_data;
+	}
 
 	m_Panels.AddToTail( new CHoloShipHealthGraphic( pSpacecraft ) );
 	m_Panels.AddToTail( new CHoloShipHealthText( pSpacecraft ) );

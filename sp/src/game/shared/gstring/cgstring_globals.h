@@ -54,6 +54,12 @@ public:
 		return m_bIsSpaceMap;
 	}
 
+	bool ShouldPlayExteriorSpaceSounds() const
+	{
+		extern ConVar gstring_space_exterior_sounds;
+		return !IsSpaceMap() || gstring_space_exterior_sounds.GetBool();
+	}
+
 	float GetWorldScale() const
 	{
 		return IsSpaceMap() ? ( 1.0f / 16.0f ) : 1.0f;

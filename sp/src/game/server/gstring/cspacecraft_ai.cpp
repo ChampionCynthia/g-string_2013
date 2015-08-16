@@ -454,9 +454,6 @@ void CSpacecraftAIBase::Move_FollowPath(float flFrametime)
 	Vector vecOrigin = m_pShip->GetAbsOrigin();
 	Vector vecEnemy = pPathTrack->GetAbsOrigin() - vecOrigin;
 
-	DebugDrawLine(vecOrigin, vecOrigin + Vector(0,0,1), 255, 0, 0, true, 1);
-	DebugDrawLine(pPathTrack->GetAbsOrigin(), pPathTrack->GetAbsOrigin() + Vector(0,0,5), 0, 255, 0, true, 1);
-
 	QAngle angMove;
 	VectorAngles(vecEnemy, angMove);
 

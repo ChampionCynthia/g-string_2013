@@ -62,6 +62,7 @@ public:
 	virtual const QAngle &GetAngularImpulse() const = 0;
 	virtual const Vector &GetPhysVelocity() const = 0;
 	virtual EngineLevel_e GetEngineLevel() const = 0;
+	virtual bool IsBoostSuspended() const = 0;
 
 #ifdef CLIENT_DLL
 	virtual int GetThrusterCount() const = 0;
@@ -105,6 +106,7 @@ public:
 	};
 
 	bool IsPlayerControlled() const;
+	bool ShouldPlaySounds() const;
 
 	// ISpacecraftData implementation
 	virtual int GetShield() const { return m_iShield; }
@@ -115,6 +117,7 @@ public:
 	virtual const QAngle &GetAngularImpulse() const { return m_AngularImpulse.Get(); }
 	virtual const Vector &GetPhysVelocity() const { return m_PhysVelocity.Get(); }
 	virtual EngineLevel_e GetEngineLevel() const { return (EngineLevel_e) m_iEngineLevel.Get(); }
+	virtual bool IsBoostSuspended() const { return m_bBoostSuspended; }
 #ifdef CLIENT_DLL
 	virtual int GetThrusterCount() const { return m_ThrusterAttachments.Count(); }
 	virtual float GetThrusterPower( int index ) const { return m_flThrusterPower[ index ]; }
@@ -135,6 +138,7 @@ public:
 	void InputEnterVehicle(inputdata_t &inputdata);
 	virtual void PhysicsSimulate();
 	virtual void VPhysicsCollision(int index, gamevcollisionevent_t *pEvent);
+	virtual void VPhysicsFriction( IPhysicsObject *pObject, float energy, int surfaceProps, int surfacePropsHit );
 	virtual bool WillSimulateGamePhysics() { return true; }
 	virtual int OnTakeDamage(const CTakeDamageInfo &info);
 	virtual void Event_Killed(const CTakeDamageInfo &info);
@@ -232,6 +236,7 @@ private:
 	IMPLEMENT_NETWORK_VAR_FOR_DERIVED(m_iHealth);
 
 	CUtlVector< int > m_WeaponAttachments;
+	float m_flBoostUsage;
 
 	CNetworkVar(int, m_iShield);
 	CNetworkVar(int, m_iMaxShield);
@@ -241,6 +246,7 @@ private:
 	CNetworkVar(int, m_iProjectileParity);
 	CNetworkVar(float, m_flMoveX);
 	CNetworkVar(float, m_flMoveY);
+	CNetworkVar(bool, m_bBoostSuspended);
 
 	// AI
 	CNetworkVar(int, m_iAITeam);

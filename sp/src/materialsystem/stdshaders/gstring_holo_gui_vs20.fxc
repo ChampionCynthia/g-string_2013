@@ -1,5 +1,6 @@
 
 //  STATIC: "VERTEXCOLOR"         "0..1"
+//  STATIC: "TEXTURE"             "0..1"
 
 #include "common_vs_fxc.h"
 
@@ -9,12 +10,18 @@ struct VS_INPUT
 #if VERTEXCOLOR
 	float4 vColor		: COLOR0;
 #endif
+#if TEXTURE
+	float2 vTexCoord	: TEXCOORD0;
+#endif
 };
 
 struct VS_OUTPUT
 {
 	float4 vProjPos		: POSITION;
 	float3 vWorldPos	: TEXCOORD0;
+#if TEXTURE
+	float2 vTexCoord	: TEXCOORD1;
+#endif
 	float4 vColor		: COLOR0;
 };
 
@@ -29,6 +36,9 @@ VS_OUTPUT main( const VS_INPUT v )
 	o.vColor.a = cModulationColor.a;
 #if VERTEXCOLOR
 	o.vColor *= v.vColor;
+#endif
+#if TEXTURE
+	o.vTexCoord = v.vTexCoord;
 #endif
 	return o;
 }

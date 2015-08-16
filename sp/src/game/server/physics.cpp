@@ -53,6 +53,10 @@
 void PortalPhysFrame( float deltaTime ); //small wrapper for PhysFrame that simulates all 3 environments at once
 #endif
 
+// GSTRINGMIGRATION
+#include "gstring/cgstring_globals.h"
+// END GSTRINGMIGRATION
+
 void PrecachePhysicsSounds( void );
 
 // memdbgon must be the last include file in a .cpp file!!!
@@ -2581,6 +2585,15 @@ bool PhysGetTriggerEvent( triggerevent_t *pEvent, CBaseEntity *pTriggerEntity )
 
 void PhysicsImpactSound( CBaseEntity *pEntity, IPhysicsObject *pPhysObject, int channel, int surfaceProps, int surfacePropsHit, float volume, float impactSpeed )
 {
+	// GSTRINGMIGRATION
+	if (g_pGstringGlobals && !g_pGstringGlobals->ShouldPlayExteriorSpaceSounds())
+	{
+		if (!pEntity || !pEntity->GetOwnerEntity() || !pEntity->GetOwnerEntity()->IsPlayer())
+		{
+			return;
+		}
+	}
+	// END GSTRINGMIGRATION
 	physicssound::AddImpactSound( g_PhysicsHook.m_impactSounds, pEntity, pEntity->entindex(), channel, pPhysObject, surfaceProps, surfacePropsHit, volume, impactSpeed );
 }
 
@@ -2600,6 +2613,16 @@ void PhysBreakSound( CBaseEntity *pEntity, IPhysicsObject *pPhysObject, Vector v
 {
 	if ( !pPhysObject)
 		return;
+	
+	// GSTRINGMIGRATION
+	if (g_pGstringGlobals && !g_pGstringGlobals->ShouldPlayExteriorSpaceSounds())
+	{
+		if (!pEntity || !pEntity->GetOwnerEntity() || !pEntity->GetOwnerEntity()->IsPlayer())
+		{
+			return;
+		}
+	}
+	// END GSTRINGMIGRATION
 
 	physicssound::AddBreakSound( g_PhysicsHook.m_breakSounds, vecOrigin, pPhysObject->GetMaterialIndex() );
 }

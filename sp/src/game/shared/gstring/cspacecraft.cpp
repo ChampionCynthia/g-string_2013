@@ -78,7 +78,10 @@ static ConVar gstring_spacecraft_move_ang_approach_speed( "gstring_spacecraft_mo
 static ConVar gstring_spacecraft_move_drag_side( "gstring_spacecraft_move_drag_side", "2.0", FCVAR_REPLICATED );
 static ConVar gstring_spacecraft_move_drag_fwd( "gstring_spacecraft_move_drag_fwd", "1.0", FCVAR_REPLICATED );
 static ConVar gstring_spacecraft_move_drag_up( "gstring_spacecraft_move_drag_up", "2.0", FCVAR_REPLICATED );
+static ConVar gstring_spacecraft_boost_duration( "gstring_spacecraft_boost_duration", "10.0", FCVAR_REPLICATED );
+static ConVar gstring_spacecraft_boost_cooldown( "gstring_spacecraft_boost_cooldown", "5.0", FCVAR_REPLICATED );
 ConVar gstring_spacecraft_move_mode( "gstring_spacecraft_move_mode", "0", FCVAR_REPLICATED );
+ConVar gstring_space_exterior_sounds( "gstring_space_exterior_sounds", "0", FCVAR_REPLICATED | FCVAR_ARCHIVE );
 
 #ifdef GAME_DLL
 BEGIN_DATADESC( CSpacecraft )
@@ -127,6 +130,7 @@ IMPLEMENT_NETWORKCLASS_DT( CSpacecraft, CSpacecraft_DT )
 
 	SendPropFloat( SENDINFO( m_flMoveX ) ),
 	SendPropFloat( SENDINFO( m_flMoveY ) ),
+	SendPropBool( SENDINFO( m_bBoostSuspended ) ),
 	SendPropInt( SENDINFO( m_iAITeam ), CSpacecraft::AITEAM_BITS, SPROP_UNSIGNED ),
 	SendPropEHandle( SENDINFO( m_hHoloSystem ) ),
 #else
@@ -144,6 +148,7 @@ IMPLEMENT_NETWORKCLASS_DT( CSpacecraft, CSpacecraft_DT )
 
 	RecvPropFloat( RECVINFO( m_flMoveX ) ),
 	RecvPropFloat( RECVINFO( m_flMoveY ) ),
+	RecvPropBool( RECVINFO( m_bBoostSuspended ) ),
 	RecvPropInt( RECVINFO( m_iAITeam ) ),
 	RecvPropEHandle( RECVINFO( m_hHoloSystem ) ),
 #endif
@@ -179,6 +184,7 @@ CSpacecraft::CSpacecraft()
 	, m_flThrusterPower( NULL )
 	, m_iAttachmentGUI( 0 )
 #endif
+	, m_flBoostUsage( 0.0f )
 {
 	m_iAITeam = AITEAM_MARTIAN;
 	m_iSettingsIndex = UTL_INVAL_SYMBOL;
@@ -253,6 +259,11 @@ const C_BaseEntity *CSpacecraft::GetEntity() const
 bool CSpacecraft::IsPlayerControlled() const
 {
 	return GetOwnerEntity() && GetOwnerEntity()->IsPlayer();
+}
+
+bool CSpacecraft::ShouldPlaySounds() const
+{
+	return IsPlayerControlled() || gstring_space_exterior_sounds.GetBool();
 }
 
 #ifdef GAME_DLL
@@ -426,6 +437,14 @@ void CSpacecraft::VPhysicsCollision( int index, gamevcollisionevent_t *pEvent )
 	}
 }
 
+void CSpacecraft::VPhysicsFriction( IPhysicsObject *pObject, float energy, int surfaceProps, int surfacePropsHit )
+{
+	if (ShouldPlaySounds())
+	{
+		BaseClass::VPhysicsFriction(pObject, energy, surfaceProps, surfacePropsHit);
+	}
+}
+
 int CSpacecraft::OnTakeDamage( const CTakeDamageInfo &info )
 {
 	CTakeDamageInfo newDamage( info );
@@ -442,7 +461,10 @@ int CSpacecraft::OnTakeDamage( const CTakeDamageInfo &info )
 	int ret = BaseClass::OnTakeDamage( newDamage );
 
 	DispatchParticleEffect( m_Settings.m_strParticleDamage, newDamage.GetDamagePosition(), GetAbsAngles() );
-	EmitSoundIfSet( this, m_Settings.m_strSoundDamage );
+	if (ShouldPlaySounds())
+	{
+		EmitSoundIfSet( this, m_Settings.m_strSoundDamage );
+	}
 
 	m_flShieldRegenerationTimer = m_Settings.m_flShieldRegenerationDelay;
 	m_flShieldRegeneratedTimeStamp = gpGlobals->curtime;
@@ -529,7 +551,10 @@ void CSpacecraft::Event_Killed( const CTakeDamageInfo &info )
 		PropBreakableCreateAll( GetModelIndex(), pPhysics, params, this, -1, true, true );
 	}
 
-	EmitSoundIfSet( this, m_Settings.m_strSoundDeath );
+	if (ShouldPlaySounds())
+	{
+		EmitSoundIfSet( this, m_Settings.m_strSoundDeath );
+	}
 	DispatchParticleEffect( m_Settings.m_strParticleDeath, GetAbsOrigin(), GetAbsAngles() );
 	//const int iRingCount = RandomInt( 2, 4 );
 	//for ( int i = 0; i < iRingCount; i++ )
@@ -903,7 +928,7 @@ void CSpacecraft::ClientThink()
 		const bool bEngineRunning = m_iEngineLevel > ENGINELEVEL_STALLED;
 		const bool bEngineWasRunning = m_iEngineLevelLast > ENGINELEVEL_STALLED;
 
-		if ( bEngineRunning != bEngineWasRunning )
+		if ( bEngineRunning != bEngineWasRunning && ShouldPlaySounds() )
 		{
 			m_flEngineVolume = flEngineVolumeTarget;
 			if ( bEngineRunning )
@@ -959,16 +984,19 @@ void CSpacecraft::ClientThink()
 			}
 		}
 
-		if ( m_iEngineLevel == ENGINELEVEL_BOOST )
+		if (ShouldPlaySounds())
 		{
-			EmitSoundIfSet( this, m_Settings.m_strSoundBoostStart );
-			m_iGUID_Boost = enginesound->GetGuidForLastSoundEmitted();
-		}
-		else if ( m_iEngineLevelLast == ENGINELEVEL_BOOST )
-		{
-			enginesound->StopSoundByGuid( m_iGUID_Boost );
-			m_iGUID_Boost = -1;
-			EmitSoundIfSet( this, m_Settings.m_strSoundBoostStop );
+			if ( m_iEngineLevel == ENGINELEVEL_BOOST )
+			{
+				EmitSoundIfSet( this, m_Settings.m_strSoundBoostStart );
+				m_iGUID_Boost = enginesound->GetGuidForLastSoundEmitted();
+			}
+			else if ( m_iEngineLevelLast == ENGINELEVEL_BOOST )
+			{
+				enginesound->StopSoundByGuid( m_iGUID_Boost );
+				m_iGUID_Boost = -1;
+				EmitSoundIfSet( this, m_Settings.m_strSoundBoostStop );
+			}
 		}
 
 		m_iEngineLevelLast = m_iEngineLevel;
@@ -1188,7 +1216,7 @@ void CSpacecraft::SimulateMove( CMoveData &moveData, float flFrametime )
 		m_flMoveX = vecMove.x;
 		m_flMoveY = vecMove.y;
 
-		const bool bBoosting = ( moveData.m_nButtons & IN_SPEED ) != 0;
+		const bool bBoosting = ( moveData.m_nButtons & IN_SPEED ) != 0 && !m_bBoostSuspended;
 		if ( bUseScreenMove )
 		{
 			if ( !bCutOffEngines )
@@ -1235,6 +1263,28 @@ void CSpacecraft::SimulateMove( CMoveData &moveData, float flFrametime )
 	{
 		m_flMoveX = 0.0f;
 		m_flMoveY = 0.0f;
+	}
+
+		const float flBoostDuration = gstring_spacecraft_boost_duration.GetFloat();
+		const float flBoostCooldown = gstring_spacecraft_boost_cooldown.GetFloat();
+
+	if ( bBoostEffects && IsPlayerControlled() )
+	{
+		m_flBoostUsage += flFrametime;
+		if ( m_flBoostUsage > flBoostDuration )
+		{
+			m_flBoostUsage = flBoostDuration;
+			m_bBoostSuspended = true;
+		}
+	}
+	else if ( m_flBoostUsage > 0.0f )
+	{
+		m_flBoostUsage -= flBoostDuration / flBoostCooldown * flFrametime;
+		if ( m_flBoostUsage <= 0.0f )
+		{
+			m_flBoostUsage = 0.0f;
+			m_bBoostSuspended = false;
+		}
 	}
 
 	m_iEngineLevel = bCutOffEngines ? ENGINELEVEL_STALLED : ( bAccelerationEffects ?

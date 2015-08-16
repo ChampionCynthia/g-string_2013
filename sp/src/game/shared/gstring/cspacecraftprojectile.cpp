@@ -10,6 +10,7 @@
 #include "particle_parse.h"
 
 static ConVar gstring_spacecraft_damage_player( "gstring_spacecraft_damage_player", "5.0", FCVAR_CHEAT | FCVAR_REPLICATED );
+extern ConVar gstring_space_exterior_sounds;
 
 #ifdef GAME_DLL
 BEGIN_DATADESC( CSpacecraftProjectile )
@@ -101,7 +102,7 @@ void CSpacecraftProjectile::Fire( CBaseEntity *pPlayer, CBaseEntity *pVehicle,
 	{
 		pPlayer->EmitSound( "Spacecraft.Projectile.Fire.Player" );
 	}
-	else
+	else if ( gstring_space_exterior_sounds.GetBool() )
 	{
 		EmitSound( "Spacecraft.Projectile.Fire" );
 	}
@@ -114,6 +115,7 @@ void CSpacecraftProjectile::OnTouch( CBaseEntity *pOther )
 
 	trace_t tr;
 	tr = BaseClass::GetTouchTrace();
+	CBaseEntity *pHitEntity = NULL;
 	if ( tr.DidHitWorld() )
 	{
 		const surfacedata_t *pdata = physprops->GetSurfaceData( tr.surface.surfaceProps );
@@ -158,6 +160,7 @@ void CSpacecraftProjectile::OnTouch( CBaseEntity *pOther )
 		if ( pOther->m_takedamage != DAMAGE_NO )
 		{
 			m_iImpactType = 2;
+			pHitEntity = pOther;
 			Vector vecVelocity = GetAbsVelocity();
 			vecVelocity.NormalizeInPlace();
 
@@ -180,7 +183,7 @@ void CSpacecraftProjectile::OnTouch( CBaseEntity *pOther )
 
 	if ( m_iImpactType != 0 )
 	{
-		tr.m_pEnt = NULL;
+		tr.m_pEnt = pHitEntity;
 		tr.endpos = tr.endpos + ( tr.endpos - tr.startpos ).Normalized() * 3.0f;
 		ImpactTrace( &tr, DMG_BLAST );
 	}

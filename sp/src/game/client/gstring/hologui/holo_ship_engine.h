@@ -32,6 +32,12 @@ private:
 	vgui::Label *m_pLabelSpeedLabel;
 	vgui::Label *m_pLabelSpeedValue;
 	IMesh *m_pMeshElement;
+	IMesh *m_pMeshIcon;
+
+	float m_flBoostSuspendedTimer;
+	bool m_bIsBoostSuspended;
+
+	CMaterialReference m_MaterialHeatIcon;
 };
 
 #endif

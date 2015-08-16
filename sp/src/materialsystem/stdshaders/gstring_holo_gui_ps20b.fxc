@@ -1,10 +1,23 @@
 
+//  STATIC: "TEXTURE"             "0..1"
+//  STATIC: "SCANLINES"           "0..1"
+
 #include "common_ps_fxc.h"
+
+sampler TextureSampler		: register( s0 );
+sampler ScanlinesSampler	: register( s1 );
+
+const float2 g_ScanlineConstants		: register( c0 );
+#define g_ScanlineTime g_ScanlineConstants.x
+#define g_ScanlineAlpha g_ScanlineConstants.y
 
 struct PS_INPUT
 {
 	float3 vWorldPos	: TEXCOORD0;
 	float4 vColor		: COLOR0;
+#if TEXTURE
+	float2 vTexCoord	: TEXCOORD1;
+#endif
 };
 
 float4 FinalOutputConst( const float4 vShaderColor, const int iTONEMAP_SCALE_TYPE )
@@ -26,6 +39,23 @@ float4 FinalOutputConst( const float4 vShaderColor, const int iTONEMAP_SCALE_TYP
 float4 main( PS_INPUT i ) : COLOR
 {
 	float4 color = i.vColor;
+	
+#if TEXTURE
+	color.rgb *= tex2D( TextureSampler, i.vTexCoord ).rgb;
+#endif
+	
+#if SCANLINES
 	//color.a *= frac( i.vWorldPos.z * 5.0 ) * 0.5 + 0.5;
+	
+	//float f = frac( i.vWorldPos.z * 7.0 + g_ScanlineTime );
+	//color.a *= saturate(pow(abs(f * 2.4 - 1.2), 2) + 0.5) * g_ScanlineAlpha;
+	
+	float scanlineUV = i.vWorldPos.z * 0.05 + g_ScanlineTime;
+	float scanline = tex1D( ScanlinesSampler, scanlineUV ).r;
+	//color.a *= scanline;
+	scanlineUV = i.vWorldPos.z * 0.0222 + g_ScanlineTime * 0.1;
+	color.a *= pow( tex1D( ScanlinesSampler, scanlineUV ).r * scanline, 2 );
+#endif
+	
 	return FinalOutputConst( color, TONEMAP_SCALE_LINEAR );
 }

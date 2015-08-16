@@ -848,6 +848,23 @@ CHLClient::CHLClient()
 
 extern IGameSystem *ViewportClientSystem();
 
+// GSTRINGMIGRATION
+void CheatsChanged(IConVar *var, const char *pOldValue, float flOldValue)
+{
+	if (var == sv_cheats)
+	{
+		static bool bShowedWarning = false;
+		if (sv_cheats && sv_cheats->GetBool() && !bShowedWarning)
+		{
+			bShowedWarning = true;
+			cvar->ConsoleColorPrintf(Color(255, 32, 16, 255),
+				"The usage of cheats is not recommended.\n");
+			cvar->ConsoleColorPrintf(Color(196, 196, 0, 255),
+				"You may risk corrupting your saves, break level transitions or generally break the game by cheating.\n");
+		}
+	}
+}
+// END GSTRINGMIGRATION
 
 //-----------------------------------------------------------------------------
 ISourceVirtualReality *g_pSourceVR = NULL;
@@ -1078,7 +1095,10 @@ int CHLClient::Init( CreateInterfaceFn appSystemFactory, CreateInterfaceFn physi
 
 	ClientWorldFactoryInit();
 
-	gHUD.InitPostSystems(); // GSTRINGMIGRATION
+	// GSTRINGMIGRATION
+	gHUD.InitPostSystems();
+	cvar->InstallGlobalChangeCallback(CheatsChanged);
+	// END GSTRINGMIGRATION
 
 	C_BaseAnimating::InitBoneSetupThreadPool();
 
@@ -1168,6 +1188,10 @@ void CHLClient::PostInit()
 //-----------------------------------------------------------------------------
 void CHLClient::Shutdown( void )
 {
+	// GSTRINGMIGRATION
+	cvar->RemoveGlobalChangeCallback(CheatsChanged);
+	// END GSTRINGMIGRATION
+
     if (g_pAchievementsAndStatsInterface)
     {
         g_pAchievementsAndStatsInterface->ReleasePanel();

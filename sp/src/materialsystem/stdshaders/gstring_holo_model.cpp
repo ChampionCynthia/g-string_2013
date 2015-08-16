@@ -12,10 +12,20 @@
 BEGIN_VS_SHADER( gstring_holo_gui, "" )
 
 	BEGIN_SHADER_PARAMS
+		SHADER_PARAM( SCANLINES, SHADER_PARAM_TYPE_TEXTURE, "0", "" )
 	END_SHADER_PARAMS
 
 	SHADER_INIT_PARAMS()
 	{
+		//if (!params[COLOR]->IsDefined())
+		//{
+		//	params[COLOR]->SetVecValue(1, 1, 1);
+		//}
+		//
+		//if (!params[ALPHA]->IsDefined())
+		//{
+		//	params[ALPHA]->SetFloatValue(1);
+		//}
 	}
 
 	SHADER_FALLBACK
@@ -25,10 +35,22 @@ BEGIN_VS_SHADER( gstring_holo_gui, "" )
 
 	SHADER_INIT
 	{
+		if ( params[ BASETEXTURE ]->IsDefined() )
+		{
+			LoadTexture( BASETEXTURE );
+		}
+
+		if ( params[ SCANLINES ]->IsDefined() )
+		{
+			LoadTexture( SCANLINES );
+		}
 	}
 
 	SHADER_DRAW
 	{
+		const bool bHasTexture = params[ BASETEXTURE ]->IsTexture();
+		const bool bHasScanlines = params[ SCANLINES ]->IsDefined() && params[ SCANLINES ]->IsTexture();
+
 		SHADOW_STATE
 		{
 			const bool bHasVertexColor = IS_FLAG_SET( MATERIAL_VAR_VERTEXALPHA ) || IS_FLAG_SET( MATERIAL_VAR_VERTEXCOLOR );
@@ -39,6 +61,18 @@ BEGIN_VS_SHADER( gstring_holo_gui, "" )
 			pShaderShadow->EnableCulling( false );
 			pShaderShadow->EnableSRGBWrite( true );
 			EnableAlphaBlending( SHADER_BLEND_SRC_ALPHA, SHADER_BLEND_ONE );
+
+			if ( bHasTexture )
+			{
+				pShaderShadow->EnableTexture( SHADER_SAMPLER0, true );
+				pShaderShadow->EnableSRGBRead( SHADER_SAMPLER0, true );
+			}
+
+			if ( bHasScanlines )
+			{
+				pShaderShadow->EnableTexture( SHADER_SAMPLER1, true );
+				pShaderShadow->EnableSRGBRead( SHADER_SAMPLER1, true );
+			}
 
 			unsigned int flags = VERTEX_POSITION;
 			if ( bHasVertexColor )
@@ -52,9 +86,12 @@ BEGIN_VS_SHADER( gstring_holo_gui, "" )
 			// Vertex Shader
 			DECLARE_STATIC_VERTEX_SHADER( gstring_holo_gui_vs20 );
 			SET_STATIC_VERTEX_SHADER_COMBO( VERTEXCOLOR, bHasVertexColor );
+			SET_STATIC_VERTEX_SHADER_COMBO( TEXTURE, bHasTexture );
 			SET_STATIC_VERTEX_SHADER( gstring_holo_gui_vs20 );
 
 			DECLARE_STATIC_PIXEL_SHADER( gstring_holo_gui_ps20b );
+			SET_STATIC_PIXEL_SHADER_COMBO( TEXTURE, bHasTexture );
+			SET_STATIC_PIXEL_SHADER_COMBO( SCANLINES, bHasScanlines );
 			SET_STATIC_PIXEL_SHADER( gstring_holo_gui_ps20b );
 		}
 		DYNAMIC_STATE
@@ -67,7 +104,31 @@ BEGIN_VS_SHADER( gstring_holo_gui, "" )
 			DECLARE_DYNAMIC_PIXEL_SHADER( gstring_holo_gui_ps20b );
 			SET_DYNAMIC_PIXEL_SHADER( gstring_holo_gui_ps20b );
 
+			if ( bHasTexture )
+			{
+				BindTexture( SHADER_SAMPLER0, BASETEXTURE );
+			}
+
+			if ( bHasScanlines )
+			{
+				BindTexture( SHADER_SAMPLER1, SCANLINES );
+			}
+
 			SetModulationVertexShaderDynamicState();
+
+			if ( bHasScanlines )
+			{
+				//float r = rand() / (float)RAND_MAX;
+				//float flConst0[] = { fmodf( pShaderAPI->CurrentTime() * 50.0f, 1.0f ) * (0.3f + 0.1f * r) + 0.7f,
+				//	0, 0, 0 };
+				//flConst0[1] = 1; //sin( flConst0[0] ) * 0.1f + 0.9f;
+				//pShaderAPI->SetPixelShaderConstant( 0, flConst0 );
+
+				float flConst0[] = { pShaderAPI->CurrentTime() * -0.5f,
+					0, 0, 0 };
+				flConst0[1] = 1; //sin( flConst0[0] ) * 0.1f + 0.9f;
+				pShaderAPI->SetPixelShaderConstant( 0, flConst0 );
+			}
 		}
 
 		Draw();

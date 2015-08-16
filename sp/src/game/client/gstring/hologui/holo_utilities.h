@@ -42,6 +42,36 @@ inline void CreateTexturedRect( IMesh *pMesh, float x, float y, float width, flo
 	builder.End();
 }
 
+inline void CreateTexturedRectHolo( IMesh *pMesh, float x, float y, float width, float height )
+{
+	CMeshBuilder builder;
+	builder.Begin( pMesh, MATERIAL_QUADS, 1 );
+
+	float color4[] = { 1, 1, 1 };
+
+	builder.Position3f( 0.0f, x, y );
+	builder.TexCoord2f( 0, 0, 1 );
+	builder.Color3fv( color4 );
+	builder.AdvanceVertex();
+
+	builder.Position3f( 0.0f, x + width, y );
+	builder.TexCoord2f( 0, 1, 1 );
+	builder.Color3fv( color4 );
+	builder.AdvanceVertex();
+
+	builder.Position3f( 0.0f, x + width, y + height );
+	builder.TexCoord2f( 0, 1, 0 );
+	builder.Color3fv( color4 );
+	builder.AdvanceVertex();
+
+	builder.Position3f( 0.0f, x, y + height );
+	builder.TexCoord2f( 0, 0, 0 );
+	builder.Color3fv( color4 );
+	builder.AdvanceVertex();
+
+	builder.End();
+}
+
 inline void CreateSlantedRect( IMesh *pMesh, float x, float y, float width, float height, float offset = 0.0f )
 {
 	CMeshBuilder builder;
@@ -353,6 +383,49 @@ inline void CreateRecticule( IMesh *pMesh, float scale, float thickness, float l
 		builder.AdvanceVertex();
 
 		v += start * thickness;
+		builder.Position3fv( v.Base() );
+		builder.AdvanceVertex();
+
+		v += dir * lineSize;
+		builder.Position3fv( v.Base() );
+		builder.AdvanceVertex();
+
+		v += offset * thickness + dir * thickness * 0.707f;
+		builder.Position3fv( v.Base() );
+		builder.AdvanceVertex();
+	}
+
+	builder.End();
+}
+
+inline void CreateRecticuleOffScreen( IMesh *pMesh, float scale, float thickness, float lineSize, float angle )
+{
+	CMeshBuilder builder;
+	builder.Begin( pMesh, MATERIAL_QUADS, 2 );
+	
+	const Vector vecDirections[] = {
+		Vector( 0, -0.707f, -0.707f ),
+		Vector( 0, 0.707f, -0.707f ),
+	};
+
+	const Vector vecOffsets[] = {
+		Vector( 0, 1, 0 ),
+		Vector( 0, -1, 0 ),
+	};
+
+	for ( int i = 0; i < 2; ++i )
+	{
+		Vector dir = vecDirections[ i ];
+		Vector offset = vecOffsets[ i ];
+
+		RotateVectorYZ( dir, angle );
+		RotateVectorYZ( offset, angle );
+
+		Vector v = vec3_origin;
+		builder.Position3fv( v.Base() );
+		builder.AdvanceVertex();
+
+		v += Vector( 0, 0, 1 ) * thickness;
 		builder.Position3fv( v.Base() );
 		builder.AdvanceVertex();
 
