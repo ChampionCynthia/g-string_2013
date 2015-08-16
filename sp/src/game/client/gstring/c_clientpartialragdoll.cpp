@@ -851,3 +851,10 @@ void C_ClientPartialRagdoll::DestroyGore()
 	}
 	m_Gore.Purge();
 }
+
+void C_ClientPartialRagdoll::DelayedInitModelEffects()
+{
+	BaseClass::DelayedInitModelEffects();
+
+	TermRopes();
+}

@@ -93,12 +93,6 @@ CPointHoloTarget::~CPointHoloTarget()
 
 #ifdef GAME_DLL
 
-//void CPointHoloTarget::OnRestore()
-//{
-//	BaseClass::OnRestore();
-//	m_bIsRestoring = true;
-//}
-
 void CPointHoloTarget::InputEnable( inputdata_t &inputdata )
 {
 	if ( !m_bEnabled )

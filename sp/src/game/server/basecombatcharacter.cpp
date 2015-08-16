@@ -1551,7 +1551,7 @@ bool CBaseCombatCharacter::BecomeRagdoll( const CTakeDamageInfo &info, const Vec
 	}
 #endif
 
-#ifdef HL2_DLL	
+#if defined(HL2_DLL) && !defined(GSTRING) // GSTRINGMIGRATION
 
 	bool bMegaPhyscannonActive = false;
 #if !defined( HL2MP )

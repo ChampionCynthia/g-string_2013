@@ -27,9 +27,9 @@ ConVar cvar_gstring_barsandgrain_zoom( "gstring_BarsAndGrain_zoom", "0.06", FCVA
 ConVar cvar_gstring_bloomflare_strength( "gstring_BloomFlare_strength", "2.0", FCVAR_ARCHIVE );
 ConVar cvar_gstring_desaturation_strength( "gstring_Desaturation_strength", "0.0", FCVAR_ARCHIVE );
 ConVar cvar_gstring_filmgrain_strength( "gstring_FilmGrain_strength", "0.04", FCVAR_ARCHIVE );
-ConVar cvar_gstring_vignette_strength( "gstring_Vignette_strength", "1.0", FCVAR_ARCHIVE );
-ConVar cvar_gstring_vignette_range_min( "gstring_Vignette_range_min", "0.2", FCVAR_ARCHIVE );
-ConVar cvar_gstring_vignette_range_max( "gstring_Vignette_range_max", "0.7", FCVAR_ARCHIVE );
+ConVar cvar_gstring_vignette_strength( "gstring_Vignette_strength", "3.0", FCVAR_ARCHIVE );
+ConVar cvar_gstring_vignette_range_min( "gstring_Vignette_range_min", "0.1", FCVAR_ARCHIVE );
+ConVar cvar_gstring_vignette_range_max( "gstring_Vignette_range_max", "1", FCVAR_ARCHIVE );
 
 ConVar cvar_gstring_debug_vguiparticles( "gstring_debug_VguiParticles", "0" );
 ConVar cvar_gstring_nightvision_minlighting( "gstring_nightvision_minlighting", "0.5" );

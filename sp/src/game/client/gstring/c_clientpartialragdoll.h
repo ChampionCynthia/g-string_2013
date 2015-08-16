@@ -45,6 +45,7 @@ public:
 
 	void RebuildGore();
 	void DestroyGore();
+	virtual void DelayedInitModelEffects();
 
 private:
 	void BuildPartial( ragdollparams_partial_t &params );

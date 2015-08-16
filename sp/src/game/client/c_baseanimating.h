@@ -473,9 +473,15 @@ private:
 	CBoneList*						RecordBones( CStudioHdr *hdr, matrix3x4_t *pBoneState );
 
 	bool							PutAttachment( int number, const matrix3x4_t &attachmentToWorld );
+
+	// GSTRINGMIGRATION
+public:
 	void							TermRopes();
 
-	void							DelayedInitModelEffects( void );
+	virtual void					DelayedInitModelEffects( void );
+
+private:
+	// END GSTRINGMIGRATION
 
 	void							UpdateRelevantInterpolatedVars();
 	void							AddBaseAnimatingInterpolatedVars();

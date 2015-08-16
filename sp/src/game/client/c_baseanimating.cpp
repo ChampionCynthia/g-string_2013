@@ -4716,48 +4716,50 @@ C_BaseAnimating *C_BaseAnimating::BecomeRagdollOnClient()
 		FOR_EACH_VEC( gibModels, i )
 		{
 			ragdollparams_partial_t &partial = gibModels[ i ];
-
 			C_BaseAnimating *pGib = CreateRagdollCopy( false );
 
-			C_ClientPartialRagdoll *pRecursiveRagdoll = dynamic_cast< C_ClientPartialRagdoll* >( pGib );
-
-			if ( pRecursiveRagdoll != NULL )
+			if ( pGib != NULL )
 			{
-				pRecursiveRagdoll->SetRecursiveGibData( pszGibGroup, pszGoreGroup, pszGoreMaterial );
-				pRecursiveRagdoll->SetBloodColor( iBloodColor );
-			}
+				C_ClientPartialRagdoll *pRecursiveRagdoll = dynamic_cast< C_ClientPartialRagdoll* >( pGib );
 
-			pGib->InitAsClientRagdoll( boneDelta0, boneDelta1, currentBones, boneDt, false, &partial );
-
-			if ( bExplosionImpact
-				&& RandomFloat() <= gstring_gibbing_explosion_recursive_chance.GetFloat() / 100.0f )
-			{
-				trace_t tr;
-				Vector dir = RandomVector( -0.5f, 0.5f ) + m_vecForce.Normalized();
-				dir.NormalizeInPlace();
-				dir *= RandomFloat( 200, 500 );
-
-				UTIL_TraceLine( pGib->WorldSpaceCenter(),
-					pGib->WorldSpaceCenter() + dir, MASK_SOLID, NULL, COLLISION_GROUP_NONE, &tr );
-
-				pGib->ImpactTrace( &tr, pCombatChar->GetKillDamageType(), NULL );
-			}
-			else
-			{
-				const char *pszEffectBone = partial.rootBone;
-
-				if ( pszEffectBone == NULL
-					|| *pszEffectBone == 0 )
-					pszEffectBone = params.pszHitBone;
-
-				if ( pszEffectBone != NULL )
+				if ( pRecursiveRagdoll != NULL )
 				{
-					DispatchGibParticle( pGib, pszEffectBone, bExplosionImpact, BloodColor() );
+					pRecursiveRagdoll->SetRecursiveGibData( pszGibGroup, pszGoreGroup, pszGoreMaterial );
+					pRecursiveRagdoll->SetBloodColor( iBloodColor );
 				}
 
-				if ( pRagdoll == NULL )
+				pGib->InitAsClientRagdoll( boneDelta0, boneDelta1, currentBones, boneDt, false, &partial );
+
+				if ( bExplosionImpact
+					&& RandomFloat() <= gstring_gibbing_explosion_recursive_chance.GetFloat() / 100.0f )
 				{
-					pRagdoll = pGib;
+					trace_t tr;
+					Vector dir = RandomVector( -0.5f, 0.5f ) + m_vecForce.Normalized();
+					dir.NormalizeInPlace();
+					dir *= RandomFloat( 200, 500 );
+
+					UTIL_TraceLine( pGib->WorldSpaceCenter(),
+						pGib->WorldSpaceCenter() + dir, MASK_SOLID, NULL, COLLISION_GROUP_NONE, &tr );
+
+					pGib->ImpactTrace( &tr, pCombatChar->GetKillDamageType(), NULL );
+				}
+				else
+				{
+					const char *pszEffectBone = partial.rootBone;
+
+					if ( pszEffectBone == NULL
+						|| *pszEffectBone == 0 )
+						pszEffectBone = params.pszHitBone;
+
+					if ( pszEffectBone != NULL )
+					{
+						DispatchGibParticle( pGib, pszEffectBone, bExplosionImpact, BloodColor() );
+					}
+
+					if ( pRagdoll == NULL )
+					{
+						pRagdoll = pGib;
+					}
 				}
 			}
 		}
@@ -4765,20 +4767,22 @@ C_BaseAnimating *C_BaseAnimating::BecomeRagdollOnClient()
 	else // create normal, full ragdoll
 	{
 		pRagdoll = CreateRagdollCopy();
-
-		C_ClientPartialRagdoll *pRecursiveRagdoll = dynamic_cast< C_ClientPartialRagdoll* >( pRagdoll );
-
-		if ( pRecursiveRagdoll != NULL
-			&& pszGibGroup != NULL )
+		if ( pRagdoll != NULL )
 		{
-			pRecursiveRagdoll->SetRecursiveGibData( pszGibGroup, pszGoreGroup, pszGoreMaterial );
-			pRecursiveRagdoll->SetBloodColor( iBloodColor );
+			C_ClientPartialRagdoll *pRecursiveRagdoll = dynamic_cast< C_ClientPartialRagdoll* >( pRagdoll );
+
+			if ( pRecursiveRagdoll != NULL
+				&& pszGibGroup != NULL )
+			{
+				pRecursiveRagdoll->SetRecursiveGibData( pszGibGroup, pszGoreGroup, pszGoreMaterial );
+				pRecursiveRagdoll->SetBloodColor( iBloodColor );
+			}
+
+			ragdollparams_partial_t defaultPartial;
+			defaultPartial.rootBone = GetModelPtr()->pBone( 0 )->pszName();
+
+			pRagdoll->InitAsClientRagdoll( boneDelta0, boneDelta1, currentBones, boneDt, false, &defaultPartial );
 		}
-
-		ragdollparams_partial_t defaultPartial;
-		defaultPartial.rootBone = GetModelPtr()->pBone( 0 )->pszName();
-
-		pRagdoll->InitAsClientRagdoll( boneDelta0, boneDelta1, currentBones, boneDt, false, &defaultPartial );
 	}
 	// END GSTRINGMIGRATION
 
