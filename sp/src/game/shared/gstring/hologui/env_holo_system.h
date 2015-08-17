@@ -6,6 +6,7 @@
 #ifdef CLIENT_DLL
 class CHoloPanel;
 class CHoloShipAim;
+class ISpacecraftData;
 #endif
 
 const Vector &CurrentHoloViewOrigin();
@@ -52,6 +53,7 @@ public:
 private:
 #ifdef GAME_DLL
 	string_t m_strAttachment;
+	string_t m_strHoloEntity;
 #else
 	void CreatePanels();
 	void PreRenderPanels();
@@ -63,9 +65,12 @@ private:
 
 	int m_iViewportWidth;
 	int m_iViewportHeight;
+
+	ISpacecraftData *m_pSpacecraftDataAdapter;
 #endif
 
 	CNetworkString( m_szAttachment, 16 );
+	CNetworkHandle( CBaseEntity, m_hHoloEntity );
 	//CNetworkVar( bool, m_bIsSpaceMap );
 };
 

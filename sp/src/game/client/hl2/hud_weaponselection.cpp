@@ -607,7 +607,6 @@ void CHudWeaponSelection::Paint()
 			int yModifiers[] = { -1, 0, 1, 0, 1, 1 };
 
 			Assert( ARRAYSIZE( yModifiers ) >= MAX_WEAPON_SLOTS );
-			// END GSTRINGMIGRATION
 
 			// Draw the four buckets
 			for ( int i = 0; i < MAX_WEAPON_SLOTS; ++i )

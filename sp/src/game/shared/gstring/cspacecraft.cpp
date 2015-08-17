@@ -279,6 +279,8 @@ void CSpacecraft::Precache()
 	BaseClass::Precache();
 
 	CSpacecraftConfig::GetInstance()->Precache();
+
+	PrecacheScriptSound( "Spacecraft.Boost.Deny" );
 }
 
 void CSpacecraft::Activate()
@@ -1227,7 +1229,14 @@ void CSpacecraft::SimulateMove( CMoveData &moveData, float flFrametime )
 		m_flMoveX = vecMove.x;
 		m_flMoveY = vecMove.y;
 
-		const bool bBoosting = ( moveData.m_nButtons & IN_SPEED ) != 0 && !m_bBoostSuspended;
+		const bool bBoostPressed = ( moveData.m_nButtons & IN_SPEED ) != 0;
+		const bool bBoosting = bBoostPressed && !m_bBoostSuspended;
+		if ( !bBoosting && bBoostPressed &&
+			( moveData.m_nOldButtons & IN_SPEED ) == 0 && IsPlayerControlled() )
+		{
+			EmitSound( "Spacecraft.Boost.Deny" );
+		}
+
 		if ( bUseScreenMove )
 		{
 			if ( !bCutOffEngines )
@@ -1276,8 +1285,8 @@ void CSpacecraft::SimulateMove( CMoveData &moveData, float flFrametime )
 		m_flMoveY = 0.0f;
 	}
 
-		const float flBoostDuration = gstring_spacecraft_boost_duration.GetFloat();
-		const float flBoostCooldown = gstring_spacecraft_boost_cooldown.GetFloat();
+	const float flBoostDuration = gstring_spacecraft_boost_duration.GetFloat();
+	const float flBoostCooldown = gstring_spacecraft_boost_cooldown.GetFloat();
 
 	if ( bBoostEffects && IsPlayerControlled() )
 	{

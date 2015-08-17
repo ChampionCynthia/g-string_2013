@@ -9,6 +9,8 @@
 #include "cgstring_interaction.h"
 
 #include "props.h"
+#else
+#include "model_types.h"
 #endif
 
 #ifdef GAME_DLL
@@ -131,6 +133,11 @@ void CGstringInteractionBody::SetTransitionBlend( float flBlend )
 int CGstringInteractionBody::DrawModel( int flags )
 {
 	if ( m_flPlayerTransitionBlend < 1.0f )
+	{
+		return 0;
+	}
+
+	if ( ( flags & STUDIO_SHADOWDEPTHTEXTURE ) != 0 )
 	{
 		return 0;
 	}

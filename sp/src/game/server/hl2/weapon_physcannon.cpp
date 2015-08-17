@@ -1512,6 +1512,8 @@ void CWeaponPhysCannon::Precache( void )
 	PrecacheScriptSound( "Weapon_MegaPhysCannon.HoldSound");
 	PrecacheScriptSound( "Weapon_MegaPhysCannon.ChargeZap");
 
+	PrecacheParticleSystem( "telekinesis_impact" );
+
 	BaseClass::Precache();
 }
 
@@ -4101,8 +4103,16 @@ void CWeaponPhysCannon::DoEffectLaunch( Vector *pos )
 
 	//End hit
 	//FIXME: Probably too big
-	CPVSFilter filter( endpos );
-	te->GaussExplosion( filter, 0.0f, endpos - ( shotDir * 4.0f ), RandomVector(-1.0f, 1.0f), 0 );
+	//CPVSFilter filter( endpos );
+	//te->GaussExplosion( filter, 0.0f, endpos - ( shotDir * 4.0f ), RandomVector(-1.0f, 1.0f), 0 );
+	//te->Smoke(filter, 0, &endpos, 0, 10, 0);
+
+	QAngle angles;
+	VectorAngles( shotDir, angles );
+	DispatchParticleEffect( "telekinesis_impact", endpos, angles );
+	//trace_t tr;
+	//UTIL_TraceLine( endpos - shotDir * 2, endpos + shotDir * 100, MASK_ALL, UTIL_GetLocalPlayer(), COLLISION_GROUP_NONE, &tr );
+	//UTIL_ImpactTrace( &tr, DMG_CLUB );
 	
 	if ( m_hBlastSprite != NULL )
 	{

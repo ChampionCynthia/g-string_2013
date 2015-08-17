@@ -1,9 +1,11 @@
 
 #include "cbase.h"
 #include "holo_panel.h"
+#include "gstring/cgstring_globals.h"
 
 #include "materialsystem/imaterialvar.h"
 
+static int s_iMaterialGlobalReferenceCount;
 CMaterialReference CHoloPanel::m_Materials[ MATERIALTYPE_COUNT ];
 
 CHoloPanel::CHoloPanel() :
@@ -13,19 +15,44 @@ CHoloPanel::CHoloPanel() :
 {
 	SetIdentityMatrix( m_Transformation );
 
-	LOAD_SHARED_MATERIAL_REFERENCE( m_Materials[ MATERIALTYPE_NORMAL ], materials->FindMaterial( "engine/hologui", TEXTURE_GROUP_OTHER ) );
-	LOAD_SHARED_MATERIAL_REFERENCE( m_Materials[ MATERIALTYPE_NORMAL_SCANLINES ], materials->FindMaterial( "engine/hologui_scanlines", TEXTURE_GROUP_OTHER ) );
-	LOAD_SHARED_MATERIAL_REFERENCE( m_Materials[ MATERIALTYPE_VERTEXCOLOR ], materials->FindMaterial( "engine/hologui_vertexcolor", TEXTURE_GROUP_OTHER ) );
-	LOAD_SHARED_MATERIAL_REFERENCE( m_Materials[ MATERIALTYPE_SCANLINES_VERTEXCOLOR ], materials->FindMaterial( "engine/hologui_scanlines_vertexcolor", TEXTURE_GROUP_OTHER ) );
-	//LOAD_SHARED_MATERIAL_REFERENCE( m_Materials[ MATERIALTYPE_VERTEXCOLOR_LINEAR ], materials->FindMaterial( "engine/hologui_vertexcolor_linear", TEXTURE_GROUP_OTHER ) );
-	LOAD_SHARED_MATERIAL_REFERENCE( m_Materials[ MATERIALTYPE_GLOW ], materials->FindMaterial( "engine/linear_glow", TEXTURE_GROUP_OTHER ) );
+	const char *pszMats[ MATERIALTYPE_COUNT ] = {
+		"engine/hologui",
+		"engine/hologui_scanlines",
+		"engine/hologui_vertexcolor",
+		"engine/hologui_scanlines_vertexcolor",
+		"engine/linear_glow",
+		"engine/hologui_vgui"
+	};
+
+	const char *pszZMats[ MATERIALTYPE_COUNT ] = {
+		"engine/hologui_z",
+		"engine/hologui_z_scanlines",
+		"engine/hologui_z_vertexcolor",
+		"engine/hologui_z_scanlines_vertexcolor",
+		"engine/linear_z_glow",
+		"engine/hologui_z_vgui"
+	};
+	
+	bool bIgnoreZ = g_pGstringGlobals && g_pGstringGlobals->IsSpaceMap();
+	const char **pMaterialNames = bIgnoreZ ? pszMats : pszZMats;
+
+	++s_iMaterialGlobalReferenceCount;
+	for (int i = 0; i < MATERIALTYPE_COUNT; ++i)
+	{
+		LOAD_SHARED_MATERIAL_REFERENCE( m_Materials[ i ], materials->FindMaterial( pMaterialNames[ i ], TEXTURE_GROUP_OTHER ) );
+	}
 }
 
 CHoloPanel::~CHoloPanel()
 {
+	--s_iMaterialGlobalReferenceCount;
 	for ( int i = 0; i < MATERIALTYPE_COUNT; ++i )
 	{
 		m_Materials[ i ]->DecrementReferenceCount();
+		if ( s_iMaterialGlobalReferenceCount == 0 )
+		{
+			m_Materials[ i ].Shutdown();
+		}
 	}
 }
 

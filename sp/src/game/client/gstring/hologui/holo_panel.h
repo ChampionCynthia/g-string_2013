@@ -41,7 +41,9 @@
 		reference.Init( material ); \
 	}
 
-class CHoloPanel
+#include "vgui_controls/panel.h"
+
+class CHoloPanel : public vgui::Panel
 {
 public:
 	CHoloPanel();
@@ -70,6 +72,7 @@ protected:
 		MATERIALTYPE_SCANLINES_VERTEXCOLOR,
 		//MATERIALTYPE_VERTEXCOLOR_LINEAR,
 		MATERIALTYPE_GLOW,
+		MATERIALTYPE_VGUI,
 		MATERIALTYPE_COUNT
 	};
 

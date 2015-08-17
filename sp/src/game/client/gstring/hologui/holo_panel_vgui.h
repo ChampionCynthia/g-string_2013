@@ -5,13 +5,12 @@
 #include "vgui_controls/Controls.h"
 #include "vgui_controls/Panel.h"
 
-class CHoloPanelVGUI : public CHoloPanel, public vgui::Panel
+class CHoloPanelVGUI : public CHoloPanel //, public vgui::Panel
 {
 	DECLARE_CLASS_GAMEROOT( CHoloPanelVGUI, CHoloPanel );
 
 public:
 	CHoloPanelVGUI();
-	virtual ~CHoloPanelVGUI();
 	virtual void Setup();
 
 	virtual void Paint();
@@ -31,9 +30,6 @@ protected:
 	float m_flScale;
 	float m_flWidth;
 	float m_flHeight;
-
-private:
-	static CMaterialReference m_MaterialVGUI;
 
 };
 

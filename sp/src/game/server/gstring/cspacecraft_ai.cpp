@@ -165,6 +165,8 @@ void CSpacecraftAIBase::Run(float flFrametime)
 	Fire_UpdateProjectilePosition(flFrametime);
 
 	m_pShip->SimulateMove(moveData, flFrametime);
+
+	moveData.m_nOldButtons = moveData.m_nButtons;
 }
 
 CBaseEntity *CSpacecraftAIBase::GetEnemy()

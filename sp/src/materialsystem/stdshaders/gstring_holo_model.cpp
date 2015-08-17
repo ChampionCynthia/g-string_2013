@@ -54,9 +54,10 @@ BEGIN_VS_SHADER( gstring_holo_gui, "" )
 		SHADOW_STATE
 		{
 			const bool bHasVertexColor = IS_FLAG_SET( MATERIAL_VAR_VERTEXALPHA ) || IS_FLAG_SET( MATERIAL_VAR_VERTEXCOLOR );
+			const bool bIgnoreZ = IS_FLAG_SET( MATERIAL_VAR_IGNOREZ );
 			SetInitialShadowState();
 
-			pShaderShadow->EnableDepthTest( false );
+			pShaderShadow->EnableDepthTest( !bIgnoreZ );
 			pShaderShadow->EnableDepthWrites( false );
 			pShaderShadow->EnableCulling( false );
 			pShaderShadow->EnableSRGBWrite( true );

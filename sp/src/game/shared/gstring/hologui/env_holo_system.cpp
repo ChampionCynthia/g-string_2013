@@ -33,7 +33,10 @@
 #ifdef GAME_DLL
 BEGIN_DATADESC( CEnvHoloSystem )
 
+	DEFINE_FIELD( m_hHoloEntity, FIELD_EHANDLE ),
+
 	DEFINE_KEYFIELD( m_strAttachment, FIELD_STRING, "Attachment" ),
+	DEFINE_KEYFIELD( m_strHoloEntity, FIELD_STRING, "HoloEntity" ),
 
 	// DEFINE_FIELD( m_bLensflareEnabled,		FIELD_BOOLEAN ),
 
@@ -62,6 +65,12 @@ const matrix3x4_t &CurrentHoloViewMatrixInverted()
 
 class CSpacecraftDataStub : public ISpacecraftData
 {
+public:
+	CSpacecraftDataStub( CBaseEntity *pEntity )
+	{
+		m_hEntity.Set( pEntity );
+	}
+
 	virtual int GetShield() const
 	{
 		return 0;
@@ -69,7 +78,7 @@ class CSpacecraftDataStub : public ISpacecraftData
 
 	virtual int GetMaxShield() const
 	{
-		return 0;
+		return 100;
 	}
 
 	virtual int GetHull() const
@@ -79,12 +88,12 @@ class CSpacecraftDataStub : public ISpacecraftData
 
 	virtual int GetMaxHull() const
 	{
-		return 0;
+		return 100;
 	}
 
 	virtual CBaseEntity *GetEntity()
 	{
-		return NULL;
+		return m_hEntity;
 	}
 
 	virtual const QAngle &GetAngularImpulse() const
@@ -116,6 +125,9 @@ class CSpacecraftDataStub : public ISpacecraftData
 	{
 		return 0.0f;
 	}
+
+private:
+	EHANDLE m_hEntity;
 };
 #endif
 
@@ -123,8 +135,10 @@ IMPLEMENT_NETWORKCLASS_DT( CEnvHoloSystem, CEnvHoloSystem_DT )
 
 #ifdef GAME_DLL
 	SendPropString( SENDINFO( m_szAttachment ) ),
+	SendPropEHandle( SENDINFO( m_hHoloEntity ) ),
 #else
 	RecvPropString( RECVINFO( m_szAttachment ) ),
+	RecvPropEHandle( RECVINFO( m_hHoloEntity ) ),
 #endif
 
 END_NETWORK_TABLE();
@@ -137,6 +151,7 @@ CEnvHoloSystem::CEnvHoloSystem()
 	, m_iEyes( -1 )
 	, m_iViewportWidth( 0 )
 	, m_iViewportHeight( 0 )
+	, m_pSpacecraftDataAdapter( NULL )
 #endif
 {
 }
@@ -145,6 +160,7 @@ CEnvHoloSystem::~CEnvHoloSystem()
 {
 #ifdef CLIENT_DLL
 	DestroyPanels();
+	delete m_pSpacecraftDataAdapter;
 #endif
 }
 
@@ -155,6 +171,12 @@ void CEnvHoloSystem::Activate()
 	BaseClass::Activate();
 
 	Q_strncpy( m_szAttachment.GetForModify(), STRING( m_strAttachment ), 16 );
+
+	m_hHoloEntity = gEntList.FindEntityByName( NULL, m_strHoloEntity, this );
+	if ( m_hHoloEntity.Get() != NULL )
+	{
+		SetOwnerEntity( m_hHoloEntity );
+	}
 }
 
 int CEnvHoloSystem::UpdateTransmitState()
@@ -270,7 +292,7 @@ RenderGroup_t CEnvHoloSystem::GetRenderGroup()
 	{
 		return RENDER_GROUP_VIEW_MODEL_TRANSLUCENT;
 	}
-	return BaseClass::GetRenderGroup();
+	return RENDER_GROUP_TRANSLUCENT_ENTITY;
 }
 
 void CEnvHoloSystem::ClientThink()
@@ -353,10 +375,13 @@ void CEnvHoloSystem::CreatePanels()
 
 	ISpacecraftData *pSpacecraft = dynamic_cast< CSpacecraft* >( GetOwnerEntity() );
 
-	if (pSpacecraft == NULL)
+	if ( pSpacecraft == NULL )
 	{
-		static CSpacecraftDataStub _data;
-		pSpacecraft = &_data;
+		if ( m_pSpacecraftDataAdapter == NULL )
+		{
+			m_pSpacecraftDataAdapter = new CSpacecraftDataStub( m_hHoloEntity );
+		}
+		pSpacecraft = m_pSpacecraftDataAdapter;
 	}
 
 	m_Panels.AddToTail( new CHoloShipHealthGraphic( pSpacecraft ) );

@@ -3193,7 +3193,7 @@ void CTriggerCamera::Enable( void )
 
 	DispatchUpdateTransmitState();
 
-	pPlayer->m_Local.m_iHideHUD |= HIDEHUD_HEALTH;
+	pPlayer->m_Local.m_iHideHUD |= HIDEHUD_HEALTH | HIDEHUD_WEAPONSELECTION;
 }
 
 //-----------------------------------------------------------------------------
@@ -3220,7 +3220,7 @@ void CTriggerCamera::Disable( void )
 		}
 		//return the player to previous takedamage state
 		m_hPlayer->m_takedamage = m_nOldTakeDamage;
-		pPlayer->m_Local.m_iHideHUD &= ~HIDEHUD_HEALTH;
+		pPlayer->m_Local.m_iHideHUD &= ~(HIDEHUD_HEALTH | HIDEHUD_WEAPONSELECTION);
 	}
 
 	m_state = USE_OFF;

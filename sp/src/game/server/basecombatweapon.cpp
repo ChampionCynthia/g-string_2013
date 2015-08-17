@@ -80,6 +80,12 @@ void W_Precache(void)
 	PrecacheParticleSystem( "blood_impact_green_01" );
 	PrecacheParticleSystem( "blood_impact_yellow_01" );
 
+	// GSTRINGMIGRATION
+	// Precache all impact types for gibs
+	PrecacheParticleSystem( "blood_impact_antlion_01" );
+	PrecacheParticleSystem( "blood_impact_zombie_01" );
+	// END GSTRINGMIGRATION
+
 	CBaseEntity::PrecacheModel ("effects/bubble.vmt");//bubble trails
 
 	CBaseEntity::PrecacheModel("models/weapons/w_bullet.mdl");
