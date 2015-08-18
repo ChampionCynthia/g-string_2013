@@ -10,7 +10,7 @@ class CHoloShipHealthText : public CHoloPanelVGUI
 	DECLARE_CLASS_GAMEROOT( CHoloShipHealthText, CHoloPanelVGUI );
 
 public:
-	CHoloShipHealthText( ISpacecraftData *pSpacecraftData );
+	CHoloShipHealthText( vgui::Panel *pParent, ISpacecraftData *pSpacecraftData );
 
 	virtual void PerformLayout();
 

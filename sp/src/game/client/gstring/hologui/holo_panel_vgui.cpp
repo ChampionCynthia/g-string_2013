@@ -3,13 +3,13 @@
 #include "holo_panel_vgui.h"
 
 #include "vgui_controls/Controls.h"
-#include "vgui/IPanel.h"
 #include "vgui/ISurface.h"
 #include "view_shared.h"
 
 using namespace vgui;
 
-CHoloPanelVGUI::CHoloPanelVGUI() :
+CHoloPanelVGUI::CHoloPanelVGUI( vgui::Panel *pParent, const char *pszName ) :
+	BaseClass( pParent, pszName ),
 	m_FontLarge( 0 ),
 	m_FontSmall( 0 ),
 	m_FontSmallMono( 0 ),
@@ -55,6 +55,7 @@ void CHoloPanelVGUI::ApplySchemeSettings( IScheme *pScheme )
 
 void CHoloPanelVGUI::PreRender( IMatRenderContext *pRenderContext, Rect_t &position, int maxWidth, int maxHeight )
 {
+	if ( GetParent() == NULL ) return;
 	int desiredWidth = GetWide() + 2;
 	int desiredHeight = GetTall() + 2;
 
@@ -97,13 +98,13 @@ void CHoloPanelVGUI::PreRender( IMatRenderContext *pRenderContext, Rect_t &posit
 	m_flWidth = desiredWidth;
 	m_flHeight = desiredHeight;
 
-	ipanel()->PerformApplySchemeSettings( GetVPanel() );
-	surface()->SolveTraverse( GetVPanel() );
+	//ipanel()->PerformApplySchemeSettings( GetVPanel() );
+	//surface()->SolveTraverse( GetVPanel() );
 
 	Frustum frustum;
 	render->Push2DView( setup, 0, pRenderContext->GetRenderTarget(), frustum );
 
-	surface()->DrawSetAlphaMultiplier( 1 );
+	surface()->DrawSetAlphaMultiplier( m_flAlpha );
 
 	surface()->PushMakeCurrent( GetVPanel(), false );
 	surface()->PaintTraverse( GetVPanel() );

@@ -12,7 +12,8 @@
 
 using namespace vgui;
 
-CHoloShipObjectives::CHoloShipObjectives( ISpacecraftData *pSpacecraftData ) :
+CHoloShipObjectives::CHoloShipObjectives( vgui::Panel *pParent, ISpacecraftData *pSpacecraftData ) :
+	BaseClass( pParent, "objectives" ),
 	m_iObjectiveCount( -1 )
 {
 	m_pLabelHeader = new Label( this, "", "" );
@@ -45,7 +46,7 @@ void CHoloShipObjectives::Draw( IMatRenderContext *pRenderContext )
 	BaseClass::Draw( pRenderContext );
 
 	GetColorVar()->SetVecValue( HOLO_COLOR_HIGHLIGHT );
-	GetAlphaVar()->SetFloatValue( 1.0f );
+	SetHoloAlpha( 1.0f );
 
 	const float flTriangleStart = -0.5f;
 	const float flTriangleHeight = 0.03f;

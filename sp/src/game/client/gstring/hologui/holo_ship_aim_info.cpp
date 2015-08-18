@@ -16,7 +16,8 @@
 
 using namespace vgui;
 
-CHoloShipAimInfo::CHoloShipAimInfo( ISpacecraftData *pSpacecraftData ) :
+CHoloShipAimInfo::CHoloShipAimInfo( vgui::Panel *pParent, ISpacecraftData *pSpacecraftData ) :
+	BaseClass( pParent, "info" ),
 	m_pSpacecraftData( pSpacecraftData ),
 	m_iHealth( -1 ),
 	m_iDistance( 0.0f ),
@@ -84,7 +85,7 @@ void CHoloShipAimInfo::Draw( IMatRenderContext *pRenderContext )
 	pRenderContext->MultMatrixLocal( viewMatrixInv );
 
 	GetColorVar( MATERIALTYPE_GLOW )->SetVecValue( HOLO_COLOR_DEFAULT );
-	GetAlphaVar( MATERIALTYPE_GLOW )->SetFloatValue( 0.03f );
+	SetHoloAlpha( 0.03f, MATERIALTYPE_GLOW );
 
 	const float flScale = 3.0f;
 	const float flRatio = 3.0f;

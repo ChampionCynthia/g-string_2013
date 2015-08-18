@@ -10,7 +10,7 @@ class CHoloShipRadar : public CHoloPanel
 	DECLARE_CLASS_GAMEROOT( CHoloShipRadar, CHoloPanel );
 
 public:
-	CHoloShipRadar( ISpacecraftData *pSpacecraftData );
+	CHoloShipRadar( vgui::Panel *pParent, ISpacecraftData *pSpacecraftData );
 	~CHoloShipRadar();
 
 protected:

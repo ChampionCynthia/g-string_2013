@@ -10,7 +10,7 @@ class CHoloShipHealthGraphic : public CHoloPanel
 	DECLARE_CLASS_GAMEROOT( CHoloShipHealthGraphic, CHoloPanel );
 
 public:
-	CHoloShipHealthGraphic( ISpacecraftData *pSpacecraftData );
+	CHoloShipHealthGraphic( vgui::Panel *pParent, ISpacecraftData *pSpacecraftData );
 	virtual ~CHoloShipHealthGraphic();
 
 protected:

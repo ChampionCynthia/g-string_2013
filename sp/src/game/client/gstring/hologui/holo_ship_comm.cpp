@@ -14,7 +14,8 @@ using namespace vgui;
 
 DECLARE_HOLO_MESSAGE( HoloMessage, CHoloShipComm );
 
-CHoloShipComm::CHoloShipComm( ISpacecraftData *pSpacecraftData ) :
+CHoloShipComm::CHoloShipComm( vgui::Panel *pParent, ISpacecraftData *pSpacecraftData ) :
+	BaseClass( pParent, "comm" ),
 	m_flResetTimer( 0.0f ),
 	m_flFlashTimer( 0.0f ),
 	m_flWaveVisibilityAmount( 0.0f ),
@@ -77,7 +78,7 @@ void CHoloShipComm::Draw( IMatRenderContext *pRenderContext )
 	BaseClass::Draw( pRenderContext );
 
 	GetColorVar()->SetVecValue( HOLO_COLOR_HIGHLIGHT );
-	GetAlphaVar()->SetFloatValue( 1.0f );
+	SetHoloAlpha( 1.0f );
 
 	const float flTriangleStart = -0.5f;
 	const float flTriangleHeight = 0.03f;
@@ -164,7 +165,7 @@ void CHoloShipComm::DrawWaveForm( IMatRenderContext *pRenderContext )
 	const float flAlpha = m_flWaveVisibilityAmount < 0.4f ? sin( m_flWaveVisibilityAmount * 20.0f ) * 0.5f + 0.5f : 1.0f;
 
 	GetColorVar()->SetVecValue( HOLO_COLOR_DEFAULT );
-	GetAlphaVar()->SetFloatValue( flAlpha );
+	SetHoloAlpha( flAlpha );
 
 	const float flBarrierFraction = RemapValClamped( m_flWaveVisibilityAmount, 0.4f, 1, 0, 1 );
 	const float flYCenter = m_vecPanelWorldOffset.x * 0.5f;
@@ -215,7 +216,7 @@ void CHoloShipComm::DrawWaveForm( IMatRenderContext *pRenderContext )
 		pRenderContext->SetStencilWriteMask( 0 );
 
 		// Draw clipped waveform
-		GetAlphaVar()->SetFloatValue( 0.2f );
+		SetHoloAlpha( 0.2f );
 		pMesh = pRenderContext->GetDynamicMesh( true, 0, 0, GetMaterial() );
 		builder.Begin( pMesh, MATERIAL_TRIANGLE_STRIP, WAVEFORM_LENGTH * 2 );
 

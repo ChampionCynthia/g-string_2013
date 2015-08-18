@@ -12,7 +12,8 @@
 
 using namespace vgui;
 
-CHoloShipEngine::CHoloShipEngine( ISpacecraftData *pSpacecraftData ) :
+CHoloShipEngine::CHoloShipEngine( vgui::Panel *pParent, ISpacecraftData *pSpacecraftData ) :
+	BaseClass( pParent, "engine" ),
 	m_pSpacecraftData( pSpacecraftData ),
 	m_flEngineStrength( 0.0f ),
 	m_flBoostSuspendedTimer( 0.0f ),
@@ -111,7 +112,6 @@ void CHoloShipEngine::Draw( IMatRenderContext *pRenderContext )
 	}
 
 	GetColorVar()->SetVecValue( vecColor.Base(), 3 );
-	IMaterialVar *pAlpha = GetAlphaVar();
 
 	const int iElementCount = 5;
 	const float flAlphaMin = 0.02f;
@@ -140,7 +140,8 @@ void CHoloShipEngine::Draw( IMatRenderContext *pRenderContext )
 			const float flFadeSelfStart = u / float( iElementCount );
 			float flAlpha = ( m_flEngineStrength - flFadeSelfStart ) / flFadeRange;
 			flAlpha = Clamp( flAlpha, 0.0f, 1.0f );
-			pAlpha->SetFloatValue( flAlphaMin + flAlpha * flAlphaDelta + flPulse );
+			//pAlpha->SetFloatValue( flAlphaMin + flAlpha * flAlphaDelta + flPulse );
+			SetHoloAlpha( flAlphaMin + flAlpha * flAlphaDelta + flPulse );
 
 			pRenderContext->Bind( GetMaterial() );
 			m_pMeshElement->Draw();
@@ -156,7 +157,7 @@ void CHoloShipEngine::Draw( IMatRenderContext *pRenderContext )
 	pRenderContext->MultMatrixLocal( viewMatrixInv );
 
 	GetColorVar( MATERIALTYPE_GLOW )->SetVecValue( vecColor.Base(), 3 );
-	GetAlphaVar( MATERIALTYPE_GLOW )->SetFloatValue( 0.02f + 0.03f * m_flEngineStrength );
+	SetHoloAlpha( 0.02f + 0.03f * m_flEngineStrength, MATERIALTYPE_GLOW );
 
 	const float flScale = 6.0f;
 	IMesh *pMeshGlow = pRenderContext->GetDynamicMesh( true, 0, 0, GetMaterial( MATERIALTYPE_GLOW ) );

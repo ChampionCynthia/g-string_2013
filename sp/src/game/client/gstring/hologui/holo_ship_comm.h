@@ -13,7 +13,7 @@ class CHoloShipComm : public CHoloPanelVGUI
 	DECLARE_CLASS_GAMEROOT( CHoloShipComm, CHoloPanelVGUI );
 
 public:
-	CHoloShipComm( ISpacecraftData *pSpacecraftData );
+	CHoloShipComm( vgui::Panel *pParent, ISpacecraftData *pSpacecraftData );
 	~CHoloShipComm();
 
 	virtual void PerformLayout();

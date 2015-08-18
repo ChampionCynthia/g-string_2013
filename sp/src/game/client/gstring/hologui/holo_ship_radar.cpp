@@ -40,7 +40,8 @@ namespace
 	const float g_flRadarFieldSize = 0.1f;
 }
 
-CHoloShipRadar::CHoloShipRadar( ISpacecraftData *pSpacecraftData ) :
+CHoloShipRadar::CHoloShipRadar( vgui::Panel *pParent, ISpacecraftData *pSpacecraftData ) :
+	BaseClass( pParent, "radar" ),
 	m_pSpacecraftData( pSpacecraftData )
 {
 	CMatRenderContextPtr pRenderContext( materials );
@@ -128,11 +129,11 @@ void CHoloShipRadar::Draw( IMatRenderContext *pRenderContext )
 	for ( int i = 0; i < iRingCount; ++i )
 	{
 		GetColorVar()->SetVecValue( HOLO_COLOR_DEFAULT );
-		GetAlphaVar()->SetFloatValue( 0.5f );
+		SetHoloAlpha( 0.5f );
 		m_pMeshRingLarge->Draw();
 
 		GetColorVar()->SetVecValue( HOLO_COLOR_HIGHLIGHT );
-		GetAlphaVar()->SetFloatValue( 1.0f );
+		SetHoloAlpha( 1.0f );
 		m_pMeshRingSmall->Draw();
 
 		MatrixScaleBy( 0.85f, matrixTemp );
@@ -158,14 +159,14 @@ void CHoloShipRadar::Draw( IMatRenderContext *pRenderContext )
 #else
 	pRenderContext->Bind( GetMaterial( MATERIALTYPE_VERTEXCOLOR ) );
 	GetColorVar( MATERIALTYPE_VERTEXCOLOR )->SetVecValue( 1, 1, 1, 1 );
-	GetAlphaVar( MATERIALTYPE_VERTEXCOLOR )->SetFloatValue( 1.0f );
+	SetHoloAlpha( 1.0f, MATERIALTYPE_VERTEXCOLOR );
 	m_pMeshRingGrid->Draw();
 
 	pRenderContext->Bind( GetMaterial() );
 #endif
 
 	// Draw blips
-	GetAlphaVar()->SetFloatValue( 1.0f );
+	SetHoloAlpha( 1.0f );
 
 	pRenderContext->ClearBuffers( false, false, true );
 	pRenderContext->SetStencilEnable( true );
@@ -179,7 +180,7 @@ void CHoloShipRadar::Draw( IMatRenderContext *pRenderContext )
 	m_pMeshCircle->Draw();
 
 	GetColorVar()->SetVecValue( HOLO_COLOR_DEFAULT );
-	GetAlphaVar()->SetFloatValue( 0.2f );
+	SetHoloAlpha( 0.2f );
 
 	pRenderContext->SetStencilCompareFunction( STENCILCOMPARISONFUNCTION_EQUAL );
 
@@ -194,7 +195,7 @@ void CHoloShipRadar::Draw( IMatRenderContext *pRenderContext )
 	pRenderContext->MultMatrixLocal( viewMatrixInv );
 
 	GetColorVar( MATERIALTYPE_GLOW )->SetVecValue( HOLO_COLOR_DEFAULT );
-	GetAlphaVar( MATERIALTYPE_GLOW )->SetFloatValue( 0.04f );
+	SetHoloAlpha( 0.04f, MATERIALTYPE_GLOW );
 
 	const float flScale = 8.0f;
 	IMesh *pMeshGlow = pRenderContext->GetDynamicMesh( true, 0, 0, GetMaterial( MATERIALTYPE_GLOW ) );
@@ -273,7 +274,7 @@ void CHoloShipRadar::DrawBlips( IMatRenderContext *pRenderContext )
 		MatrixScaleBy( flBlipSize, matrixTemp );
 		pRenderContext->MultMatrixLocal( matrixTemp );
 
-		GetAlphaVar()->SetFloatValue( 0.8f * flAlphaScale );
+		SetHoloAlpha( 0.8f * flAlphaScale );
 		m_pMeshCircle->Draw();
 		m_pMeshCircle->Draw();
 
@@ -284,7 +285,7 @@ void CHoloShipRadar::DrawBlips( IMatRenderContext *pRenderContext )
 		MatrixScaleBy( g_flRadarFieldSize * pTarget->GetSize(), matrixTemp );
 		pRenderContext->MultMatrixLocal( matrixTemp );
 
-		GetAlphaVar()->SetFloatValue( 0.05f * flAlphaScale );
+		SetHoloAlpha( 0.05f * flAlphaScale );
 		m_pMeshCircle->Draw();
 
 		pRenderContext->PopMatrix();
@@ -300,7 +301,7 @@ void CHoloShipRadar::DrawBlips( IMatRenderContext *pRenderContext )
 			IMesh *pMesh = pRenderContext->GetDynamicMesh( true, 0, 0, GetMaterial() );
 			CreateSlantedRect( pMesh, -flStripeWidth, 0.0f, flStripeWidth * 2.0f, flZPosition );
 
-			GetAlphaVar()->SetFloatValue( ( vecDelta.z < 0.0f ? 0.1f : 0.3f ) * flAlphaScale );
+			SetHoloAlpha( ( vecDelta.z < 0.0f ? 0.1f : 0.3f ) * flAlphaScale );
 			pMesh->Draw();
 
 			SetIdentityMatrix( matrixTemp );

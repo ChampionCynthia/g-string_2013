@@ -25,6 +25,10 @@
 #include "view.h"
 #include "c_user_message_register.h"
 
+#include "vgui/IPanel.h"
+#include "vgui/ISurface.h"
+#include "vgui_controls/AnimationController.h"
+
 #include "materialsystem/itexture.h"
 #include "vgui/ISurface.h"
 #include "sourcevr/isourcevirtualreality.h"
@@ -42,6 +46,24 @@ BEGIN_DATADESC( CEnvHoloSystem )
 
 END_DATADESC()
 #else
+
+static CEnvHoloSystem *g_pLastHoloSystem;
+CON_COMMAND( gstring_debug_holosystem_play_animation, "" )
+{
+	if ( g_pLastHoloSystem != NULL && args.ArgC() > 1 )
+	{
+		DevMsg( "Starting holo animation: %s\n", args[ 1 ] );
+		g_pLastHoloSystem->StartAnimation( args[ 1 ] );
+	}
+}
+
+CON_COMMAND( gstring_debug_holosystem_reload_animation_script, "" )
+{
+	if ( g_pLastHoloSystem != NULL )
+	{
+		g_pLastHoloSystem->ReloadAnimationScript();
+	}
+}
 
 static ConVar gstring_holoui_draw( "gstring_holoui_draw", "1" );
 
@@ -152,8 +174,16 @@ CEnvHoloSystem::CEnvHoloSystem()
 	, m_iViewportWidth( 0 )
 	, m_iViewportHeight( 0 )
 	, m_pSpacecraftDataAdapter( NULL )
+	, m_pRoot( NULL )
+	, m_pAnimationController( NULL )
 #endif
 {
+#ifdef CLIENT_DLL
+	if ( g_pLastHoloSystem == NULL )
+	{
+		g_pLastHoloSystem = this;
+	}
+#endif
 }
 
 CEnvHoloSystem::~CEnvHoloSystem()
@@ -161,6 +191,11 @@ CEnvHoloSystem::~CEnvHoloSystem()
 #ifdef CLIENT_DLL
 	DestroyPanels();
 	delete m_pSpacecraftDataAdapter;
+
+	if ( g_pLastHoloSystem == this )
+	{
+		g_pLastHoloSystem = NULL;
+	}
 #endif
 }
 
@@ -297,6 +332,11 @@ RenderGroup_t CEnvHoloSystem::GetRenderGroup()
 
 void CEnvHoloSystem::ClientThink()
 {
+	if ( m_pAnimationController != NULL )
+	{
+		m_pAnimationController->UpdateAnimations( gpGlobals->curtime );
+	}
+
 	if ( GetOwnerEntity() == NULL )
 	{
 		DestroyPanels();
@@ -384,16 +424,23 @@ void CEnvHoloSystem::CreatePanels()
 		pSpacecraft = m_pSpacecraftDataAdapter;
 	}
 
-	m_Panels.AddToTail( new CHoloShipHealthGraphic( pSpacecraft ) );
-	m_Panels.AddToTail( new CHoloShipHealthText( pSpacecraft ) );
-	m_Panels.AddToTail( new CHoloShipModel( pSpacecraft ) );
-	m_Panels.AddToTail( new CHoloShipEngine( pSpacecraft ) );
-	m_Panels.AddToTail( new CHoloShipThruster( pSpacecraft ) );
-	m_Panels.AddToTail( new CHoloShipRadar( pSpacecraft ) );
-	m_Panels.AddToTail( new CHoloShipAim( pSpacecraft ) );
-	m_Panels.AddToTail( new CHoloShipObjectives( pSpacecraft ) );
-	m_Panels.AddToTail( new CHoloShipComm( pSpacecraft ) );
-	m_Panels.AddToTail( new CHoloShipAimInfo( pSpacecraft ) );
+	ITexture *pHoloGUITexture = g_pGstringRenderTargets->GetHoloGUITexture();
+
+	m_pRoot = new vgui::Panel();
+	m_pRoot->SetBounds( 0, 0, pHoloGUITexture->GetActualWidth(), pHoloGUITexture->GetActualHeight() );
+	m_pAnimationController = new vgui::AnimationController( m_pRoot );
+	ReloadAnimationScript();
+
+	m_Panels.AddToTail( new CHoloShipHealthGraphic( m_pRoot, pSpacecraft ) );
+	m_Panels.AddToTail( new CHoloShipHealthText( m_pRoot, pSpacecraft ) );
+	m_Panels.AddToTail( new CHoloShipModel( m_pRoot, pSpacecraft ) );
+	m_Panels.AddToTail( new CHoloShipEngine( m_pRoot, pSpacecraft ) );
+	m_Panels.AddToTail( new CHoloShipThruster( m_pRoot, pSpacecraft ) );
+	m_Panels.AddToTail( new CHoloShipRadar( m_pRoot, pSpacecraft ) );
+	m_Panels.AddToTail( new CHoloShipAim( m_pRoot, pSpacecraft ) );
+	m_Panels.AddToTail( new CHoloShipObjectives( m_pRoot, pSpacecraft ) );
+	m_Panels.AddToTail( new CHoloShipComm( m_pRoot, pSpacecraft ) );
+	m_Panels.AddToTail( new CHoloShipAimInfo( m_pRoot, pSpacecraft ) );
 
 	int x, y, width, height;
 	vgui::surface()->GetFullscreenViewport( x, y, width, height );
@@ -411,7 +458,36 @@ void CEnvHoloSystem::CreatePanels()
 
 void CEnvHoloSystem::DestroyPanels()
 {
+	FOR_EACH_VEC( m_Panels, i )
+	{
+		m_Panels[ i ]->SetParent( (vgui::Panel*)NULL );
+	}
 	m_Panels.PurgeAndDeleteElements();
+	if ( m_pRoot != NULL )
+	{
+		m_pRoot->DeletePanel();
+	}
+	m_pRoot = NULL;
+	m_pAnimationController = NULL;
+}
+
+void CEnvHoloSystem::StartAnimation( const char *pszName )
+{
+	if ( m_pAnimationController != NULL )
+	{
+		if ( !m_pAnimationController->StartAnimationSequence( pszName ) )
+		{
+			DevMsg( "Failed to play holo animation: %s\n", pszName );
+		}
+	}
+}
+
+void CEnvHoloSystem::ReloadAnimationScript()
+{
+	if ( !m_pAnimationController || !m_pAnimationController->SetScriptFile( m_pRoot->GetVPanel(), "scripts/holoanimations.txt", true ) )
+	{
+		DevMsg( "Failed loading holo animations!\n" );
+	}
 }
 
 void CEnvHoloSystem::PreRenderPanels()
@@ -427,6 +503,12 @@ void CEnvHoloSystem::PreRenderPanels()
 	rect.x = rect.y = rect.width = rect.height = 0;
 	const int width = pHoloGUITexture->GetActualWidth();
 	const int height = pHoloGUITexture->GetActualHeight();
+
+	if ( m_pRoot != NULL )
+	{
+		vgui::ipanel()->PerformApplySchemeSettings( m_pRoot->GetVPanel() );
+		vgui::surface()->SolveTraverse( m_pRoot->GetVPanel() );
+	}
 
 	FOR_EACH_VEC( m_Panels, i )
 	{

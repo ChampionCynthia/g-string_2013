@@ -4,6 +4,8 @@
 #include "cbase.h"
 
 #ifdef CLIENT_DLL
+#include "vgui_controls/Controls.h"
+
 class CHoloPanel;
 class CHoloShipAim;
 class ISpacecraftData;
@@ -12,6 +14,7 @@ class ISpacecraftData;
 const Vector &CurrentHoloViewOrigin();
 const matrix3x4_t &CurrentHoloViewMatrix();
 const matrix3x4_t &CurrentHoloViewMatrixInverted();
+
 
 class CEnvHoloSystem : public CBaseEntity
 {
@@ -38,6 +41,8 @@ public:
 	virtual int UpdateTransmitState();
 #else
 	void DestroyPanels();
+	void StartAnimation( const char *pszName );
+	void ReloadAnimationScript();
 
 	virtual void OnDataChanged( DataUpdateType_t type );
 
@@ -67,6 +72,8 @@ private:
 	int m_iViewportHeight;
 
 	ISpacecraftData *m_pSpacecraftDataAdapter;
+	vgui::Panel *m_pRoot;
+	vgui::AnimationController *m_pAnimationController;
 #endif
 
 	CNetworkString( m_szAttachment, 16 );

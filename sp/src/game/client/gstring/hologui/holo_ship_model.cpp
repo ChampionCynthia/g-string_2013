@@ -11,7 +11,8 @@
 
 #define DAMAGE_EFFECT_DURATION 0.5f
 
-CHoloShipModel::CHoloShipModel( ISpacecraftData *pSpacecraftData ) :
+CHoloShipModel::CHoloShipModel( vgui::Panel *pParent, ISpacecraftData *pSpacecraftData ) :
+	BaseClass( pParent, "ship" ),
 	m_pSpacecraftData( pSpacecraftData ),
 	m_iHull( -1 ),
 	m_flDamageTimer( 0.0f ),
@@ -56,6 +57,7 @@ void CHoloShipModel::Draw( IMatRenderContext *pRenderContext )
 		}
 
 		color = Lerp( warningAmount, color, Vector( HOLO_COLOR_WARNING ) );
+		color = Lerp( m_flAlpha, vec3_origin, color );
 		render->SetColorModulation( color.Base() );
 		//render->SetBlend( 0.4f );
 
@@ -73,7 +75,7 @@ void CHoloShipModel::Draw( IMatRenderContext *pRenderContext )
 		pRenderContext->MultMatrixLocal( viewMatrixInv );
 
 		GetColorVar( MATERIALTYPE_GLOW )->SetVecValue( color.Base(), 3 );
-		GetAlphaVar( MATERIALTYPE_GLOW )->SetFloatValue( 0.04f );
+		SetHoloAlpha( 0.04f, MATERIALTYPE_GLOW );
 
 		const float flScale = 8.0f;
 		IMesh *pMeshGlow = pRenderContext->GetDynamicMesh( true, 0, 0, GetMaterial( MATERIALTYPE_GLOW ) );

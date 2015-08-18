@@ -10,7 +10,8 @@
 
 using namespace vgui;
 
-CHoloShipThruster::CHoloShipThruster( ISpacecraftData *pSpacecraftData ) :
+CHoloShipThruster::CHoloShipThruster( vgui::Panel *pParent, ISpacecraftData *pSpacecraftData ) :
+	BaseClass( pParent, "thruster" ),
 	m_pSpacecraftData( pSpacecraftData ),
 	m_flThrusterStrength( 0.0f )
 {
@@ -56,7 +57,6 @@ void CHoloShipThruster::Draw( IMatRenderContext *pRenderContext )
 	pRenderContext->MultMatrixLocal( mat );
 
 	GetColorVar()->SetVecValue( HOLO_COLOR_HIGHLIGHT );
-	IMaterialVar *pAlpha = GetAlphaVar();
 
 	const int iThrusterCount = m_pSpacecraftData->GetThrusterCount();
 	const int iElementCount = 3;
@@ -76,7 +76,7 @@ void CHoloShipThruster::Draw( IMatRenderContext *pRenderContext )
 			const float flFadeSelfStart = u / float( iElementCount );
 			float flAlpha = ( flThrusterPower - flFadeSelfStart ) / flFadeRange;
 			flAlpha = Clamp( flAlpha, 0.0f, 1.0f );
-			pAlpha->SetFloatValue( flAlphaMin + flAlpha * flAlphaDelta );
+			SetHoloAlpha( flAlphaMin + flAlpha * flAlphaDelta );
 
 			pRenderContext->Bind( GetMaterial() );
 			m_pMeshElement->Draw();
@@ -92,7 +92,7 @@ void CHoloShipThruster::Draw( IMatRenderContext *pRenderContext )
 	pRenderContext->MultMatrixLocal( viewMatrixInv );
 
 	GetColorVar( MATERIALTYPE_GLOW )->SetVecValue( HOLO_COLOR_HIGHLIGHT );
-	GetAlphaVar( MATERIALTYPE_GLOW )->SetFloatValue( 0.03f );
+	SetHoloAlpha( 0.03f, MATERIALTYPE_GLOW );
 
 	const float flScale = 5.0f;
 	IMesh *pMeshGlow = pRenderContext->GetDynamicMesh( true, 0, 0, GetMaterial( MATERIALTYPE_GLOW ) );

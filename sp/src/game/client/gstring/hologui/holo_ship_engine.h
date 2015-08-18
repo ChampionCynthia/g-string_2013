@@ -11,7 +11,7 @@ class CHoloShipEngine : public CHoloPanelVGUI
 	DECLARE_CLASS_GAMEROOT( CHoloShipEngine, CHoloPanelVGUI );
 
 public:
-	CHoloShipEngine( ISpacecraftData *pSpacecraftData );
+	CHoloShipEngine( vgui::Panel *pParent, ISpacecraftData *pSpacecraftData );
 	~CHoloShipEngine();
 
 	virtual void PerformLayout();

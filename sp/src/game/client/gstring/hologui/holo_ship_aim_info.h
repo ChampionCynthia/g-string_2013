@@ -12,7 +12,7 @@ class CHoloShipAimInfo : public CHoloPanelVGUI
 	DECLARE_CLASS_GAMEROOT( CHoloShipAimInfo, CHoloPanelVGUI );
 
 public:
-	CHoloShipAimInfo( ISpacecraftData *pSpacecraftData );
+	CHoloShipAimInfo( vgui::Panel *pParent, ISpacecraftData *pSpacecraftData );
 	~CHoloShipAimInfo();
 
 	virtual void PerformLayout();

@@ -1,6 +1,8 @@
 #ifndef HOLO_PANEL_H
 #define HOLO_PANEL_H
 
+#include "vgui_controls/panel.h"
+
 #define HOLO_COLOR255_FRIENDLY 0.3f * 255.0f, 1.0f * 255.0f, 0.5f * 255.0f
 #define HOLO_COLOR_FRIENDLY 0.3f, 1.0f, 0.5f
 
@@ -41,12 +43,11 @@
 		reference.Init( material ); \
 	}
 
-#include "vgui_controls/panel.h"
-
 class CHoloPanel : public vgui::Panel
 {
+	DECLARE_CLASS_SIMPLE_NOBASE( CHoloPanel )
 public:
-	CHoloPanel();
+	CHoloPanel( vgui::Panel *pParent, const char *pszName );
 	virtual ~CHoloPanel();
 	virtual void Setup() {}
 
@@ -77,7 +78,7 @@ protected:
 	};
 
 	IMaterialVar *GetColorVar( MaterialType type = MATERIALTYPE_NORMAL );
-	IMaterialVar *GetAlphaVar( MaterialType type = MATERIALTYPE_NORMAL );
+	void SetHoloAlpha( float flAlpha, MaterialType type = MATERIALTYPE_NORMAL );
 	IMaterial *GetMaterial( MaterialType type = MATERIALTYPE_NORMAL )
 	{
 		Assert( type >= 0 && type < MATERIALTYPE_COUNT );
@@ -86,6 +87,8 @@ protected:
 
 	const QAngle &GetAngles();
 	const Vector &GetOrigin();
+
+	CPanelAnimationVar( float, m_flAlpha, "holoalpha", "1.0" );
 
 private:
 	void UpdateTransformation();

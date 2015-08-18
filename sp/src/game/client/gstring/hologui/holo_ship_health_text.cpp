@@ -8,7 +8,8 @@
 
 using namespace vgui;
 
-CHoloShipHealthText::CHoloShipHealthText( ISpacecraftData *pSpacecraftData ) :
+CHoloShipHealthText::CHoloShipHealthText( vgui::Panel *pParent, ISpacecraftData *pSpacecraftData ) :
+	BaseClass( pParent, "healthtext" ),
 	m_pSpacecraftData( pSpacecraftData ),
 	m_iShield( -1 ),
 	m_iHull( -1 )

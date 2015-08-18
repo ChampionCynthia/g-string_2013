@@ -7,8 +7,9 @@ class ISpacecraftData;
 
 class CHoloShipModel : public CHoloPanel
 {
+	DECLARE_CLASS_GAMEROOT( CHoloShipModel, CHoloPanel );
 public:
-	CHoloShipModel( ISpacecraftData *pSpacecraftData );
+	CHoloShipModel( vgui::Panel *pParent, ISpacecraftData *pSpacecraftData );
 	virtual ~CHoloShipModel();
 
 protected:

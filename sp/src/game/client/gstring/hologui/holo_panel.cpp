@@ -8,7 +8,7 @@
 static int s_iMaterialGlobalReferenceCount;
 CMaterialReference CHoloPanel::m_Materials[ MATERIALTYPE_COUNT ];
 
-CHoloPanel::CHoloPanel() :
+CHoloPanel::CHoloPanel( vgui::Panel *pParent, const char *pszName ) : vgui::Panel( pParent, pszName ),
 	m_Angles( vec3_angle ),
 	m_Origin( vec3_origin ),
 	m_bTransformationDirty( false )
@@ -127,11 +127,11 @@ IMaterialVar *CHoloPanel::GetColorVar( MaterialType type )
 	return m_Materials[ type ]->FindVarFast( "$color", &iMatVar[ type ] );
 }
 
-IMaterialVar *CHoloPanel::GetAlphaVar( MaterialType type )
+void CHoloPanel::SetHoloAlpha( float flAlpha, MaterialType type )
 {
 	Assert( type >= 0 && type < MATERIALTYPE_COUNT );
 	static unsigned int iMatVar[ MATERIALTYPE_COUNT ] = { 0 };
-	return m_Materials[ type ]->FindVarFast( "$alpha", &iMatVar[ type ] );
+	m_Materials[ type ]->FindVarFast( "$alpha", &iMatVar[ type ] )->SetFloatValue( flAlpha * m_flAlpha );
 }
 
 const QAngle &CHoloPanel::GetAngles()

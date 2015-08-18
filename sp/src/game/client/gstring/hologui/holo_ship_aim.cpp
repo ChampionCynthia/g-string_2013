@@ -26,7 +26,8 @@ namespace
 
 DECLARE_HOLO_MESSAGE( SpacecraftDamage, CHoloShipAim );
 
-CHoloShipAim::CHoloShipAim( ISpacecraftData *pSpacecraftData ) :
+CHoloShipAim::CHoloShipAim( vgui::Panel *pParent, ISpacecraftData *pSpacecraftData ) :
+	BaseClass( pParent, "aim" ),
 	m_pSpacecraftData( pSpacecraftData )
 {
 	CMatRenderContextPtr pRenderContext( materials );
@@ -294,7 +295,7 @@ void CHoloShipAim::DrawTargets( IMatRenderContext *pRenderContext )
 	// Draw deco
 	pRenderContext->Bind( GetMaterial() );
 	GetColorVar()->SetVecValue( HOLO_COLOR_DEFAULT );
-	GetAlphaVar()->SetFloatValue( 0.3f );
+	SetHoloAlpha( 0.3f );
 	m_pMeshDamagePanelDecor->Draw();
 
 	pRenderContext->Bind( GetMaterial() );
@@ -419,7 +420,7 @@ void CHoloShipAim::DrawTargets( IMatRenderContext *pRenderContext )
 			}
 
 			GetColorVar( MATERIALTYPE_NORMAL_SCANLINES )->SetVecValue( XYZ( color ) );
-			GetAlphaVar( MATERIALTYPE_NORMAL_SCANLINES )->SetFloatValue( flAlpha );
+			SetHoloAlpha( flAlpha, MATERIALTYPE_NORMAL_SCANLINES );
 
 			matrix3x4_t temp, mat;
 			SetIdentityMatrix( temp );
@@ -450,7 +451,7 @@ void CHoloShipAim::DrawTargets( IMatRenderContext *pRenderContext )
 				MatrixScaleBy( 1.0f + 0.2f * target.m_flFocusTimer, rr );
 				pRenderContext->MultMatrixLocal( rr );
 
-				GetAlphaVar( MATERIALTYPE_NORMAL_SCANLINES )->SetFloatValue( flAlpha * target.m_flFocusTimer );
+				SetHoloAlpha( flAlpha * target.m_flFocusTimer, MATERIALTYPE_NORMAL_SCANLINES );
 				m_pMeshTargetArrows->Draw();
 			}
 		}
@@ -538,7 +539,7 @@ void CHoloShipAim::DrawTargets( IMatRenderContext *pRenderContext )
 	// Draw the panel
 	pRenderContext->Bind( GetMaterial( MATERIALTYPE_SCANLINES_VERTEXCOLOR ) );
 	GetColorVar( MATERIALTYPE_SCANLINES_VERTEXCOLOR )->SetVecValue( HOLO_COLOR_DEFAULT );
-	GetAlphaVar( MATERIALTYPE_SCANLINES_VERTEXCOLOR )->SetFloatValue( 0.1f );
+	SetHoloAlpha( 0.1f, MATERIALTYPE_SCANLINES_VERTEXCOLOR );
 
 	pRenderContext->PushMatrix();
 
@@ -575,7 +576,7 @@ void CHoloShipAim::DrawReticule( IMatRenderContext *pRenderContext )
 			{
 				flAlpha *= 0.3f;
 			}
-			GetAlphaVar( MATERIALTYPE_SCANLINES_VERTEXCOLOR )->SetFloatValue( flAlpha );
+			SetHoloAlpha( flAlpha, MATERIALTYPE_SCANLINES_VERTEXCOLOR );
 			pRenderContext->PushMatrix();
 			MatrixBuildRotationAboutAxis( Vector( 1, 0, 0 ), panel.m_flAngle, matrixTemp );
 			pRenderContext->MultMatrixLocal( matrixTemp );
@@ -599,7 +600,7 @@ void CHoloShipAim::DrawReticule( IMatRenderContext *pRenderContext )
 	}
 
 	GetColorVar()->SetVecValue( HOLO_COLOR_DEFAULT );
-	GetAlphaVar()->SetFloatValue( 0.5f );
+	SetHoloAlpha( 0.5f );
 	pRenderContext->Bind( GetMaterial() );
 
 	// center

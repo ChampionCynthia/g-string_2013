@@ -10,7 +10,7 @@ class CHoloPanelVGUI : public CHoloPanel //, public vgui::Panel
 	DECLARE_CLASS_GAMEROOT( CHoloPanelVGUI, CHoloPanel );
 
 public:
-	CHoloPanelVGUI();
+	CHoloPanelVGUI( vgui::Panel *pParent, const char *pszName );
 	virtual void Setup();
 
 	virtual void Paint();

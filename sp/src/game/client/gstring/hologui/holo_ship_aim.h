@@ -8,8 +8,9 @@ class IHoloTarget;
 
 class CHoloShipAim : public CHoloPanel
 {
+	DECLARE_CLASS_GAMEROOT( CHoloShipAim, CHoloPanel );
 public:
-	CHoloShipAim( ISpacecraftData *pSpacecraftData );
+	CHoloShipAim( vgui::Panel *pParent, ISpacecraftData *pSpacecraftData );
 	virtual ~CHoloShipAim();
 
 	void MsgFunc_SpacecraftDamage( bf_read &msg );

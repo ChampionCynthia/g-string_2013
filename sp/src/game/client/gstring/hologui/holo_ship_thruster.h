@@ -11,7 +11,7 @@ class CHoloShipThruster : public CHoloPanelVGUI
 	DECLARE_CLASS_GAMEROOT( CHoloShipThruster, CHoloPanelVGUI );
 
 public:
-	CHoloShipThruster( ISpacecraftData *pSpacecraftData );
+	CHoloShipThruster( vgui::Panel *pParent, ISpacecraftData *pSpacecraftData );
 	~CHoloShipThruster();
 
 	virtual void PerformLayout();
