@@ -12,7 +12,9 @@ CHoloShipHealthGraphic::CHoloShipHealthGraphic( vgui::Panel *pParent, ISpacecraf
 	BaseClass( pParent, "health" ),
 	m_pSpacecraftData( pSpacecraftData ),
 	m_flHullFraction( 0.0f ),
-	m_flShieldFraction( 0.0f )
+	m_flShieldFraction( 0.0f ),
+	m_flShieldAlpha( 1.0f ),
+	m_nAnimationMode( 0 )
 {
 	SetAngles( QAngle( -25, 20, -3 ) );
 	SetOrigin( Vector( 0, 8, -7 ) );
@@ -41,25 +43,41 @@ void CHoloShipHealthGraphic::Draw( IMatRenderContext *pRenderContext )
 	IMaterialVar *pColor = GetColorVar();
 	pColor->SetVecValue( HOLO_COLOR_DEFAULT );
 
-	const float flHealthPercentage = m_flHullFraction * 7.0f;
-	for ( int s = 0; s < 2; ++s )
+	if ( m_nAnimationMode == 0 )
 	{
-		for ( int i = 0; i < 13; ++i )
+		const float flHealthPercentage = m_flHullFraction * 7.0f;
+		for ( int s = 0; s < 2; ++s )
 		{
-			const int index = abs( i - 6 );
-			if ( index <= flHealthPercentage )
+			for ( int i = 0; i < 13; ++i )
 			{
-				float flAlpha = 0.6f;
-				flAlpha *= 1.0f - abs( index ) / 10.0f;
-				const float flLocalPercentage = flHealthPercentage - index;
-				if ( flLocalPercentage >= 0.0f && flLocalPercentage < 1.0f )
+				const int index = abs( i - 6 );
+				if ( index <= flHealthPercentage )
 				{
-					flAlpha *= fmodf( flLocalPercentage, 1.0f );
-				}
-				SetHoloAlpha( flAlpha );
+					float flAlpha = 0.6f;
+					flAlpha *= 1.0f - abs( index ) / 10.0f;
+					const float flLocalPercentage = flHealthPercentage - index;
+					if ( flLocalPercentage >= 0.0f && flLocalPercentage < 1.0f )
+					{
+						flAlpha *= fmodf( flLocalPercentage, 1.0f );
+					}
+					SetHoloAlpha( flAlpha );
 
-				m_pHullElement->Draw();
+					m_pHullElement->Draw();
+				}
+				pRenderContext->MultMatrixLocal(dst);
 			}
+		}
+	}
+	else
+	{
+		for ( int i = 0; i < 26; ++i )
+		{
+			const float flIndex = i / 25.0f;
+			const float flFrac = 1.0f - fmodf( gpGlobals->curtime + flIndex, 1.0f );
+			float flAlpha = 0.8f * powf( 5.0f * MAX( 0.0f, flFrac - 0.8f ), 2.0f );
+			SetHoloAlpha( flAlpha );
+
+			m_pHullElement->Draw();
 			pRenderContext->MultMatrixLocal(dst);
 		}
 	}
@@ -72,7 +90,7 @@ void CHoloShipHealthGraphic::Draw( IMatRenderContext *pRenderContext )
 		IMesh *pMesh = pRenderContext->GetDynamicMesh( true, 0, 0, GetMaterial( MATERIALTYPE_VERTEXCOLOR ) );
 		CreateMirroredArcFaded( pMesh, 3.1f, 0.2f, m_flShieldFraction - 0.001f, m_flShieldFraction + flFadeRange );
 		GetColorVar( MATERIALTYPE_VERTEXCOLOR )->SetVecValue( HOLO_COLOR_HIGHLIGHT );
-		SetHoloAlpha( 1.0f, MATERIALTYPE_VERTEXCOLOR );
+		SetHoloAlpha( m_flShieldAlpha, MATERIALTYPE_VERTEXCOLOR );
 		pMesh->Draw();
 	}
 }

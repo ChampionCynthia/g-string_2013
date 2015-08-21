@@ -9,6 +9,7 @@
 class CHoloPanel;
 class CHoloShipAim;
 class ISpacecraftData;
+class CSpacecraftDataStub;
 #endif
 
 const Vector &CurrentHoloViewOrigin();
@@ -30,7 +31,7 @@ public:
 	virtual ~CEnvHoloSystem();
 
 #ifdef GAME_DLL
-	//virtual void Spawn();
+	virtual void Spawn();
 	virtual void Activate();
 
 	virtual int ObjectCaps()
@@ -39,6 +40,10 @@ public:
 	};
 
 	virtual int UpdateTransmitState();
+
+	void InputPlayAnimation( inputdata_t &inputdata );
+	void InputEnable( inputdata_t &inputdata );
+	void InputDisable( inputdata_t &inputdata );
 #else
 	void DestroyPanels();
 	void StartAnimation( const char *pszName );
@@ -59,6 +64,7 @@ private:
 #ifdef GAME_DLL
 	string_t m_strAttachment;
 	string_t m_strHoloEntity;
+	bool m_bEnabled;
 #else
 	void CreatePanels();
 	void PreRenderPanels();
@@ -70,14 +76,16 @@ private:
 
 	int m_iViewportWidth;
 	int m_iViewportHeight;
+	bool m_bIsAnimating;
 
-	ISpacecraftData *m_pSpacecraftDataAdapter;
+	CSpacecraftDataStub *m_pSpacecraftDataAdapter;
 	vgui::Panel *m_pRoot;
 	vgui::AnimationController *m_pAnimationController;
 #endif
 
 	CNetworkString( m_szAttachment, 16 );
 	CNetworkHandle( CBaseEntity, m_hHoloEntity );
+	CNetworkVar( int, m_iUIState );
 	//CNetworkVar( bool, m_bIsSpaceMap );
 };
 

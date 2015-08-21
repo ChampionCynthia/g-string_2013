@@ -6,12 +6,20 @@
 #include "materialsystem/imaterialvar.h"
 
 static int s_iMaterialGlobalReferenceCount;
-CMaterialReference CHoloPanel::m_Materials[ MATERIALTYPE_COUNT ];
+static CMaterialReference m_Materials[ CHoloPanel::MATERIALTYPE_COUNT ];
 
 CHoloPanel::CHoloPanel( vgui::Panel *pParent, const char *pszName ) : vgui::Panel( pParent, pszName ),
 	m_Angles( vec3_angle ),
 	m_Origin( vec3_origin ),
-	m_bTransformationDirty( false )
+	m_bTransformationDirty( false ),
+	m_flAlpha( 1.0f ),
+	m_flScale( 1.0f ),
+	m_flOffsetX( 0.0f ),
+	m_flOffsetY( 0.0f ),
+	m_flOffsetZ( 0.0f ),
+	m_flAngleX( 0.0f ),
+	m_flAngleY( 0.0f ),
+	m_flAngleZ( 0.0f )
 {
 	SetIdentityMatrix( m_Transformation );
 
@@ -48,12 +56,20 @@ CHoloPanel::~CHoloPanel()
 	--s_iMaterialGlobalReferenceCount;
 	for ( int i = 0; i < MATERIALTYPE_COUNT; ++i )
 	{
-		m_Materials[ i ]->DecrementReferenceCount();
 		if ( s_iMaterialGlobalReferenceCount == 0 )
 		{
 			m_Materials[ i ].Shutdown();
 		}
+		else
+		{
+			m_Materials[ i ]->DecrementReferenceCount();
+		}
 	}
+}
+
+void CHoloPanel::Setup()
+{
+	m_bSkipAnimVars = true;
 }
 
 void CHoloPanel::SetAngles( const QAngle &angles )
@@ -134,6 +150,12 @@ void CHoloPanel::SetHoloAlpha( float flAlpha, MaterialType type )
 	m_Materials[ type ]->FindVarFast( "$alpha", &iMatVar[ type ] )->SetFloatValue( flAlpha * m_flAlpha );
 }
 
+IMaterial *CHoloPanel::GetMaterial( MaterialType type )
+{
+	Assert( type >= 0 && type < MATERIALTYPE_COUNT );
+	return m_Materials[ type ];
+}
+
 const QAngle &CHoloPanel::GetAngles()
 {
 	return m_Angles;
@@ -147,5 +169,12 @@ const Vector &CHoloPanel::GetOrigin()
 void CHoloPanel::UpdateTransformation()
 {
 	m_bTransformationDirty = false;
-	AngleMatrix( m_Angles, m_Origin, m_Transformation );
+	AngleMatrix( m_Angles /*+ QAngle( m_flAngleX, m_flAngleY, m_flAngleZ )*/,
+		m_Origin + Vector( m_flOffsetX, m_flOffsetY, m_flOffsetZ ),
+		m_Transformation );
+
+	if ( m_flScale != 1.0f )
+	{
+		MatrixScaleBy( m_flScale, m_Transformation );
+	}
 }

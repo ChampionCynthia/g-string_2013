@@ -2292,10 +2292,17 @@ void CHudCloseCaption::ProcessAsyncWork()
 		}
 
 		// GSTRINGMIGRATION Valve...
+		// We processed this one, remove it!
 		if ( m_AsyncWork.Count() > 0 )
 		{
 			m_AsyncWork.Remove( i );
 			delete item;
+		}
+
+		// The captions can be cleared in ProcessCaption, basic immutable iterator fail. Fuck all.
+		if ( m_AsyncWork.Count() == 0 )
+		{
+			break;
 		}
 		// END GSTRINGMIGRATION
 

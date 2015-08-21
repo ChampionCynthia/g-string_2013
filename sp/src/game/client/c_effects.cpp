@@ -649,7 +649,6 @@ void CClient_Precipitation::Render()
 	// Create any queued up water splashes.
 	CreateWaterSplashes();
 
-	
 	CFastTimer timer;
 	timer.Start();
 

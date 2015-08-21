@@ -38,9 +38,15 @@
 BEGIN_DATADESC( CEnvHoloSystem )
 
 	DEFINE_FIELD( m_hHoloEntity, FIELD_EHANDLE ),
+	DEFINE_FIELD( m_bEnabled, FIELD_BOOLEAN ),
 
 	DEFINE_KEYFIELD( m_strAttachment, FIELD_STRING, "Attachment" ),
 	DEFINE_KEYFIELD( m_strHoloEntity, FIELD_STRING, "HoloEntity" ),
+	DEFINE_KEYFIELD( m_iUIState, FIELD_INTEGER, "UIState" ),
+
+	DEFINE_INPUTFUNC( FIELD_STRING, "PlayAnimation", InputPlayAnimation ),
+	DEFINE_INPUTFUNC( FIELD_VOID, "Enable", InputEnable ),
+	DEFINE_INPUTFUNC( FIELD_VOID, "Disable", InputDisable ),
 
 	// DEFINE_FIELD( m_bLensflareEnabled,		FIELD_BOOLEAN ),
 
@@ -48,7 +54,7 @@ END_DATADESC()
 #else
 
 static CEnvHoloSystem *g_pLastHoloSystem;
-CON_COMMAND( gstring_debug_holosystem_play_animation, "" )
+CON_COMMAND( gstring_holo_play_animation, "" )
 {
 	if ( g_pLastHoloSystem != NULL && args.ArgC() > 1 )
 	{
@@ -57,13 +63,27 @@ CON_COMMAND( gstring_debug_holosystem_play_animation, "" )
 	}
 }
 
-CON_COMMAND( gstring_debug_holosystem_reload_animation_script, "" )
+CON_COMMAND( gstring_holo_reload_animation_script, "" )
 {
 	if ( g_pLastHoloSystem != NULL )
 	{
 		g_pLastHoloSystem->ReloadAnimationScript();
 	}
 }
+
+static void __MsgFunc_HoloAnimation( bf_read &msg )
+{
+	int entindex = msg.ReadShort();
+	C_BaseEntity *pEntity = ClientEntityList().GetBaseEntity( entindex );
+	CEnvHoloSystem *pHoloSystem = dynamic_cast<CEnvHoloSystem*>( pEntity );
+	if ( pHoloSystem != NULL )
+	{
+		char szAnimationName[ 128 ];
+		msg.ReadString( szAnimationName, sizeof( szAnimationName ) );
+		pHoloSystem->StartAnimation( szAnimationName );
+	}
+}
+USER_MESSAGE_REGISTER( HoloAnimation );
 
 static ConVar gstring_holoui_draw( "gstring_holoui_draw", "1" );
 
@@ -89,13 +109,28 @@ class CSpacecraftDataStub : public ISpacecraftData
 {
 public:
 	CSpacecraftDataStub( CBaseEntity *pEntity )
+		: m_vecVelocity( vec3_origin )
+		, m_iAttachment( -1 )
 	{
 		m_hEntity.Set( pEntity );
 	}
 
+	void Update()
+	{
+		if ( m_hEntity.Get() != NULL )
+		{
+			if ( m_iAttachment < 0 )
+			{
+				m_iAttachment = m_hEntity->LookupAttachment( "engine_2" );
+			}
+			Quaternion angularVelocity;
+			m_hEntity->GetAttachmentVelocity( m_iAttachment, m_vecVelocity, angularVelocity );
+		}
+	}
+
 	virtual int GetShield() const
 	{
-		return 0;
+		return 100;
 	}
 
 	virtual int GetMaxShield() const
@@ -105,7 +140,7 @@ public:
 
 	virtual int GetHull() const
 	{
-		return 0;
+		return 100;
 	}
 
 	virtual int GetMaxHull() const
@@ -125,12 +160,12 @@ public:
 
 	virtual const Vector &GetPhysVelocity() const
 	{
-		return vec3_origin;
+		return m_vecVelocity;
 	}
 
 	virtual EngineLevel_e GetEngineLevel() const
 	{
-		return ISpacecraftData::ENGINELEVEL_NORMAL;
+		return m_vecVelocity.LengthSqr() > 1.0f ? ISpacecraftData::ENGINELEVEL_NORMAL : ISpacecraftData::ENGINELEVEL_IDLE;
 	}
 
 	virtual bool IsBoostSuspended() const
@@ -140,7 +175,7 @@ public:
 
 	virtual int GetThrusterCount() const
 	{
-		return 0;
+		return 8;
 	}
 
 	virtual float GetThrusterPower( int index ) const
@@ -150,15 +185,19 @@ public:
 
 private:
 	EHANDLE m_hEntity;
+	int m_iAttachment;
+	Vector m_vecVelocity;
 };
 #endif
 
 IMPLEMENT_NETWORKCLASS_DT( CEnvHoloSystem, CEnvHoloSystem_DT )
 
 #ifdef GAME_DLL
+	SendPropInt( SENDINFO( m_iUIState ) ),
 	SendPropString( SENDINFO( m_szAttachment ) ),
 	SendPropEHandle( SENDINFO( m_hHoloEntity ) ),
 #else
+	RecvPropInt( RECVINFO( m_iUIState ) ),
 	RecvPropString( RECVINFO( m_szAttachment ) ),
 	RecvPropEHandle( RECVINFO( m_hHoloEntity ) ),
 #endif
@@ -173,9 +212,12 @@ CEnvHoloSystem::CEnvHoloSystem()
 	, m_iEyes( -1 )
 	, m_iViewportWidth( 0 )
 	, m_iViewportHeight( 0 )
+	, m_bIsAnimating( false )
 	, m_pSpacecraftDataAdapter( NULL )
 	, m_pRoot( NULL )
 	, m_pAnimationController( NULL )
+#else
+	: m_bEnabled( false )
 #endif
 {
 #ifdef CLIENT_DLL
@@ -201,6 +243,13 @@ CEnvHoloSystem::~CEnvHoloSystem()
 
 #ifdef GAME_DLL
 
+void CEnvHoloSystem::Spawn()
+{
+	BaseClass::Spawn();
+
+	m_bEnabled = HasSpawnFlags( 1 );
+}
+
 void CEnvHoloSystem::Activate()
 {
 	BaseClass::Activate();
@@ -216,7 +265,34 @@ void CEnvHoloSystem::Activate()
 
 int CEnvHoloSystem::UpdateTransmitState()
 {
-	return SetTransmitState( FL_EDICT_ALWAYS );
+	return SetTransmitState( m_bEnabled ? FL_EDICT_ALWAYS : FL_EDICT_DONTSEND );
+}
+
+void CEnvHoloSystem::InputPlayAnimation( inputdata_t &inputdata )
+{
+	if ( inputdata.value.FieldType() == FIELD_STRING || inputdata.value.Convert( FIELD_STRING ) )
+	{
+		CBasePlayer *pLocal = UTIL_GetLocalPlayer();
+
+		CSingleUserRecipientFilter user( pLocal );
+		user.MakeReliable();
+		UserMessageBegin( user, "HoloAnimation" );
+			WRITE_SHORT( entindex() );
+			WRITE_STRING( inputdata.value.String() );
+		MessageEnd();
+	}
+}
+
+void CEnvHoloSystem::InputEnable( inputdata_t &inputdata )
+{
+	m_bEnabled = true;
+	DispatchUpdateTransmitState();
+}
+
+void CEnvHoloSystem::InputDisable( inputdata_t &inputdata )
+{
+	m_bEnabled = false;
+	DispatchUpdateTransmitState();
 }
 
 #else
@@ -332,9 +408,24 @@ RenderGroup_t CEnvHoloSystem::GetRenderGroup()
 
 void CEnvHoloSystem::ClientThink()
 {
+	if ( m_pSpacecraftDataAdapter != NULL )
+	{
+		m_pSpacecraftDataAdapter->Update();
+	}
+
 	if ( m_pAnimationController != NULL )
 	{
 		m_pAnimationController->UpdateAnimations( gpGlobals->curtime );
+
+		const bool bIsAnimating = m_pAnimationController->GetNumActiveAnimations();
+		if ( bIsAnimating || m_bIsAnimating )
+		{
+			FOR_EACH_VEC( m_Panels, i )
+			{
+				m_Panels[ i ]->MakeDirty();
+			}
+		}
+		m_bIsAnimating = bIsAnimating;
 	}
 
 	if ( GetOwnerEntity() == NULL )
@@ -395,6 +486,20 @@ void CEnvHoloSystem::OnDataChanged( DataUpdateType_t type )
 	{
 		SetNextClientThink( CLIENT_THINK_ALWAYS );
 		CreatePanels();
+
+		if ( m_pAnimationController != NULL )
+		{
+			m_pAnimationController->UpdateAnimations( gpGlobals->curtime );
+			switch ( m_iUIState )
+			{
+				// Parked ship
+				case 1:
+					{
+						StartAnimation( "shipparked" );
+					}
+					break;
+			}
+		}
 	}
 
 	C_BaseAnimating *pAttachedModel = assert_cast< C_BaseAnimating* >( GetOwnerEntity() );
@@ -428,8 +533,7 @@ void CEnvHoloSystem::CreatePanels()
 
 	m_pRoot = new vgui::Panel();
 	m_pRoot->SetBounds( 0, 0, pHoloGUITexture->GetActualWidth(), pHoloGUITexture->GetActualHeight() );
-	m_pAnimationController = new vgui::AnimationController( m_pRoot );
-	ReloadAnimationScript();
+	m_pRoot->MakeReadyForUse();
 
 	m_Panels.AddToTail( new CHoloShipHealthGraphic( m_pRoot, pSpacecraft ) );
 	m_Panels.AddToTail( new CHoloShipHealthText( m_pRoot, pSpacecraft ) );
@@ -441,6 +545,9 @@ void CEnvHoloSystem::CreatePanels()
 	m_Panels.AddToTail( new CHoloShipObjectives( m_pRoot, pSpacecraft ) );
 	m_Panels.AddToTail( new CHoloShipComm( m_pRoot, pSpacecraft ) );
 	m_Panels.AddToTail( new CHoloShipAimInfo( m_pRoot, pSpacecraft ) );
+
+	m_pAnimationController = new vgui::AnimationController( m_pRoot );
+	ReloadAnimationScript();
 
 	int x, y, width, height;
 	vgui::surface()->GetFullscreenViewport( x, y, width, height );
@@ -514,6 +621,8 @@ void CEnvHoloSystem::PreRenderPanels()
 	{
 		m_Panels[ i ]->PreRenderHierarchy( pRenderContext, rect, width, height );
 	}
+
+	vgui::surface()->DrawSetAlphaMultiplier( 1.0f );
 
 	Assert( ( rect.x + rect.width ) <= width && ( rect.y + rect.height ) <= height );
 

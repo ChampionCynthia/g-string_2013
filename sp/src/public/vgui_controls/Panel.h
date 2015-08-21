@@ -924,6 +924,11 @@ private:
 
 	// obselete, remove soon
 	void OnOldMessage(KeyValues *params, VPANEL ifromPanel);
+
+	// GSTRINGMIGRATION
+	// HACK: Holo panels cause bad writes in memory when initializing their anim vars
+protected:
+	bool m_bSkipAnimVars;
 };
 
 inline void Panel::DisableMouseInputForThisPanel( bool bDisable )

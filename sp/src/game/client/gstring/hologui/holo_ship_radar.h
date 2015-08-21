@@ -7,7 +7,7 @@ class ISpacecraftData;
 
 class CHoloShipRadar : public CHoloPanel
 {
-	DECLARE_CLASS_GAMEROOT( CHoloShipRadar, CHoloPanel );
+	DECLARE_CLASS_SIMPLE( CHoloShipRadar, CHoloPanel );
 
 public:
 	CHoloShipRadar( vgui::Panel *pParent, ISpacecraftData *pSpacecraftData );

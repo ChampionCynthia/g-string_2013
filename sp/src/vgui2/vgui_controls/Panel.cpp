@@ -720,6 +720,9 @@ void Panel::Init( int x, int y, int wide, int tall )
 	m_LastNavDirection = ND_NONE;
 	m_bWorldPositionCurrentFrame = false;
 	m_bForceStereoRenderToFrameBuffer = false;
+
+	// GSTRINGMIGRATION
+	m_bSkipAnimVars = false;
 }
 
 
@@ -6142,6 +6145,13 @@ void Panel::InternalApplySettings( PanelAnimationMap *map, KeyValues *inResource
 void  Panel::InternalInitDefaultValues( PanelAnimationMap *map )
 {
 	_flags.ClearFlag( NEEDS_DEFAULT_SETTINGS_APPLIED );
+
+	// GSTRINGMIGRATION
+	if ( m_bSkipAnimVars )
+	{
+		return;
+	}
+	// END GSTRINGMIGRATION
 
 	// Look through mapping for entry
 	int c = map->entries.Count();

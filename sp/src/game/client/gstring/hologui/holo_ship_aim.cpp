@@ -46,11 +46,11 @@ CHoloShipAim::CHoloShipAim( vgui::Panel *pParent, ISpacecraftData *pSpacecraftDa
 	m_pMeshPanel = pRenderContext->CreateStaticMesh( VERTEX_POSITION | VERTEX_COLOR | VERTEX_TEXCOORD_SIZE( 0, 2 ),
 		TEXTURE_GROUP_MODEL, GetMaterial( MATERIALTYPE_SCANLINES_VERTEXCOLOR ) );
 	m_pMeshDamagePanel = pRenderContext->CreateStaticMesh( VERTEX_POSITION | VERTEX_COLOR | VERTEX_TEXCOORD_SIZE( 0, 2 ),
-		TEXTURE_GROUP_MODEL, GetMaterial( MATERIALTYPE_SCANLINES_VERTEXCOLOR ) );
+		TEXTURE_GROUP_MODEL, GetMaterial( MATERIALTYPE_VERTEXCOLOR ) );
 	m_pMeshDamagePanelInner = pRenderContext->CreateStaticMesh( VERTEX_POSITION | VERTEX_COLOR | VERTEX_TEXCOORD_SIZE( 0, 2 ),
-		TEXTURE_GROUP_MODEL, GetMaterial( MATERIALTYPE_SCANLINES_VERTEXCOLOR ) );
+		TEXTURE_GROUP_MODEL, GetMaterial( MATERIALTYPE_VERTEXCOLOR ) );
 	m_pMeshDamagePanelOuter = pRenderContext->CreateStaticMesh( VERTEX_POSITION | VERTEX_COLOR | VERTEX_TEXCOORD_SIZE( 0, 2 ),
-		TEXTURE_GROUP_MODEL, GetMaterial( MATERIALTYPE_SCANLINES_VERTEXCOLOR ) );
+		TEXTURE_GROUP_MODEL, GetMaterial( MATERIALTYPE_VERTEXCOLOR ) );
 	m_pMeshDamagePanelDecor = pRenderContext->CreateStaticMesh( VERTEX_POSITION | VERTEX_COLOR | VERTEX_TEXCOORD_SIZE( 0, 2 ),
 		TEXTURE_GROUP_MODEL, GetMaterial() );
 
@@ -566,8 +566,8 @@ void CHoloShipAim::DrawReticule( IMatRenderContext *pRenderContext )
 	// damage indicator
 	if ( m_DamagePanels.Count() > 0 )
 	{
-		GetColorVar( MATERIALTYPE_SCANLINES_VERTEXCOLOR )->SetVecValue( 0.9f, 0.2f, 0.05f );
-		pRenderContext->Bind( GetMaterial( MATERIALTYPE_SCANLINES_VERTEXCOLOR ) );
+		GetColorVar( MATERIALTYPE_VERTEXCOLOR )->SetVecValue( 0.9f, 0.2f, 0.05f );
+		pRenderContext->Bind( GetMaterial( MATERIALTYPE_VERTEXCOLOR ) );
 		FOR_EACH_VEC( m_DamagePanels, i )
 		{
 			const DamagePanel &panel = m_DamagePanels[ i ];
@@ -576,7 +576,7 @@ void CHoloShipAim::DrawReticule( IMatRenderContext *pRenderContext )
 			{
 				flAlpha *= 0.3f;
 			}
-			SetHoloAlpha( flAlpha, MATERIALTYPE_SCANLINES_VERTEXCOLOR );
+			SetHoloAlpha( flAlpha, MATERIALTYPE_VERTEXCOLOR );
 			pRenderContext->PushMatrix();
 			MatrixBuildRotationAboutAxis( Vector( 1, 0, 0 ), panel.m_flAngle, matrixTemp );
 			pRenderContext->MultMatrixLocal( matrixTemp );

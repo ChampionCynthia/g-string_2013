@@ -50,6 +50,7 @@ void RegisterUserMessages( void )
 	usermessages->Register( "Fireball", -1 );
 	usermessages->Register( "SpacecraftDamage", -1 );
 	usermessages->Register( "HoloMessage", -1 );
+	usermessages->Register( "HoloAnimation", -1 );
 	// END GSTRINGMIGRATION
 
 #ifndef _X360

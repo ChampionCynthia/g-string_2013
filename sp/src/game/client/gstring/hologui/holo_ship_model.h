@@ -25,6 +25,8 @@ private:
 	float m_flDamageTimer;
 	int m_iShield;
 	float m_flShieldTimer;
+
+	CPanelAnimationVar( int, m_nSequenceCopy, "sequencecopy", "0" );
 };
 
 #endif

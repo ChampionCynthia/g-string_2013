@@ -49,7 +49,7 @@ class CHoloPanel : public vgui::Panel
 public:
 	CHoloPanel( vgui::Panel *pParent, const char *pszName );
 	virtual ~CHoloPanel();
-	virtual void Setup() {}
+	virtual void Setup();
 
 	void SetAngles( const QAngle &angles );
 	void SetOrigin( const Vector &origin );
@@ -59,11 +59,8 @@ public:
 	void ThinkHierarchy( float frametime );
 	void PerformLayout3DHierarchy( int width, int height, bool useVR );
 
-protected:
-	virtual void PreRender( IMatRenderContext *pRenderContext, Rect_t &position, int maxWidth, int maxHeight );
-	virtual void Draw( IMatRenderContext *pRenderContext );
-	virtual void Think( float frametime );
-	virtual void PerformLayout3D( int width, int height, bool useVR );
+	void UpdateTransformation();
+	void MakeDirty() { m_bTransformationDirty = true; }
 
 	enum MaterialType
 	{
@@ -77,28 +74,39 @@ protected:
 		MATERIALTYPE_COUNT
 	};
 
+protected:
+	virtual void PreRender( IMatRenderContext *pRenderContext, Rect_t &position, int maxWidth, int maxHeight );
+	virtual void Draw( IMatRenderContext *pRenderContext );
+	virtual void Think( float frametime );
+	virtual void PerformLayout3D( int width, int height, bool useVR );
+
 	IMaterialVar *GetColorVar( MaterialType type = MATERIALTYPE_NORMAL );
 	void SetHoloAlpha( float flAlpha, MaterialType type = MATERIALTYPE_NORMAL );
-	IMaterial *GetMaterial( MaterialType type = MATERIALTYPE_NORMAL )
-	{
-		Assert( type >= 0 && type < MATERIALTYPE_COUNT );
-		return m_Materials[ type ];
-	}
+	IMaterial *GetMaterial( MaterialType type = MATERIALTYPE_NORMAL );
 
 	const QAngle &GetAngles();
 	const Vector &GetOrigin();
 
-	CPanelAnimationVar( float, m_flAlpha, "holoalpha", "1.0" );
+	float GetHoloAlpha() const { return m_flAlpha; }
+	float GetHoloScale() const { return m_flScale; }
+	Vector GetHoloOffset() const { return Vector( m_flOffsetX, m_flOffsetY, m_flOffsetZ ); }
+	QAngle GetHoloAngle() const { return QAngle( m_flAngleX, m_flAngleY, m_flAngleZ ); }
 
 private:
-	void UpdateTransformation();
-
 	QAngle m_Angles;
 	Vector m_Origin;
 	matrix3x4_t m_Transformation;
 	bool m_bTransformationDirty;
 
-	static CMaterialReference m_Materials[ MATERIALTYPE_COUNT ];
+	CPanelAnimationVar( float, m_flAlpha, "holoalpha", "1.0" );
+	CPanelAnimationVar( float, m_flScale, "holoscale", "1.0" );
+
+	CPanelAnimationVar( float, m_flOffsetX, "offsetx", "0.0" );
+	CPanelAnimationVar( float, m_flOffsetY, "offsety", "0.0" );
+	CPanelAnimationVar( float, m_flOffsetZ, "offsetz", "0.0" );
+	CPanelAnimationVar( float, m_flAngleX, "anglex", "0.0" );
+	CPanelAnimationVar( float, m_flAngleY, "angley", "0.0" );
+	CPanelAnimationVar( float, m_flAngleZ, "anglez", "0.0" );
 };
 
 #endif

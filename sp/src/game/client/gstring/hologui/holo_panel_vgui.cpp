@@ -24,7 +24,9 @@ CHoloPanelVGUI::CHoloPanelVGUI( vgui::Panel *pParent, const char *pszName ) :
 
 void CHoloPanelVGUI::Setup()
 {
-	InvalidateLayout( true, true );
+	BaseClass::Setup();
+
+	InvalidateLayout( false, true );
 	MakeReadyForUse();
 }
 
@@ -104,7 +106,7 @@ void CHoloPanelVGUI::PreRender( IMatRenderContext *pRenderContext, Rect_t &posit
 	Frustum frustum;
 	render->Push2DView( setup, 0, pRenderContext->GetRenderTarget(), frustum );
 
-	surface()->DrawSetAlphaMultiplier( m_flAlpha );
+	surface()->DrawSetAlphaMultiplier( GetHoloAlpha() );
 
 	surface()->PushMakeCurrent( GetVPanel(), false );
 	surface()->PaintTraverse( GetVPanel() );

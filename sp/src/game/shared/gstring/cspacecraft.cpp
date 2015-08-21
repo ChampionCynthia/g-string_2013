@@ -351,6 +351,7 @@ void CSpacecraft::OnPlayerEntered( CGstringPlayer *pPlayer )
 		Assert( pHoloSystem );
 		pHoloSystem->SetOwnerEntity( this );
 		pHoloSystem->KeyValue( "Attachment", "gui" );
+		pHoloSystem->KeyValue( "spawnflags", "1" ); // Start enabled
 		DispatchSpawn( pHoloSystem );
 		pHoloSystem->Activate();
 		m_hHoloSystem = pHoloSystem;

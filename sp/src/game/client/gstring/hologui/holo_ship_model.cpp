@@ -17,7 +17,8 @@ CHoloShipModel::CHoloShipModel( vgui::Panel *pParent, ISpacecraftData *pSpacecra
 	m_iHull( -1 ),
 	m_flDamageTimer( 0.0f ),
 	m_iShield( -1 ),
-	m_flShieldTimer( 0.0f )
+	m_flShieldTimer( 0.0f ),
+	m_nSequenceCopy( 0 )
 {
 	m_MaterialHoloModel.Init( materials->FindMaterial( "engine/hologui_model", TEXTURE_GROUP_MODEL ) );
 }
@@ -57,7 +58,7 @@ void CHoloShipModel::Draw( IMatRenderContext *pRenderContext )
 		}
 
 		color = Lerp( warningAmount, color, Vector( HOLO_COLOR_WARNING ) );
-		color = Lerp( m_flAlpha, vec3_origin, color );
+		color = Lerp( GetHoloAlpha(), vec3_origin, color );
 		render->SetColorModulation( color.Base() );
 		//render->SetBlend( 0.4f );
 
@@ -66,6 +67,12 @@ void CHoloShipModel::Draw( IMatRenderContext *pRenderContext )
 		pVarEyePos->SetVecValue( XYZ( CurrentHoloViewOrigin() ) );
 
 		modelrender->ForcedMaterialOverride( m_MaterialHoloModel );
+
+		const float flTargetScale = 0.012f * GetHoloScale();
+		if ( m_hModel->GetModelScale() != flTargetScale )
+		{
+			m_hModel->SetModelScale( flTargetScale );
+		}
 		m_hModel->DrawModel( STUDIO_RENDER | STUDIO_TRANSPARENCY );
 		modelrender->ForcedMaterialOverride( NULL );
 
@@ -97,7 +104,10 @@ void CHoloShipModel::Think( float frametime )
 		}
 
 		C_BaseAnimating *pAnimating = new C_BaseAnimating();
-		pAnimating->InitializeAsClientEntity( NULL, RENDER_GROUP_OPAQUE_ENTITY );
+		pAnimating->InitializeAsClientEntity( NULL, RENDER_GROUP_COUNT );
+		pAnimating->RemoveFromLeafSystem();
+		//cl_entitylist->RemoveEntity( pAnimating->GetRefEHandle() );
+		pAnimating->CollisionProp()->DestroyPartitionHandle();
 		pAnimating->SetModelPointer( pDesiredMdl );
 		pAnimating->SetModelScale( 0.012f );
 
@@ -106,8 +116,40 @@ void CHoloShipModel::Think( float frametime )
 
 	if ( m_hModel )
 	{
-		m_hModel->SetAbsOrigin( Vector( 0, 8, -6.5f ) );
-		m_hModel->SetAbsAngles( m_pSpacecraftData->GetAngularImpulse() * 0.1f );
+		if ( m_hModel->GetRenderHandle() != INVALID_CLIENT_RENDER_HANDLE )
+		{
+			m_hModel->RemoveFromLeafSystem();
+		}
+		const Vector vecOrigin = Vector( 0, 8, -6.5f );
+
+		if ( m_nSequenceCopy <= 0 )
+		{
+			m_hModel->SetAbsOrigin( vecOrigin );
+			m_hModel->SetAbsAngles( m_pSpacecraftData->GetAngularImpulse() * 0.1f );
+		}
+		else
+		{
+			m_hModel->SetAbsOrigin( vecOrigin * GetHoloScale() + GetHoloOffset() );
+			m_hModel->SetAbsAngles( GetHoloAngle() );
+
+			switch ( m_nSequenceCopy )
+			{
+			case 1:
+				{
+					C_BaseAnimating *pAnimating = assert_cast<C_BaseAnimating*>(m_pSpacecraftData->GetEntity());
+					m_hModel->SetSequence( pAnimating->GetSequence() );
+					m_hModel->SetCycle( pAnimating->GetCycle() );
+				}
+				break;
+
+			case 2:
+				if ( m_hModel->GetSequence() != 0 )
+				{
+					m_hModel->SetSequence( 0 );
+				}
+				break;
+			}
+		}
 	}
 
 	int iHull = m_pSpacecraftData->GetHull();

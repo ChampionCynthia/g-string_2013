@@ -7,6 +7,7 @@
 #include "shadereditor/ivshadereditor.h"
 #include "gstring/cenv_postprocessing.h"
 #include "gstring/gstring_cvars.h"
+#include "gstring/cgstring_globals.h"
 #include "gstring/vgui/vutil.h"
 #include "c_sun.h"
 
@@ -121,7 +122,8 @@ void DrawBarsAndGrain( int x, int y, int w, int h )
 	const float flBarScale = UseVR() ? 0.0f : cvar_gstring_bars_scale.GetFloat();
 
 	if ( /*cvar_gstring_drawbars.GetBool()
-		&&*/ flBarScale > 0.0f )
+		&&*/ flBarScale > 0.0f &&
+		( g_pGstringGlobals == NULL || !g_pGstringGlobals->IsSpaceMap() ) )
 	{
 		static CMaterialReference blackMaterial( "effects/black", TEXTURE_GROUP_OTHER );
 

@@ -23,6 +23,9 @@ private:
 
 	float m_flHullFraction;
 	float m_flShieldFraction;
+	
+	CPanelAnimationVar( float, m_flShieldAlpha, "shieldalpha", "0" );
+	CPanelAnimationVar( int, m_nAnimationMode, "animationmode", "0" );
 };
 
 #endif
