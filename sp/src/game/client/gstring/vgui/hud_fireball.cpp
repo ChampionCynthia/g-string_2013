@@ -11,6 +11,7 @@
 #include <vgui_controls/AnimationController.h>
 #include <vgui/ILocalize.h>
 #include "vutil.h"
+#include "hud.h"
 
 #include "tier0/memdbgon.h"
 
@@ -124,14 +125,14 @@ void CHudFireball::Paint()
 void CHudFireball::PaintLabel()
 {
 	surface()->DrawSetTextFont( m_hTextFont );
-	surface()->DrawSetTextColor( GetFgColor() );
+	surface()->DrawSetTextColor( gHUD.m_clrNormal );
 	surface()->DrawSetTextPos( m_flTextXPos, m_flTextYPos );
 	surface()->DrawUnicodeString( m_wszLabelText );
 }
 
 void CHudFireball::PaintBar()
 {
-	surface()->DrawSetColor( m_BarBorderColor );
+	surface()->DrawSetColor( gHUD.m_clrNormal );
 
 	const float flXInset = m_flBarHeight / m_vecBarAngleDirection.y * m_vecBarAngleDirection.x;
 	const float flYInset = m_flBarY;
@@ -163,7 +164,7 @@ void CHudFireball::PaintBar()
 		};
 
 		surface()->DrawSetTexture( m_iTexBar );
-		surface()->DrawSetColor( Color( 255, 255, 255, 255 ) );
+		surface()->DrawSetColor( gHUD.m_clrNormal );
 		surface()->DrawTexturedPolygon( 4, barVertices );
 	}
 }

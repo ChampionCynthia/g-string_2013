@@ -37,4 +37,5 @@ ConVar cvar_gstring_debug_vguiparticles( "gstring_debug_VguiParticles", "0" );
 ConVar cvar_gstring_nightvision_minlighting( "gstring_nightvision_minlighting", "0.5" );
 
 ConVar cvar_gstring_drawhurtfx( "gstring_DrawHurtFX", "1", FCVAR_ARCHIVE );
+ConVar gstring_hud_color( "gstring_hud_color", "255 229 153 255", FCVAR_ARCHIVE );
 #endif

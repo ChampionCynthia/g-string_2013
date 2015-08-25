@@ -8,6 +8,7 @@
 #include "vgui_controls/Frame.h"
 #include "vgui_controls/PropertySheet.h"
 
+class CColorPickerButton;
 class CVGUIGstringOptions : public vgui::Frame
 {
 public:
@@ -21,6 +22,7 @@ public:
 	MESSAGE_FUNC_PTR( OnCheckButtonChecked, "CheckButtonChecked", panel );
 	MESSAGE_FUNC_PARAMS( OnSliderMoved, "SliderMoved", pKV );
 	MESSAGE_FUNC_PARAMS( OnTextChanged, "TextChanged", pKV );
+	MESSAGE_FUNC_PARAMS( OnPicked, "ColorPickerPicked", pKV );
 
 protected:
 	virtual void ApplySchemeSettings( vgui::IScheme *pScheme );
@@ -64,6 +66,9 @@ private:
 	vgui::Label			*m_pLabel_Value_FilmGrain;
 	vgui::Label			*m_pLabel_Value_Bend;
 	vgui::Label			*m_pLabel_Value_Chromatic;
+
+	CColorPickerButton	*m_pHUDColorPicker;
+	Color m_colHUD;
 
 	// Game
 	vgui::CheckButton	*m_pCheck_FirstPersonBody;

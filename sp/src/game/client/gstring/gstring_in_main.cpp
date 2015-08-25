@@ -139,26 +139,33 @@ void CGstringInput::MouseMove( CUserCmd *cmd )
 		PerformSpacecraftAutoAim( cmd );
 
 		// clamp yaw diff to prevent overturn
-		//QAngle viewangles, viewanglesOld;
-		//engine->GetViewAngles( viewanglesOld );
-		BaseClass::MouseMove( cmd );
-		//engine->GetViewAngles( viewangles );
+		if ( true )
+		{
+			QAngle viewangles, viewanglesOld;
+			engine->GetViewAngles( viewanglesOld );
+			BaseClass::MouseMove( cmd );
+			engine->GetViewAngles( viewangles );
 
-		//QAngle modelAngles = pPlayer->GetSpacecraft()->GetAbsAngles();
-		//const float flDiffOld = AngleDiff( viewanglesOld.y, modelAngles.y );
-		//float flDiffNew = AngleDiff( viewangles.y, modelAngles.y );
-		//if ( Sign( flDiffOld ) != Sign( flDiffNew ) && abs( flDiffOld ) > 90.0f)
-		//{
-		//	viewangles.y = viewanglesOld.y;
-		//}
+			QAngle modelAngles = pPlayer->GetSpacecraft()->GetAbsAngles();
+			const float flDiffOld = AngleDiff( viewanglesOld.y, modelAngles.y );
+			float flDiffNew = AngleDiff( viewangles.y, modelAngles.y );
+			if ( Sign( flDiffOld ) != Sign( flDiffNew ) && abs( flDiffOld ) > 90.0f)
+			{
+				viewangles.y = viewanglesOld.y;
+			}
 
-		//const float flMaxYawDiff = 160.0f;
-		//if ( abs( flDiffNew ) > flMaxYawDiff )
-		//{
-		//	flDiffNew = clamp( flDiffNew, -flMaxYawDiff, flMaxYawDiff );
-		//	viewangles.y = AngleNormalize( modelAngles.y + flDiffNew );
-		//}
-		//engine->SetViewAngles( viewangles );
+			const float flMaxYawDiff = 90.0f + abs( viewangles.x ) * 0.3f;
+			if ( abs( flDiffNew ) > flMaxYawDiff )
+			{
+				flDiffNew = clamp( flDiffNew, -flMaxYawDiff, flMaxYawDiff );
+				viewangles.y = AngleNormalize( modelAngles.y + flDiffNew );
+			}
+			engine->SetViewAngles( viewangles );
+		}
+		else
+		{
+			BaseClass::MouseMove( cmd );
+		}
 		return;
 	}
 

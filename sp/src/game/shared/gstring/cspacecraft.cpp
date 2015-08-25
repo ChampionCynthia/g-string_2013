@@ -563,13 +563,14 @@ void CSpacecraft::Event_Killed( const CTakeDamageInfo &info )
 		params.fadeTimeOverride = ( pPlayer != NULL ) ? 5.0f : 0.5f;
 
 		MDLCACHE_CRITICAL_SECTION();
-		PropBreakableCreateAll( GetModelIndex(), pPhysics, params, this, -1, true, true );
+		PropBreakableCreateAll( GetModelIndex(), pPhysics, params, this, -1, false, true );
 	}
 
-	if (ShouldPlaySounds())
+	if ( ShouldPlaySounds() )
 	{
 		EmitSoundIfSet( this, m_Settings.m_strSoundDeath );
 	}
+
 	DispatchParticleEffect( m_Settings.m_strParticleDeath, GetAbsOrigin(), GetAbsAngles() );
 	//const int iRingCount = RandomInt( 2, 4 );
 	//for ( int i = 0; i < iRingCount; i++ )

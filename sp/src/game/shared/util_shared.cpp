@@ -1004,6 +1004,18 @@ void UTIL_StringToColor32( color32 *color, const char *pString )
 	color->a = tmp[3];
 }
 
+// GSTRINGMIGRATION
+void UTIL_StringToColor( Color &color, const char *pString )
+{
+	int tmp[4];
+	UTIL_StringToIntArray( tmp, 4, pString );
+	color[0] = tmp[0];
+	color[1] = tmp[1];
+	color[2] = tmp[2];
+	color[3] = tmp[3];
+}
+// END GSTRINGMIGRATION
+
 #ifndef _XBOX
 void UTIL_DecodeICE( unsigned char * buffer, int size, const unsigned char *key)
 {

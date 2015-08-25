@@ -13,6 +13,8 @@
 #include "vgui_controls/Button.h"
 #include "vgui_controls/PropertyPage.h"
 
+#include "matsys_controls/colorpickerpanel.h"
+
 using namespace vgui;
 
 extern ConVar gstring_firstpersonbody_enable;
@@ -119,6 +121,8 @@ CVGUIGstringOptions::CVGUIGstringOptions( VPANEL parent, const char *pName ) : B
 	//CREATE_VGUI_CHECKBOX( m_pCheck_FirstPersonShadow, "check_first_person_shadow", pPageGame );
 	CREATE_VGUI_CHECKBOX( m_pCheck_LightVolumetrics, "check_volumetrics", pPageGame );
 
+	m_pHUDColorPicker = new CColorPickerButton( pPageGame, "hud_color_picker_button", this );
+
 	pPageGame->LoadControlSettings( "resource/gstring_options_page_game.res" );
 
 	DoModal();
@@ -165,8 +169,10 @@ void CVGUIGstringOptions::OnCommand( const char *cmd )
 		CVAR_SLIDER_FLOAT( cvar_gstring_chromatic_aberration, m_pSlider_Chromatic_Strength, 1000 );
 
 		//cvar_gstring_drawbloomflare.SetValue( m_pCBox_BloomFlare->GetActiveItem() );
+		gstring_hud_color.SetValue( VarArgs( "%i %i %i 255", m_colHUD.r(), m_colHUD.g(), m_colHUD.b() ) );
 
 		engine->ClientCmd( "host_writeconfig" );
+		engine->ClientCmd( "hud_reloadscheme" );
 
 		CloseModal();
 	}
@@ -188,6 +194,8 @@ void CVGUIGstringOptions::OnCommand( const char *cmd )
 		cvar_gstring_filmgrain_strength.Revert();
 		cvar_gstring_bend_strength.Revert();
 		cvar_gstring_chromatic_aberration.Revert();
+
+		gstring_hud_color.Revert();
 
 		ReadValues( true );
 		UpdateLabels();
@@ -232,6 +240,9 @@ void CVGUIGstringOptions::ReadValues( bool bUpdatePreset )
 	CVAR_SLIDER_INTEGER( cvar_gstring_filmgrain_strength, m_pSlider_FilmGrain_Strength, 51 );
 	CVAR_SLIDER_INTEGER( cvar_gstring_bend_strength, m_pSlider_Bend_Strength, 11 );
 	CVAR_SLIDER_INTEGER( cvar_gstring_chromatic_aberration, m_pSlider_Chromatic_Strength, 1100 );
+
+	UTIL_StringToColor( m_colHUD, gstring_hud_color.GetString() );
+	m_pHUDColorPicker->SetColor( m_colHUD );
 
 	if ( bUpdatePreset )
 	{
@@ -280,6 +291,11 @@ void CVGUIGstringOptions::OnSliderMoved( KeyValues *pKV )
 void CVGUIGstringOptions::OnTextChanged( KeyValues *pKV )
 {
 	ApplyPreset( m_pCBox_Preset->GetActiveItem() );
+}
+
+void CVGUIGstringOptions::OnPicked( KeyValues *pKV )
+{
+	m_colHUD = pKV->GetColor( "color" );
 }
 
 void CVGUIGstringOptions::ApplyPreset( int index )

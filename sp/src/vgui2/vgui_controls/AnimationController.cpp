@@ -282,6 +282,43 @@ void AnimationController::SetupPosition( AnimCmdAnimate_t& cmd, float *output, c
 	*output = static_cast<float>( pos );
 }
 
+// GSTRINGMIGRATION
+static void UTIL_StringToIntArray( int *pVector, int count, const char *pString )
+{
+	char *pstr, *pfront, tempString[128];
+	int	j;
+
+	Q_strncpy( tempString, pString, sizeof(tempString) );
+	pstr = pfront = tempString;
+
+	for ( j = 0; j < count; j++ )			// lifted from pr_edict.c
+	{
+		pVector[j] = atoi( pfront );
+
+		while ( *pstr && *pstr != ' ' )
+			pstr++;
+		if (!*pstr)
+			break;
+		pstr++;
+		pfront = pstr;
+	}
+
+	for ( j++; j < count; j++ )
+	{
+		pVector[j] = 0;
+	}
+}
+
+static void UTIL_StringToColor( Color &color, const char *pString )
+{
+	int tmp[4];
+	UTIL_StringToIntArray( tmp, 4, pString );
+	color[0] = tmp[0];
+	color[1] = tmp[1];
+	color[2] = tmp[2];
+	color[3] = tmp[3];
+}
+// END GSTRINGMIGRATION
 
 //-----------------------------------------------------------------------------
 // Purpose: parses a script into sequences
@@ -398,29 +435,42 @@ bool AnimationController::ParseScriptFile(char *pMem, int length)
 					// parse the floating point values right out
 					if (0 == sscanf(token, "%f %f %f %f", &cmdAnimate.target.a, &cmdAnimate.target.b, &cmdAnimate.target.c, &cmdAnimate.target.d))
 					{
-						//=============================================================================
-						// HPE_BEGIN:
-						// [pfreese] Improved handling colors not defined in scheme 
-						//=============================================================================
-						
-						// could be referencing a value in the scheme file, lookup
-						Color default_invisible_black(0, 0, 0, 0);
-						Color col = scheme->GetColor(token, default_invisible_black);
-
-						// we don't have a way of seeing if the color is not declared in the scheme, so we use this
-						// silly method of trying again with a different default to see if we get the fallback again
-						if (col == default_invisible_black)
+						// GSTRINGMIGRATION
+						Color col;
+						const bool bBrightHUD = Q_stricmp( token, "DamagedFg" ) == 0 ||
+							Q_stricmp( token, "BrightDamagedFg" ) == 0;
+						if ( Q_stricmp( token, "FgColor" ) == 0 || bBrightHUD )
 						{
-							Color error_pink(255, 0, 255, 255);	// make it extremely obvious if a scheme lookup fails
-							col = scheme->GetColor(token, error_pink);
-
-							// commented out for Soldier/Demo release...(getting spammed in console)
-							// we'll try to figure this out after the update is out
-// 							if (col == error_pink)
-// 							{
-// 								Warning("Missing color in scheme: %s\n", token);
-// 							}
+							ConVarRef hudColorRef( "gstring_hud_color" );
+							UTIL_StringToColor( col, hudColorRef.GetString() );
 						}
+						else
+						{
+							//=============================================================================
+							// HPE_BEGIN:
+							// [pfreese] Improved handling colors not defined in scheme 
+							//=============================================================================
+						
+							// could be referencing a value in the scheme file, lookup
+							Color default_invisible_black(0, 0, 0, 0);
+							col = scheme->GetColor(token, default_invisible_black);
+
+							// we don't have a way of seeing if the color is not declared in the scheme, so we use this
+							// silly method of trying again with a different default to see if we get the fallback again
+							if (col == default_invisible_black)
+							{
+								Color error_pink(255, 0, 255, 255);	// make it extremely obvious if a scheme lookup fails
+								col = scheme->GetColor(token, error_pink);
+
+								// commented out for Soldier/Demo release...(getting spammed in console)
+								// we'll try to figure this out after the update is out
+	// 							if (col == error_pink)
+	// 							{
+	// 								Warning("Missing color in scheme: %s\n", token);
+	// 							}
+							}
+						}
+						// END GSTRINGMIGRATION
 						
 						//=============================================================================
 						// HPE_END

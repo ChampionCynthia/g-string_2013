@@ -357,6 +357,9 @@ void		UTIL_StringToVector( float *pVector, const char *pString );
 void		UTIL_StringToIntArray( int *pVector, int count, const char *pString );
 void		UTIL_StringToFloatArray( float *pVector, int count, const char *pString );
 void		UTIL_StringToColor32( color32 *color, const char *pString );
+// GSTRINGMIGRATION
+void		UTIL_StringToColor( Color &color, const char *pString );
+// END GSTRINGMIGRATION
 
 CBasePlayer *UTIL_PlayerByIndex( int entindex );
 

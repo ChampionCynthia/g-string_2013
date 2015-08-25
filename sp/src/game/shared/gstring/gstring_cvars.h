@@ -38,6 +38,7 @@ extern ConVar cvar_gstring_drawhurtfx;
 extern ConVar cvar_gstring_chromatic_aberration;
 
 extern ConVar gstring_spacecraft_firstperson;
+extern ConVar gstring_hud_color;
 #endif
 
 

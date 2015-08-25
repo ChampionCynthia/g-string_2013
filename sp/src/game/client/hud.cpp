@@ -27,6 +27,10 @@
 #include <vgui/ISurface.h>
 #include "hud_lcd.h"
 
+// GSTRINGMIGRATION
+#include "gstring/gstring_cvars.h"
+// END GSTRINGMIGRATION
+
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -497,9 +501,13 @@ void CHud::InitPostSystems( void )
 //-----------------------------------------------------------------------------
 void CHud::InitColors( vgui::IScheme *scheme )
 {
-	m_clrNormal = scheme->GetColor( "Normal", Color( 255, 208, 64 ,255 ) );
+	// GSTRINGMIGRATION
+	UTIL_StringToColor( m_clrNormal, gstring_hud_color.GetString() );
+	m_clrYellowish = m_clrNormal;
+	//m_clrNormal = scheme->GetColor( "Normal", Color( 255, 208, 64 ,255 ) );
 	m_clrCaution = scheme->GetColor( "Caution", Color( 255, 48, 0, 255 ) );
-	m_clrYellowish = scheme->GetColor( "Yellowish", Color( 255, 160, 0, 255 ) );
+	//m_clrYellowish = scheme->GetColor( "Yellowish", Color( 255, 160, 0, 255 ) );
+	// END GSTRINGMIGRATION
 }
 
 //-----------------------------------------------------------------------------
@@ -536,6 +544,13 @@ void CHud::Shutdown( void )
 //-----------------------------------------------------------------------------
 void CHud::LevelInit( void )
 {
+	static bool bFirstLevelInit = false;
+	if ( !bFirstLevelInit )
+	{
+		bFirstLevelInit = true;
+		engine->ExecuteClientCmd( "hud_reloadscheme" );
+	}
+
 	// Tell all the registered hud elements to LevelInit
 	for ( int i = 0; i < m_HudList.Size(); i++ )
 	{
