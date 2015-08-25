@@ -19,30 +19,31 @@ public:
 	void OnCommand( const char *cmd );
 
 	MESSAGE_FUNC_PTR( OnCheckButtonChecked, "CheckButtonChecked", panel );
-
 	MESSAGE_FUNC_PARAMS( OnSliderMoved, "SliderMoved", pKV );
+	MESSAGE_FUNC_PARAMS( OnTextChanged, "TextChanged", pKV );
 
 protected:
-
 	virtual void ApplySchemeSettings( vgui::IScheme *pScheme );
 
 	virtual void PerformLayout();
 
 private:
-
-	void ReadValues();
+	void ReadValues( bool bUpdatePreset );
+	void UpdateLabels();
+	void ApplyPreset( int index );
+	int FindCurrentPreset();
+	void OnPresetModified();
 
 	vgui::PropertySheet		*m_pPropertySheet;
 
 	// Post-processing
+	vgui::ComboBox		*m_pCBox_Preset;
+
 	vgui::CheckButton	*m_pCheck_HurtFX;
 	vgui::CheckButton	*m_pCheck_GodRays;
 	vgui::CheckButton	*m_pCheck_WaterEffects;
 	vgui::CheckButton	*m_pCheck_Vignette;
-
 	vgui::CheckButton	*m_pCheck_LensFlare;
-	vgui::ComboBox		*m_pCBox_BloomFlare;
-
 	vgui::CheckButton	*m_pCheck_DreamBlur;
 	vgui::CheckButton	*m_pCheck_ScreenBlur;
 
@@ -52,6 +53,7 @@ private:
 	vgui::Slider		*m_pSlider_ExplosionBlur_Strength;
 	vgui::Slider		*m_pSlider_Desaturation_Strength;
 	vgui::Slider		*m_pSlider_FilmGrain_Strength;
+	vgui::Slider		*m_pSlider_Bend_Strength;
 	vgui::Slider		*m_pSlider_Chromatic_Strength;
 
 	vgui::Label			*m_pLabel_Value_CinematicBars;
@@ -60,11 +62,12 @@ private:
 	vgui::Label			*m_pLabel_Value_ExplosionBlur;
 	vgui::Label			*m_pLabel_Value_Desaturation;
 	vgui::Label			*m_pLabel_Value_FilmGrain;
+	vgui::Label			*m_pLabel_Value_Bend;
 	vgui::Label			*m_pLabel_Value_Chromatic;
 
 	// Game
 	vgui::CheckButton	*m_pCheck_FirstPersonBody;
-	vgui::CheckButton	*m_pCheck_FirstPersonShadow;
+	//vgui::CheckButton	*m_pCheck_FirstPersonShadow;
 	vgui::CheckButton	*m_pCheck_LightVolumetrics;
 };
 

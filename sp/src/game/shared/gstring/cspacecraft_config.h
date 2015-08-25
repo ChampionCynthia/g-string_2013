@@ -4,6 +4,25 @@
 #include "cbase.h"
 #include "UtlStringMap.h"
 
+struct SpacecraftProjectileSettings_t
+{
+	SpacecraftProjectileSettings_t()
+		: m_flDamage( 5.0f )
+		, m_flSpeed( 4000.0f )
+		, m_flSpread( 0.008f )
+	{
+	}
+
+	float m_flDamage;
+	float m_flSpeed;
+	float m_flSpread;
+	
+	CUtlString m_strParticleSpawn;
+	CUtlString m_strParticleTrail;
+	CUtlString m_strParticleHitWorld;
+	CUtlString m_strParticleHitShip;
+};
+
 struct SpacecraftSettings_t
 {
 	SpacecraftSettings_t() :
@@ -18,7 +37,13 @@ struct SpacecraftSettings_t
 		m_flHealthRegenerationRate( 1.0f ),
 		m_flCollisionDamageScale( 0.0f ),
 		m_flCollisionDamageMin( 0.0f ),
-		m_flCollisionDamageMax( FLT_MAX )
+		m_flCollisionDamageMax( FLT_MAX ),
+		m_flFireRate( 0.1f ),
+		m_iProjectileCount( 1 ),
+		m_flFireDurationMin( 1.0f ),
+		m_flFireDurationMax( 4.0f ),
+		m_flIdleDurationMin( 1.0f ),
+		m_flIdleDurationMax( 4.0f )
 	{
 	}
 
@@ -51,6 +76,14 @@ struct SpacecraftSettings_t
 	float m_flCollisionDamageScale;
 	float m_flCollisionDamageMin;
 	float m_flCollisionDamageMax;
+
+	float m_flFireRate;
+	int m_iProjectileCount;
+	float m_flFireDurationMin;
+	float m_flFireDurationMax;
+	float m_flIdleDurationMin;
+	float m_flIdleDurationMax;
+	SpacecraftProjectileSettings_t m_ProjectileSettings;
 };
 
 class CSpacecraftConfig : public CAutoGameSystem
@@ -68,6 +101,7 @@ public:
 
 	UtlSymId_t GetSettingsIndex( const char *pszSettingsName ) const;
 	const SpacecraftSettings_t &GetSettings( UtlSymId_t index ) const;
+	const SpacecraftProjectileSettings_t &GetProjectileSettings( UtlSymId_t index ) const;
 
 private:
 	typedef CUtlStringMap< SpacecraftSettings_t > SpacecraftSettingsContrainer;

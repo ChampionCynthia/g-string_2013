@@ -18,7 +18,7 @@ static ConVar gstring_firstpersonbody_forwardoffset_min( "gstring_firstpersonbod
 static ConVar gstring_firstpersonbody_forwardoffset_max( "gstring_firstpersonbody_forwardoffset_max", "18.0" );
 
 ConVar gstring_firstpersonbody_enable( "gstring_firstpersonbody_enable", "1", FCVAR_ARCHIVE );
-ConVar gstring_firstpersonbody_shadow_enable( "gstring_firstpersonbody_shadow_enable", "1", FCVAR_ARCHIVE );
+//ConVar gstring_firstpersonbody_shadow_enable( "gstring_firstpersonbody_shadow_enable", "1", FCVAR_ARCHIVE );
 
 static ConVar gstring_viewbob_walk_dist( "gstring_viewbob_walk_dist", "2.5" );
 static ConVar gstring_viewbob_walk_scale( "gstring_viewbob_walk_scale", "1.5" );
@@ -592,40 +592,40 @@ ShadowHandle_t C_GstringPlayer::GetFlashlightHandle()
 
 bool C_GstringPlayer::ShouldFirstpersonModelCastShadow()
 {
-	C_GstringPlayer *pPlayer = LocalGstringPlayer();
+	//C_GstringPlayer *pPlayer = LocalGstringPlayer();
 
-	if ( pPlayer )
-	{
-		if ( pPlayer->m_pFlashlight )
-		{
-			ClientShadowHandle_t clientHandle = pPlayer->m_pFlashlight->GetFlashlightHandle();
+	//if ( pPlayer )
+	//{
+	//	if ( pPlayer->m_pFlashlight )
+	//	{
+	//		ClientShadowHandle_t clientHandle = pPlayer->m_pFlashlight->GetFlashlightHandle();
 
-			ShadowHandle_t shadowHandle = ( clientHandle != CLIENTSHADOW_INVALID_HANDLE ) ?
-				g_pClientShadowMgr->GetShadowHandle( clientHandle ) : SHADOW_HANDLE_INVALID;
+	//		ShadowHandle_t shadowHandle = ( clientHandle != CLIENTSHADOW_INVALID_HANDLE ) ?
+	//			g_pClientShadowMgr->GetShadowHandle( clientHandle ) : SHADOW_HANDLE_INVALID;
 
-			if ( shadowHandle != SHADOW_HANDLE_INVALID
-				&& shadowHandle == g_pClientShadowMgr->GetActiveDepthTextureHandle() )
-			{
-				return false;
-			}
-		}
+	//		if ( shadowHandle != SHADOW_HANDLE_INVALID
+	//			&& shadowHandle == g_pClientShadowMgr->GetActiveDepthTextureHandle() )
+	//		{
+	//			return false;
+	//		}
+	//	}
 
-		if ( pPlayer->m_pMuzzleFlashEffect )
-		{
-			ClientShadowHandle_t clientHandle = pPlayer->m_pMuzzleFlashEffect->GetFlashlightHandle();
+	//	if ( pPlayer->m_pMuzzleFlashEffect )
+	//	{
+	//		ClientShadowHandle_t clientHandle = pPlayer->m_pMuzzleFlashEffect->GetFlashlightHandle();
 
-			ShadowHandle_t shadowHandle = ( clientHandle != CLIENTSHADOW_INVALID_HANDLE ) ?
-				g_pClientShadowMgr->GetShadowHandle( clientHandle ) : SHADOW_HANDLE_INVALID;
+	//		ShadowHandle_t shadowHandle = ( clientHandle != CLIENTSHADOW_INVALID_HANDLE ) ?
+	//			g_pClientShadowMgr->GetShadowHandle( clientHandle ) : SHADOW_HANDLE_INVALID;
 
-			if ( shadowHandle != SHADOW_HANDLE_INVALID
-				&& shadowHandle == g_pClientShadowMgr->GetActiveDepthTextureHandle() )
-			{
-				return false;
-			}
-		}
+	//		if ( shadowHandle != SHADOW_HANDLE_INVALID
+	//			&& shadowHandle == g_pClientShadowMgr->GetActiveDepthTextureHandle() )
+	//		{
+	//			return false;
+	//		}
+	//	}
 
-		return gstring_firstpersonbody_shadow_enable.GetBool();
-	}
+	//	return gstring_firstpersonbody_shadow_enable.GetBool();
+	//}
 
 	return false;
 }

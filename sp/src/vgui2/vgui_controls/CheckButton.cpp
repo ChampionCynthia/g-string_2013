@@ -132,13 +132,16 @@ IBorder *CheckButton::GetBorder(bool depressed, bool armed, bool selected, bool 
 //-----------------------------------------------------------------------------
 // Purpose: Check the button
 //-----------------------------------------------------------------------------
-void CheckButton::SetSelected(bool state )
+void CheckButton::SetSelected(bool state, bool bTriggerChangeMessage)
 {
 	if (m_bCheckButtonCheckable)
 	{
 		// send a message saying we've been checked
 		KeyValues *msg = new KeyValues("CheckButtonChecked", "state", (int)state);
-		PostActionSignal(msg);
+		if (bTriggerChangeMessage)
+		{
+			PostActionSignal(msg);
+		}
 		
 		BaseClass::SetSelected(state);
 	}

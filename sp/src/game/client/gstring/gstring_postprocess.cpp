@@ -101,8 +101,11 @@ void DrawBarsAndGrain( int x, int y, int w, int h )
 	if ( g_pPPCtrl != NULL && !g_pPPCtrl->IsBarsEnabled() )
 		return;
 
+	const float flBendStrength = UseVR() ? 0.0f : cvar_gstring_bend_strength.GetFloat();
+	const float flFilmgrainStrength = cvar_gstring_filmgrain_strength.GetFloat();
 	if ( /*cvar_gstring_drawfilmgrain.GetBool()
-		&&*/ cvar_gstring_filmgrain_strength.GetFloat() > 0.0f )
+		&&*/ flFilmgrainStrength > 0.0f
+		|| flBendStrength > 0.0f )
 	{
 		C_GstringPlayer *pPlayer = LocalGstringPlayer();
 		float flNightvisionStrengthInv = 1.0f - (pPlayer ? pPlayer->GetNightvisionFraction() : 0.0f);
@@ -112,8 +115,10 @@ void DrawBarsAndGrain( int x, int y, int w, int h )
 		if ( iFilmgrainIndex >= 0 )
 		{
 			DEFINE_SHADEREDITOR_MATERIALVAR( FILMGRAIN_EDITOR_NAME, "filmgrain", "$MUTABLE_01", pVar_Filmgrain_Strength );
+			DEFINE_SHADEREDITOR_MATERIALVAR( FILMGRAIN_EDITOR_NAME, "filmgrain", "$MUTABLE_02", pVar_Bend_Strength );
 
-			pVar_Filmgrain_Strength->SetFloatValue( cvar_gstring_filmgrain_strength.GetFloat() * flNightvisionStrengthInv );
+			pVar_Filmgrain_Strength->SetFloatValue( flFilmgrainStrength * flNightvisionStrengthInv );
+			pVar_Bend_Strength->SetFloatValue( flBendStrength * flNightvisionStrengthInv );
 
 			shaderEdit->DrawPPEOnDemand( iFilmgrainIndex, x, y, w, h );
 		}
@@ -616,8 +621,12 @@ void DrawBloomFlare( int w, int h )
 	if ( !ShouldDrawCommon() )
 		return;
 
-	int iBloomFlareMode = cvar_gstring_drawbloomflare.GetInt();
-	if ( iBloomFlareMode <= 0 )
+	//int iBloomFlareMode = cvar_gstring_drawbloomflare.GetInt();
+	//if ( iBloomFlareMode <= 0 )
+	//	return;
+
+	const float flStrength = cvar_gstring_bloomflare_strength.GetFloat();
+	if ( flStrength <= 0.0f )
 		return;
 
 	static const int iBloomFlare = shaderEdit->GetPPEIndex( BLOOMFLARE_EDITOR_NAME );
@@ -627,12 +636,9 @@ void DrawBloomFlare( int w, int h )
 	DEFINE_SHADEREDITOR_MATERIALVAR( BLOOMFLARE_EDITOR_NAME, "bloomflare", "$MUTABLE_01", pVar_BloomFlare_Strength );
 	DEFINE_SHADEREDITOR_MATERIALVAR( BLOOMFLARE_EDITOR_NAME, "bloomflare", "$MUTABLE_02", pVar_BloomFlare_Scale );
 
-	if ( cvar_gstring_bloomflare_strength.GetFloat() <= 0.0f )
-		return;
-
-	if ( g_pPPCtrl != NULL &&
-		iBloomFlareMode == 1 && !g_pPPCtrl->IsBloomflareEnabled() )
-		return;
+	//if ( g_pPPCtrl != NULL &&
+	//	iBloomFlareMode == 1 && !g_pPPCtrl->IsBloomflareEnabled() )
+	//	return;
 
 	if ( pVar_BloomFlare_Strength == NULL ||
 		pVar_BloomFlare_Scale == NULL )
@@ -672,7 +678,9 @@ void DrawDesaturation( int x, int y, int w, int h )
 		return;
 	}
 
-	pVar_Desaturation_Strength->SetFloatValue( flDesaturationStrength );
+	const float flSinCityMask = 1.0f - MAX( 0.0f, flDesaturationStrength - 0.5f ) * 2.0f;
+	const float flDesatValues[] = { MIN( 1.0f, flDesaturationStrength * 2.0f ), flSinCityMask };
+	pVar_Desaturation_Strength->SetVecValue( flDesatValues, 2 );
 
 	shaderEdit->DrawPPEOnDemand( iDesaturationIndex, x, y, w, h );
 }

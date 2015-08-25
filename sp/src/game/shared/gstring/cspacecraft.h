@@ -107,17 +107,20 @@ public:
 
 	bool IsPlayerControlled() const;
 	bool ShouldPlaySounds() const;
+	const SpacecraftSettings_t &GetSettings() { return m_Settings; }
 
 	// ISpacecraftData implementation
 	virtual int GetShield() const { return m_iShield; }
 	virtual int GetMaxShield() const { return m_iMaxShield; }
 	virtual int GetHull() const { return GetHealth(); }
 	virtual int GetMaxHull() const { return GetMaxHealth(); }
+
 	virtual CBaseEntity *GetEntity() { return this; }
 	virtual const QAngle &GetAngularImpulse() const { return m_AngularImpulse.Get(); }
 	virtual const Vector &GetPhysVelocity() const { return m_PhysVelocity.Get(); }
 	virtual EngineLevel_e GetEngineLevel() const { return (EngineLevel_e) m_iEngineLevel.Get(); }
 	virtual bool IsBoostSuspended() const { return m_bBoostSuspended; }
+
 #ifdef CLIENT_DLL
 	virtual int GetThrusterCount() const { return m_ThrusterAttachments.Count(); }
 	virtual float GetThrusterPower( int index ) const { return m_flThrusterPower[ index ]; }
@@ -185,7 +188,7 @@ private:
 	string_t m_strSettingsName;
 
 	float m_flFireDelay;
-	bool m_bAlternatingWeapons;
+	int m_iNextWeaponIndex;
 
 	ISpacecraftAI *m_pAI;
 

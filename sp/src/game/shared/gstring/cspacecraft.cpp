@@ -161,7 +161,7 @@ LINK_ENTITY_TO_CLASS( prop_vehicle_spacecraft, CSpacecraft );
 CSpacecraft::CSpacecraft()
 #ifdef GAME_DLL
 	: m_flFireDelay( 0.0f )
-	, m_bAlternatingWeapons( false )
+	, m_iNextWeaponIndex( 0 )
 	, m_pAI( NULL )
 	, m_iAIControlled( 0 )
 	, m_iAIState( 0 )
@@ -331,6 +331,7 @@ void CSpacecraft::Activate()
 	m_iShield = m_iMaxShield;
 
 	// Not called when restoring...
+	MDLCACHE_CRITICAL_SECTION();
 	OnNewModel();
 
 	// Restore controlling player
@@ -453,7 +454,7 @@ void CSpacecraft::VPhysicsCollision( int index, gamevcollisionevent_t *pEvent )
 
 void CSpacecraft::VPhysicsFriction( IPhysicsObject *pObject, float energy, int surfaceProps, int surfacePropsHit )
 {
-	if (ShouldPlaySounds())
+	if ( ShouldPlaySounds() )
 	{
 		BaseClass::VPhysicsFriction(pObject, energy, surfaceProps, surfacePropsHit);
 	}
@@ -580,6 +581,7 @@ void CSpacecraft::Event_Killed( const CTakeDamageInfo &info )
 	BaseClass::Event_Killed( info );
 
 	AddSolidFlags( FSOLID_NOT_SOLID );
+	VPhysicsDestroyObject();
 
 	UTIL_ScreenShake( GetAbsOrigin(), 8.0f, 8.0f, 1.2f, 96.0f, SHAKE_START_NORUMBLE, true );
 	UTIL_ScreenShake( GetAbsOrigin(), 40.0f * flRumbleScale, 5.0f * flRumbleScale, 1.2f,
@@ -635,12 +637,11 @@ void CSpacecraft::SimulateFire( CMoveData &moveData, float flFrametime )
 
 	if ( ( moveData.m_nButtons & IN_ATTACK ) != 0 && m_flFireDelay <= 0.0f )
 	{
-		int i = 0;
-		if ( m_bAlternatingWeapons && m_WeaponAttachments.Count() > 1 )
+		int i = m_iNextWeaponIndex;
+		if ( i >= m_WeaponAttachments.Count() )
 		{
-			i = 1;
+			i = m_iNextWeaponIndex = 0;
 		}
-		m_bAlternatingWeapons = !m_bAlternatingWeapons;
 		m_iProjectileParity++;
 
 		CBasePlayer *pPlayer = moveData.m_nPlayerHandle.IsValid() ?
@@ -660,13 +661,13 @@ void CSpacecraft::SimulateFire( CMoveData &moveData, float flFrametime )
 		Vector vecSpacecraftForward;
 		AngleVectors( angSpacecraft, &vecSpacecraftForward );
 
-		for ( ; i < m_WeaponAttachments.Count(); i += 2 )
+		const int iShotsMax = i + m_Settings.m_iProjectileCount;
+		const float flProjectileSpeed = m_Settings.m_ProjectileSettings.m_flSpeed;
+		for ( ; i < iShotsMax; ++i )
 		{
-			const float flProjectileSpeed = 4000.0f;
-
 			Vector vecProjectileOrigin;
 			QAngle angProjectileAngles;
-			GetAttachment( m_WeaponAttachments[ i ], vecProjectileOrigin, angProjectileAngles );
+			GetAttachment( m_WeaponAttachments[ i % m_WeaponAttachments.Count() ], vecProjectileOrigin, angProjectileAngles );
 
 			//Vector vecAttachmentFwd;
 			//AngleVectors( angProjectileAngles, &vecAttachmentFwd );
@@ -730,10 +731,12 @@ void CSpacecraft::SimulateFire( CMoveData &moveData, float flFrametime )
 			Assert( pProjectile );
 
 			vecProjectileVelocity *= flProjectileSpeed;
-			pProjectile->Fire( pPlayer, this, vecProjectileOrigin, vecProjectileVelocity );
+			pProjectile->Fire( m_strSettingsName, pPlayer, this, vecProjectileOrigin, vecProjectileVelocity );
+
+			++m_iNextWeaponIndex;
 		}
 
-		m_flFireDelay = 0.1f;
+		m_flFireDelay += m_Settings.m_flFireRate;
 	}
 }
 
@@ -1094,7 +1097,7 @@ void CSpacecraft::ClientThink()
 
 		for ( ; i < m_WeaponAttachments.Count(); i += 2 )
 		{
-			DispatchParticleEffect( "projectile_red_spawn", PATTACH_POINT_FOLLOW, this, m_WeaponAttachments[ i ] );
+			DispatchParticleEffect( m_Settings.m_ProjectileSettings.m_strParticleSpawn, PATTACH_POINT_FOLLOW, this, m_WeaponAttachments[ i ] );
 		}
 
 		m_iProjectileParityLast = m_iProjectileParity;

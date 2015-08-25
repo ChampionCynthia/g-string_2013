@@ -8,7 +8,7 @@
 
 extern bool g_bAIDisabledByUser;
 
-CON_COMMAND(gstring_spaceshipai_debug_spawn, "")
+CON_COMMAND(gstring_spacecraftai_debug_spawn, "")
 {
 	CGstringPlayer *pPlayer = LocalGstringPlayer();
 
@@ -36,7 +36,8 @@ CON_COMMAND(gstring_spaceshipai_debug_spawn, "")
 		if (pEnemyShip != NULL)
 		{
 			pEnemyShip->SetAbsOrigin(tr.endpos);
-			pEnemyShip->KeyValue("settingsname", "ricepod");
+			pEnemyShip->KeyValue("settingsname", "coildrone");
+			pEnemyShip->KeyValue("aiteam", "1");
 
 			CSpacecraftAIBase *pAI = new CSpacecraftAIBase(pEnemyShip);
 			if (bFollowLeader)
@@ -206,7 +207,7 @@ void CSpacecraftAIBase::Think_Idle()
 
 void CSpacecraftAIBase::Think_ShootSalvoes()
 {
-	if (GetEnemy() == NULL)
+	if ( GetEnemy() == NULL )
 	{
 		moveData.m_nButtons &= ~IN_ATTACK;
 		SetNextThink(RandomFloat(1.0f, 1.5f));
@@ -214,7 +215,17 @@ void CSpacecraftAIBase::Think_ShootSalvoes()
 	}
 
 	moveData.m_nButtons ^= IN_ATTACK;
-	SetNextThink(RandomFloat(1.0f, 4.0f));
+
+	const bool bIsFiring = ( moveData.m_nButtons & IN_ATTACK ) != 0;
+	const SpacecraftSettings_t &settings = m_pShip->GetSettings();
+	if ( bIsFiring )
+	{
+		SetNextThink( RandomFloat( settings.m_flFireDurationMin, settings.m_flFireDurationMax ) );
+	}
+	else
+	{
+		SetNextThink( RandomFloat( settings.m_flIdleDurationMin, settings.m_flIdleDurationMax ) );
+	}
 }
 
 void CSpacecraftAIBase::Move_Idle(float flFrametime)
@@ -528,7 +539,7 @@ void CSpacecraftAIBase::Fire_UpdateProjectilePosition(float frametime)
 	}
 
 	if (UTIL_PredictProjectileTarget(m_pShip->GetAbsOrigin(), vecTarget, vecVelocity,
-		4000.0f, vecPredictedTarget))
+		m_pShip->GetSettings().m_ProjectileSettings.m_flSpeed, vecPredictedTarget))
 	{
 		vecTarget = vecPredictedTarget;
 	}

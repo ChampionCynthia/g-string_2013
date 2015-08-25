@@ -56,6 +56,9 @@ void CInfoTarget::Spawn( void )
 }
 
 LINK_ENTITY_TO_CLASS( info_target, CInfoTarget );
+
+// GSTRINGMIGRATION
+LINK_ENTITY_TO_CLASS( info_target_interaction, CInfoTarget );
 #endif
 
 

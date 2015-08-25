@@ -16,7 +16,7 @@ extern ConVar cvar_gstring_drawgodrays;
 extern ConVar cvar_gstring_drawmotionblur;
 extern ConVar cvar_gstring_drawscreenblur;
 extern ConVar cvar_gstring_drawdreamblur;
-extern ConVar cvar_gstring_drawbloomflare;
+//extern ConVar cvar_gstring_drawbloomflare;
 extern ConVar cvar_gstring_drawlensflare;
 extern ConVar cvar_gstring_drawwatereffects;
 
@@ -26,6 +26,7 @@ extern ConVar cvar_gstring_motionblur_scale;
 extern ConVar cvar_gstring_bloomflare_strength;
 extern ConVar cvar_gstring_desaturation_strength;
 extern ConVar cvar_gstring_filmgrain_strength;
+extern ConVar cvar_gstring_bend_strength;
 extern ConVar cvar_gstring_vignette_strength;
 extern ConVar cvar_gstring_vignette_range_min;
 extern ConVar cvar_gstring_vignette_range_max;

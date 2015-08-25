@@ -9,11 +9,12 @@
 #include "decals.h"
 #include "particle_parse.h"
 
-static ConVar gstring_spacecraft_damage_player( "gstring_spacecraft_damage_player", "5.0", FCVAR_CHEAT | FCVAR_REPLICATED );
 extern ConVar gstring_space_exterior_sounds;
 
 #ifdef GAME_DLL
 BEGIN_DATADESC( CSpacecraftProjectile )
+
+	DEFINE_FIELD( m_strSettingsName, FIELD_STRING ),
 
 	DEFINE_FUNCTION( OnTouch ),
 	DEFINE_THINKFUNC( OnTimeout ),
@@ -24,15 +25,11 @@ END_DATADESC()
 IMPLEMENT_NETWORKCLASS_DT( CSpacecraftProjectile, CSpacecraftProjectile_DT )
 
 #ifdef GAME_DLL
-	//SendPropBool( SENDINFO( m_bHadImpact ) ),
 	SendPropInt( SENDINFO( m_iImpactType ), 2, SPROP_UNSIGNED ),
-	//SendPropVector( SENDINFO( m_AngularImpulse ) ),
-	//SendPropVector( SENDINFO( m_PhysVelocity ) ),
+	SendPropInt( SENDINFO( m_iSettingsIndex ) ),
 #else
-	//RecvPropBool( RECVINFO( m_bHadImpact ) ),
 	RecvPropInt( RECVINFO( m_iImpactType ) ),
-	//RecvPropVector( RECVINFO( m_AngularImpulse ) ),
-	//RecvPropVector( RECVINFO( m_PhysVelocity ) ),
+	RecvPropInt( RECVINFO( m_iSettingsIndex ) ),
 #endif
 
 END_NETWORK_TABLE();
@@ -45,10 +42,20 @@ CSpacecraftProjectile::CSpacecraftProjectile()
 	: m_iImpactTypeLast( 0 )
 #endif
 {
+	m_iSettingsIndex = UTL_INVAL_SYMBOL;
 }
 
 CSpacecraftProjectile::~CSpacecraftProjectile()
 {
+}
+
+void CSpacecraftProjectile::UpdateConfig()
+{
+	const CSpacecraftConfig *pConfig = CSpacecraftConfig::GetInstance();
+#ifdef GAME_DLL
+	m_iSettingsIndex = pConfig->GetSettingsIndex( STRING( m_strSettingsName ) );
+#endif
+	m_Settings = pConfig->GetProjectileSettings( m_iSettingsIndex );
 }
 
 #ifdef GAME_DLL
@@ -60,6 +67,12 @@ void CSpacecraftProjectile::Precache()
 	PrecacheScriptSound( "Spacecraft.Projectile.Fire.Player" );
 }
 
+void CSpacecraftProjectile::Activate()
+{
+	BaseClass::Activate();
+	UpdateConfig();
+}
+
 bool CSpacecraftProjectile::ShouldCollide( const CBaseEntity *pOther ) const
 {
 	if ( pOther == m_hVehicleOwner )
@@ -69,15 +82,18 @@ bool CSpacecraftProjectile::ShouldCollide( const CBaseEntity *pOther ) const
 	return BaseClass::ShouldCollide( pOther );
 }
 
-void CSpacecraftProjectile::Fire( CBaseEntity *pPlayer, CBaseEntity *pVehicle,
+void CSpacecraftProjectile::Fire( string_t strSettingsName, CBaseEntity *pPlayer, CBaseEntity *pVehicle,
 	const Vector &vecOrigin, const Vector &vecVelocity )
 {
+	m_strSettingsName = strSettingsName;
+	UpdateConfig();
+
 	SetOwnerEntity( pPlayer ? pPlayer : pVehicle );
 	m_hVehicleOwner = pVehicle;
 
 	Vector vecFinalVelocity = vecVelocity;
 	const float flSpeed = vecFinalVelocity.NormalizeInPlace();
-	vecFinalVelocity += RandomVector( -0.008f, 0.008f );
+	vecFinalVelocity += RandomVector( -m_Settings.m_flSpread, m_Settings.m_flSpread );
 	vecFinalVelocity.NormalizeInPlace();
 	vecFinalVelocity *= flSpeed;
 
@@ -164,7 +180,7 @@ void CSpacecraftProjectile::OnTouch( CBaseEntity *pOther )
 			Vector vecVelocity = GetAbsVelocity();
 			vecVelocity.NormalizeInPlace();
 
-			CTakeDamageInfo dmgInfo( this, GetOwnerEntity(), gstring_spacecraft_damage_player.GetFloat(), DMG_BLAST );
+			CTakeDamageInfo dmgInfo( this, GetOwnerEntity(), m_Settings.m_flDamage, DMG_BLAST );
 			if ( GetOwnerEntity() != NULL && GetOwnerEntity()->IsPlayer() && pOther->IsNPC() )
 			{
 				dmgInfo.AdjustPlayerDamageInflictedForSkillLevel();
@@ -200,7 +216,8 @@ void CSpacecraftProjectile::OnDataChanged( DataUpdateType_t t )
 
 	if ( t == DATA_UPDATE_CREATED )
 	{
-		m_hTrailParticle = ParticleProp()->Create( "projectile_red", PATTACH_ABSORIGIN_FOLLOW );
+		UpdateConfig();
+		m_hTrailParticle = ParticleProp()->Create( m_Settings.m_strParticleTrail, PATTACH_ABSORIGIN_FOLLOW );
 
 		//dlight_t *el = effects->CL_AllocElight( entindex() );
 		//el->origin = GetAbsOrigin();
