@@ -4,9 +4,11 @@
 #ifdef CLIENT_DLL
 class C_GstringPlayer;
 #define CSharedPlayer C_GstringPlayer
+#define CSharedEntity C_BaseEntity
 #else
 class CGstringPlayer;
 #define CSharedPlayer CGstringPlayer
+#define CSharedEntity CBaseEntity
 #endif
 
 #endif

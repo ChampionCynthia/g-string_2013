@@ -241,6 +241,15 @@ void CGstringPlayer::DeathSound( const CTakeDamageInfo &info )
 	}
 }
 
+int CGstringPlayer::OnTakeDamage( const CTakeDamageInfo &info )
+{
+	if ( IsInSpacecraft() && ( info.GetDamageType() & DMG_VEHICLE ) == 0 )
+	{
+		return 0;
+	}
+	return BaseClass::OnTakeDamage( info );
+}
+
 bool CGstringPlayer::CanBecomeRagdoll()
 {
 	if ( IsInSpacecraft() )

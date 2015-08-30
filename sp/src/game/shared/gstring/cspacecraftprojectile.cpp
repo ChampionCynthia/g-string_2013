@@ -47,6 +47,13 @@ CSpacecraftProjectile::CSpacecraftProjectile()
 
 CSpacecraftProjectile::~CSpacecraftProjectile()
 {
+#ifdef CLIENT_DLL
+	if ( m_hTrailParticle.GetObject() != NULL )
+	{
+		m_hTrailParticle->StopEmission( false, true );
+		m_hTrailParticle = NULL;
+	}
+#endif
 }
 
 void CSpacecraftProjectile::UpdateConfig()
@@ -132,44 +139,33 @@ void CSpacecraftProjectile::OnTouch( CBaseEntity *pOther )
 	trace_t tr;
 	tr = BaseClass::GetTouchTrace();
 	CBaseEntity *pHitEntity = NULL;
+	bool bCheckReflect = false;
 	if ( tr.DidHitWorld() )
 	{
 		const surfacedata_t *pdata = physprops->GetSurfaceData( tr.surface.surfaceProps );
 		if ( pdata->game.material == CHAR_TEX_METAL )
 		{
-			Vector vecVelocity = GetAbsVelocity();
-			float speed = VectorNormalize( vecVelocity );
-			const float hitDot = DotProduct( tr.plane.normal, -vecVelocity );
-			if ( hitDot < 0.707f )
-			{
-				Vector vReflection = 2.0f * tr.plane.normal * hitDot + vecVelocity.Normalized();
-				SetAbsVelocity( vReflection * speed );
-
-				QAngle facing;
-				VectorAngles( vReflection, facing );
-				SetAbsAngles( facing );
-
-				tr.m_pEnt = NULL;
-				ImpactTrace( &tr, DMG_BLAST );
-				return;
-			}
+			bCheckReflect = true;
+			m_iImpactType = 1;
 		}
-
-		if ( ( tr.surface.flags & SURF_SKY ) == 0 )
+		else if ( ( tr.surface.flags & SURF_SKY ) == 0 )
 		{
 			m_iImpactType = 1;
 		}
-
-		SetNextThink( gpGlobals->curtime + gpGlobals->frametime );
 	}
 	else
 	{
-		SetNextThink( gpGlobals->curtime + gpGlobals->frametime );
+		const surfacedata_t *pdata = physprops->GetSurfaceData( tr.surface.surfaceProps );
+		if ( pdata != NULL && pdata->game.material == CHAR_TEX_METAL )
+		{
+			bCheckReflect = true;
+		}
 
 		if ( pOther->IsSolidFlagSet( FSOLID_VOLUME_CONTENTS | FSOLID_TRIGGER ) &&
 			( ( pOther->m_takedamage == DAMAGE_NO ) || ( pOther->m_takedamage == DAMAGE_EVENTS_ONLY ) ) )
 		{
 			m_iImpactType = 1;
+			SetNextThink( gpGlobals->curtime + gpGlobals->frametime );
 			return;
 		}
 
@@ -185,11 +181,20 @@ void CSpacecraftProjectile::OnTouch( CBaseEntity *pOther )
 			{
 				dmgInfo.AdjustPlayerDamageInflictedForSkillLevel();
 			}
+			if ( vecVelocity.LengthSqr() < 1.0f )
+			{
+				vecVelocity = RandomVector( -0.5f, 0.5f );
+			}
 			dmgInfo.SetDamageForce( vecVelocity * 7500.0f );
 			//CalculateMeleeDamageForce( &dmgInfo, vecVelocity, tr.endpos, 2.0f );
 			dmgInfo.SetDamagePosition( tr.endpos );
 			pOther->DispatchTraceAttack( dmgInfo, vecVelocity, &tr );
 			ApplyMultiDamage();
+
+			if ( pOther->m_takedamage == DAMAGE_YES )
+			{
+				bCheckReflect = false;
+			}
 		}
 		else
 		{
@@ -203,6 +208,28 @@ void CSpacecraftProjectile::OnTouch( CBaseEntity *pOther )
 		tr.endpos = tr.endpos + ( tr.endpos - tr.startpos ).Normalized() * 3.0f;
 		ImpactTrace( &tr, DMG_BLAST );
 	}
+
+	if ( bCheckReflect )
+	{
+		Vector vecVelocity = GetAbsVelocity();
+		float speed = VectorNormalize( vecVelocity );
+		const float hitDot = DotProduct( tr.plane.normal, -vecVelocity );
+		if ( speed > 0.0f && tr.plane.normal.LengthSqr() > 0.5f && hitDot < 0.707f )
+		{
+			Vector vReflection = 2.0f * tr.plane.normal * hitDot + vecVelocity.Normalized();
+			Assert( vReflection.LengthSqr() > 0.5f && speed > 0.0f );
+			SetAbsVelocity( vReflection * speed );
+
+			QAngle facing;
+			VectorAngles( vReflection, facing );
+			SetAbsAngles( facing );
+
+			m_iImpactType = 0;
+			return;
+		}
+	}
+
+	SetNextThink( gpGlobals->curtime + gpGlobals->frametime );
 }
 
 void CSpacecraftProjectile::OnTimeout()

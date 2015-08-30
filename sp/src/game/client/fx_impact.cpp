@@ -249,36 +249,37 @@ struct ImpactEffect_t
 {
 	const char *m_pName;
 	const char *m_pNameNoFlecks;
+	const char *m_pNameSpace; // GSTRINGMIGRATION
 };
 
 static ImpactEffect_t s_pImpactEffect[26] = 
 {
-	{ "impact_antlion",		NULL },							// CHAR_TEX_ANTLION
-	{ NULL,					NULL },							// CHAR_TEX_BLOODYFLESH	
-	{ "impact_concrete",	"impact_concrete_noflecks" },	// CHAR_TEX_CONCRETE		
-	{ "impact_dirt",		NULL },							// CHAR_TEX_DIRT			
-	{ NULL,					NULL },							// CHAR_TEX_EGGSHELL		
-	{ NULL,					NULL },							// CHAR_TEX_FLESH			
-	{ NULL,					NULL },							// CHAR_TEX_GRATE			
-	{ NULL,					NULL },							// CHAR_TEX_ALIENFLESH		
-	{ NULL,					NULL },							// CHAR_TEX_CLIP			
-	{ NULL,					NULL },							// CHAR_TEX_UNUSED		
-	{ NULL,					NULL },							// CHAR_TEX_UNUSED		
-	{ NULL,					NULL },							// CHAR_TEX_PLASTIC		
-	{ "impact_metal",		NULL },							// CHAR_TEX_METAL			
-	{ "impact_dirt",		NULL },							// CHAR_TEX_SAND			
-	{ NULL,					NULL },							// CHAR_TEX_FOLIAGE		
-	{ "impact_computer",	NULL },							// CHAR_TEX_COMPUTER		
-	{ NULL,					NULL },							// CHAR_TEX_UNUSED		
-	{ NULL,					NULL },							// CHAR_TEX_UNUSED		
-	{ NULL,					NULL },							// CHAR_TEX_SLOSH			
-	{ "impact_concrete",	"impact_concrete_noflecks" },	// CHAR_TEX_TILE			
-	{ NULL,					NULL },							// CHAR_TEX_UNUSED		
-	{ "impact_metal",		NULL },							// CHAR_TEX_VENT			
-	{ "impact_wood",		"impact_wood_noflecks" },		// CHAR_TEX_WOOD			
-	{ NULL,					NULL },							// CHAR_TEX_UNUSED		
-	{ "impact_glass",		NULL },							// CHAR_TEX_GLASS			
-	{ "warp_shield_impact", NULL },							// CHAR_TEX_WARPSHIELD		
+	{ "impact_antlion",		NULL,						NULL },							// CHAR_TEX_ANTLION
+	{ NULL,					NULL,						NULL },							// CHAR_TEX_BLOODYFLESH	
+	{ "impact_concrete",	"impact_concrete_noflecks",	NULL },	// CHAR_TEX_CONCRETE		
+	{ "impact_dirt",		NULL,						NULL },							// CHAR_TEX_DIRT			
+	{ NULL,					NULL,						NULL },							// CHAR_TEX_EGGSHELL		
+	{ NULL,					NULL,						NULL },							// CHAR_TEX_FLESH			
+	{ NULL,					NULL,						NULL },							// CHAR_TEX_GRATE			
+	{ NULL,					NULL,						NULL },							// CHAR_TEX_ALIENFLESH		
+	{ NULL,					NULL,						NULL },							// CHAR_TEX_CLIP			
+	{ NULL,					NULL,						NULL },							// CHAR_TEX_UNUSED		
+	{ NULL,					NULL,						NULL },							// CHAR_TEX_UNUSED		
+	{ NULL,					NULL,						NULL },							// CHAR_TEX_PLASTIC		
+	{ "impact_metal",		NULL,						"impact_metal_space" },							// CHAR_TEX_METAL			
+	{ "impact_dirt",		NULL,						NULL },							// CHAR_TEX_SAND			
+	{ NULL,					NULL,						NULL },							// CHAR_TEX_FOLIAGE		
+	{ "impact_computer",	NULL,						NULL },							// CHAR_TEX_COMPUTER		
+	{ NULL,					NULL,						NULL },							// CHAR_TEX_UNUSED		
+	{ NULL,					NULL,						NULL },							// CHAR_TEX_UNUSED		
+	{ NULL,					NULL,						NULL },							// CHAR_TEX_SLOSH			
+	{ "impact_concrete",	"impact_concrete_noflecks",	NULL },	// CHAR_TEX_TILE			
+	{ NULL,					NULL,						NULL },							// CHAR_TEX_UNUSED		
+	{ "impact_metal",		NULL,						NULL },							// CHAR_TEX_VENT			
+	{ "impact_wood",		"impact_wood_noflecks",		NULL },		// CHAR_TEX_WOOD			
+	{ NULL,					NULL,						NULL },							// CHAR_TEX_UNUSED		
+	{ "impact_glass",		NULL,						NULL },							// CHAR_TEX_GLASS			
+	{ "warp_shield_impact", NULL,						NULL },							// CHAR_TEX_WARPSHIELD		
 };
 
 static void SetImpactControlPoint( CNewParticleEffect *pEffect, int nPoint, const Vector &vecImpactPoint, const Vector &vecForward, C_BaseEntity *pEntity )
@@ -307,6 +308,14 @@ static void PerformNewCustomEffects( const Vector &vecOrigin, trace_t &tr, const
 	{
 		pImpactName = effect.m_pNameNoFlecks;
 	}
+
+	// GSTRINGMIGRATION
+	if ( g_pGstringGlobals && g_pGstringGlobals->IsSpaceMap() && effect.m_pNameSpace )
+	{
+		pImpactName = effect.m_pNameSpace;
+	}
+	// END GSTRINGMIGRATION
+
 	if ( !pImpactName )
 		return;
 

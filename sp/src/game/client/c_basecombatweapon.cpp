@@ -523,16 +523,16 @@ int C_BaseCombatWeapon::DrawModel( int flags )
 			&& viewId != VIEW_SHADOW_DEPTH_TEXTURE )
 			return 0;
 
-		if ( false )
-		{
-			CBaseAnimating::AutoAllowBoneAccess boneAccess( true, false );
+		//if ( false )
+		//{
+		//	CBaseAnimating::AutoAllowBoneAccess boneAccess( true, false );
 
-			localplayer->InvalidateBoneCache();
-			localplayer->SetupBones( NULL, -1, BONE_USED_BY_ANYTHING, gpGlobals->curtime );
+		//	localplayer->InvalidateBoneCache();
+		//	localplayer->SetupBones( NULL, -1, BONE_USED_BY_ANYTHING, gpGlobals->curtime );
 
-			InvalidateBoneCache();
-			SetupBones( NULL, -1, BONE_USED_BY_ANYTHING, gpGlobals->curtime );
-		}
+		//	InvalidateBoneCache();
+		//	SetupBones( NULL, -1, BONE_USED_BY_ANYTHING, gpGlobals->curtime );
+		//}
 
 		//SetAbsOrigin( localplayer->GetAbsOrigin() );
 		RemoveEffects( EF_NODRAW );

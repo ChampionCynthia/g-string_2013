@@ -21,32 +21,28 @@ extern ConVar gstring_firstpersonbody_enable;
 //extern ConVar gstring_firstpersonbody_shadow_enable;
 extern ConVar gstring_volumetrics_enabled;
 
-struct Preset_t
-{
-	bool checks[7];
-	float val[8];
-};
 
-// m_pCheck_HurtFX, m_pCheck_GodRays, m_pCheck_WaterEffects, m_pCheck_Vignette, m_pCheck_LensFlare, m_pCheck_DreamBlur, m_pCheck_ScreenBlur
-// m_pSlider_CinematicBars_Size, m_pSlider_MotionBlur_Strength, m_pSlider_BloomFlare_Strength, m_pSlider_ExplosionBlur_Strength,
-//		m_pSlider_Desaturation_Strength, m_pSlider_FilmGrain_Strength, m_pSlider_Bend_Strength, m_pSlider_Chromatic_Strength
-static Preset_t presets[] =
+static PostProcessingState_t presets[] =
 {
 	// Subtle
 	{ true, true, true, true, true, true, false, 0.0f, 0.3f, 0.7f, 0.3f, 0.0f, 0.1f, 0.2f, 0.2f },
 	// Vibrant
-	{ true, true, true, true, true, true, true, 0.0f, 0.7f, 1.0f, 0.5f, 0.0f, 0.2f, 0.4f, 0.8f },
+	{ true, true, true, true, true, true, true, 0.0f, 0.7f, 1.0f, 0.5f, 0.0f, 0.2f, 0.6f, 0.8f },
 	// film noir
-	{ true, true, true, true, true, true, true, 0.0f, 0.8f, 1.0f, 0.5f, 0.5f, 0.3f, 0.0f, 0.9f },
+	{ true, true, true, true, true, true, true, 0.0f, 0.8f, 1.0f, 0.5f, 1.0f, 0.3f, 0.2f, 0.9f },
+	// film noir red
+	{ true, true, true, true, true, true, true, 0.0f, 0.8f, 1.0f, 0.5f, 0.5f, 0.3f, 0.2f, 0.9f },
+	// bw
+	{ false, false, false, false, false, false, false, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f },
+	// bw red
+	{ false, false, false, false, false, false, false, 0.0f, 0.0f, 0.0f, 0.0f, 0.5f, 0.0f, 0.0f, 0.0f },
 	// 70 mm
 	{ true, true, true, true, true, true, true, 1.0f, 0.2f, 0.8f, 0.1f, 0.1f, 0.2f, 0.7f, 0.6f },
-	// bw
-	{ true, true, true, true, true, true, true, 0.0f, 0.3f, 0.7f, 0.2f, 1.0f, 0.2f, 0.0f, 0.4f },
 	// none
 	{ false, false, false, false, false, false, false, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },
 };
 
-static float scales[] = {
+static float scales[ PP_VALS ] = {
 	5.0f,
 	1.0f,
 	0.2f,
@@ -92,8 +88,10 @@ CVGUIGstringOptions::CVGUIGstringOptions( VPANEL parent, const char *pName ) : B
 	m_pCBox_Preset->AddItem( "#pp_preset_subtle", NULL );
 	m_pCBox_Preset->AddItem( "#pp_preset_vibrant", NULL );
 	m_pCBox_Preset->AddItem( "#pp_preset_filmnoir", NULL );
-	m_pCBox_Preset->AddItem( "#pp_preset_70mm", NULL );
+	m_pCBox_Preset->AddItem( "#pp_preset_filmnoir_red", NULL );
 	m_pCBox_Preset->AddItem( "#pp_preset_bw", NULL );
+	m_pCBox_Preset->AddItem( "#pp_preset_bw_red", NULL );
+	m_pCBox_Preset->AddItem( "#pp_preset_70mm", NULL );
 	m_pCBox_Preset->AddItem( "#pp_preset_none", NULL );
 	m_pCBox_Preset->AddActionSignalTarget( this );
 
@@ -134,6 +132,24 @@ CVGUIGstringOptions::CVGUIGstringOptions( VPANEL parent, const char *pName ) : B
 
 	SetTitle( "#pp_title", false );
 
+	m_pVarChecks[ 0 ] = &cvar_gstring_drawhurtfx;
+	m_pVarChecks[ 1 ] = &cvar_gstring_drawgodrays;
+	m_pVarChecks[ 2 ] = &cvar_gstring_drawwatereffects;
+	m_pVarChecks[ 3 ] = &cvar_gstring_drawvignette;
+	m_pVarChecks[ 4 ] = &cvar_gstring_drawlensflare;
+	m_pVarChecks[ 5 ] = &cvar_gstring_drawdreamblur;
+	m_pVarChecks[ 6 ] = &cvar_gstring_drawscreenblur;
+	m_pVarValues[ 0 ] = &cvar_gstring_bars_scale;
+	m_pVarValues[ 1 ] = &cvar_gstring_motionblur_scale;
+	m_pVarValues[ 2 ] = &cvar_gstring_bloomflare_strength;
+	m_pVarValues[ 3 ] = &cvar_gstring_explosionfx_strength;
+	m_pVarValues[ 4 ] = &cvar_gstring_desaturation_strength;
+	m_pVarValues[ 5 ] = &cvar_gstring_filmgrain_strength;
+	m_pVarValues[ 6 ] = &cvar_gstring_bend_strength;
+	m_pVarValues[ 7 ] = &cvar_gstring_chromatic_aberration;
+
+	CvarToState();
+
 	OnSliderMoved( NULL );
 }
 
@@ -146,29 +162,28 @@ void CVGUIGstringOptions::OnCommand( const char *cmd )
 	if ( !Q_stricmp( cmd, "save" ) )
 	{
 #define CVAR_CHECK_INTEGER( x, y ) ( x.SetValue( ( y->IsSelected() ? 1 : int(0) ) ) )
-#define CVAR_SLIDER_FLOAT( x, y, ratio ) ( x.SetValue( (float)(y->GetValue()/(float)ratio ) ) )
-
-		CVAR_CHECK_INTEGER( cvar_gstring_drawhurtfx, m_pCheck_HurtFX );
-		CVAR_CHECK_INTEGER( cvar_gstring_drawvignette, m_pCheck_Vignette );
-		CVAR_CHECK_INTEGER( cvar_gstring_drawgodrays, m_pCheck_GodRays );
-		CVAR_CHECK_INTEGER( cvar_gstring_drawscreenblur, m_pCheck_ScreenBlur );
-		CVAR_CHECK_INTEGER( cvar_gstring_drawdreamblur, m_pCheck_DreamBlur );
-		CVAR_CHECK_INTEGER( cvar_gstring_drawlensflare, m_pCheck_LensFlare );
-		CVAR_CHECK_INTEGER( cvar_gstring_drawwatereffects, m_pCheck_WaterEffects );
+//#define CVAR_SLIDER_FLOAT( x, y, ratio ) ( x.SetValue( (float)(y->GetValue()/(float)ratio ) ) )
+//
+//		CVAR_CHECK_INTEGER( cvar_gstring_drawhurtfx, m_pCheck_HurtFX );
+//		CVAR_CHECK_INTEGER( cvar_gstring_drawvignette, m_pCheck_Vignette );
+//		CVAR_CHECK_INTEGER( cvar_gstring_drawgodrays, m_pCheck_GodRays );
+//		CVAR_CHECK_INTEGER( cvar_gstring_drawscreenblur, m_pCheck_ScreenBlur );
+//		CVAR_CHECK_INTEGER( cvar_gstring_drawdreamblur, m_pCheck_DreamBlur );
+//		CVAR_CHECK_INTEGER( cvar_gstring_drawlensflare, m_pCheck_LensFlare );
+//		CVAR_CHECK_INTEGER( cvar_gstring_drawwatereffects, m_pCheck_WaterEffects );
+//
+//		CVAR_SLIDER_FLOAT( cvar_gstring_explosionfx_strength, m_pSlider_ExplosionBlur_Strength, 10 );
+//		CVAR_SLIDER_FLOAT( cvar_gstring_bars_scale, m_pSlider_CinematicBars_Size, 50 );
+//		CVAR_SLIDER_FLOAT( cvar_gstring_motionblur_scale, m_pSlider_MotionBlur_Strength, 10 );
+//		CVAR_SLIDER_FLOAT( cvar_gstring_bloomflare_strength, m_pSlider_BloomFlare_Strength, 2 );
+//		CVAR_SLIDER_FLOAT( cvar_gstring_desaturation_strength, m_pSlider_Desaturation_Strength, 10 );
+//		CVAR_SLIDER_FLOAT( cvar_gstring_filmgrain_strength, m_pSlider_FilmGrain_Strength, 50 );
+//		CVAR_SLIDER_FLOAT( cvar_gstring_bend_strength, m_pSlider_Bend_Strength, 10 );
+//		CVAR_SLIDER_FLOAT( cvar_gstring_chromatic_aberration, m_pSlider_Chromatic_Strength, 1000 );
 		CVAR_CHECK_INTEGER( gstring_firstpersonbody_enable, m_pCheck_FirstPersonBody );
-		//CVAR_CHECK_INTEGER( gstring_firstpersonbody_shadow_enable, m_pCheck_FirstPersonShadow );
 		CVAR_CHECK_INTEGER( gstring_volumetrics_enabled, m_pCheck_LightVolumetrics );
+		StateToCvar();
 
-		CVAR_SLIDER_FLOAT( cvar_gstring_explosionfx_strength, m_pSlider_ExplosionBlur_Strength, 10 );
-		CVAR_SLIDER_FLOAT( cvar_gstring_bars_scale, m_pSlider_CinematicBars_Size, 50 );
-		CVAR_SLIDER_FLOAT( cvar_gstring_motionblur_scale, m_pSlider_MotionBlur_Strength, 10 );
-		CVAR_SLIDER_FLOAT( cvar_gstring_bloomflare_strength, m_pSlider_BloomFlare_Strength, 2 );
-		CVAR_SLIDER_FLOAT( cvar_gstring_desaturation_strength, m_pSlider_Desaturation_Strength, 10 );
-		CVAR_SLIDER_FLOAT( cvar_gstring_filmgrain_strength, m_pSlider_FilmGrain_Strength, 50 );
-		CVAR_SLIDER_FLOAT( cvar_gstring_bend_strength, m_pSlider_Bend_Strength, 10 );
-		CVAR_SLIDER_FLOAT( cvar_gstring_chromatic_aberration, m_pSlider_Chromatic_Strength, 1000 );
-
-		//cvar_gstring_drawbloomflare.SetValue( m_pCBox_BloomFlare->GetActiveItem() );
 		gstring_hud_color.SetValue( VarArgs( "%i %i %i 255", m_colHUD.r(), m_colHUD.g(), m_colHUD.b() ) );
 
 		engine->ClientCmd( "host_writeconfig" );
@@ -215,31 +230,29 @@ void CVGUIGstringOptions::ApplySchemeSettings( vgui::IScheme *pScheme )
 void CVGUIGstringOptions::ReadValues( bool bUpdatePreset )
 {
 #define CVAR_CHECK_SELECTED( x, y ) ( y->SetSelected( x.GetBool(), false ) )
-#define CVAR_SLIDER_INTEGER( x, y, ratio ) ( y->SetValue( x.GetFloat() * ratio, false ) )
+//#define CVAR_SLIDER_INTEGER( x, y, ratio ) ( y->SetValue( x.GetFloat() * ratio, false ) )
 
-	CVAR_CHECK_SELECTED( cvar_gstring_drawhurtfx, m_pCheck_HurtFX );
-	CVAR_CHECK_SELECTED( cvar_gstring_drawvignette, m_pCheck_Vignette );
-	CVAR_CHECK_SELECTED( cvar_gstring_drawgodrays, m_pCheck_GodRays );
-	CVAR_CHECK_SELECTED( cvar_gstring_drawscreenblur, m_pCheck_ScreenBlur );
-	CVAR_CHECK_SELECTED( cvar_gstring_drawdreamblur, m_pCheck_DreamBlur );
-	CVAR_CHECK_SELECTED( cvar_gstring_drawlensflare, m_pCheck_LensFlare );
-	CVAR_CHECK_SELECTED( cvar_gstring_drawwatereffects, m_pCheck_WaterEffects );
 	CVAR_CHECK_SELECTED( gstring_firstpersonbody_enable, m_pCheck_FirstPersonBody );
-	//m_pCheck_FirstPersonShadow->SetEnabled( gstring_firstpersonbody_enable.GetBool() );
-	//CVAR_CHECK_SELECTED( gstring_firstpersonbody_shadow_enable, m_pCheck_FirstPersonShadow );
 	CVAR_CHECK_SELECTED( gstring_volumetrics_enabled, m_pCheck_LightVolumetrics );
 
-	//m_pCBox_BloomFlare->ActivateItem( clamp( cvar_gstring_drawbloomflare.GetInt(),
-	//	0, m_pCBox_BloomFlare->GetItemCount() ) );
-
-	CVAR_SLIDER_INTEGER( cvar_gstring_explosionfx_strength, m_pSlider_ExplosionBlur_Strength, 11 );
-	CVAR_SLIDER_INTEGER( cvar_gstring_bars_scale, m_pSlider_CinematicBars_Size, 51 );
-	CVAR_SLIDER_INTEGER( cvar_gstring_motionblur_scale, m_pSlider_MotionBlur_Strength, 11 );
-	CVAR_SLIDER_INTEGER( cvar_gstring_bloomflare_strength, m_pSlider_BloomFlare_Strength, 2 );
-	CVAR_SLIDER_INTEGER( cvar_gstring_desaturation_strength, m_pSlider_Desaturation_Strength, 10 );
-	CVAR_SLIDER_INTEGER( cvar_gstring_filmgrain_strength, m_pSlider_FilmGrain_Strength, 51 );
-	CVAR_SLIDER_INTEGER( cvar_gstring_bend_strength, m_pSlider_Bend_Strength, 11 );
-	CVAR_SLIDER_INTEGER( cvar_gstring_chromatic_aberration, m_pSlider_Chromatic_Strength, 1100 );
+#define CVAR_STATE_CHECK_SELECTED( i, y ) ( y->SetSelected( m_state.checks[ i ], false ) )
+#define CVAR_STATE_SLIDER_INTEGER( i, y ) ( y->SetValue( m_state.val[ i ] * 10.1f, false ) )
+	
+	CVAR_STATE_CHECK_SELECTED( 0, m_pCheck_HurtFX );
+	CVAR_STATE_CHECK_SELECTED( 1, m_pCheck_GodRays );
+	CVAR_STATE_CHECK_SELECTED( 2, m_pCheck_WaterEffects );
+	CVAR_STATE_CHECK_SELECTED( 3, m_pCheck_Vignette );
+	CVAR_STATE_CHECK_SELECTED( 4, m_pCheck_LensFlare );
+	CVAR_STATE_CHECK_SELECTED( 5, m_pCheck_DreamBlur );
+	CVAR_STATE_CHECK_SELECTED( 6, m_pCheck_ScreenBlur );
+	CVAR_STATE_SLIDER_INTEGER( 0, m_pSlider_CinematicBars_Size );
+	CVAR_STATE_SLIDER_INTEGER( 1, m_pSlider_MotionBlur_Strength );
+	CVAR_STATE_SLIDER_INTEGER( 2, m_pSlider_BloomFlare_Strength );
+	CVAR_STATE_SLIDER_INTEGER( 3, m_pSlider_ExplosionBlur_Strength );
+	CVAR_STATE_SLIDER_INTEGER( 4, m_pSlider_Desaturation_Strength );
+	CVAR_STATE_SLIDER_INTEGER( 5, m_pSlider_FilmGrain_Strength );
+	CVAR_STATE_SLIDER_INTEGER( 6, m_pSlider_Bend_Strength );
+	CVAR_STATE_SLIDER_INTEGER( 7, m_pSlider_Chromatic_Strength );
 
 	UTIL_StringToColor( m_colHUD, gstring_hud_color.GetString() );
 	m_pHUDColorPicker->SetColor( m_colHUD );
@@ -263,27 +276,69 @@ void CVGUIGstringOptions::PerformLayout()
 
 void CVGUIGstringOptions::OnCheckButtonChecked( Panel *panel )
 {
+	CheckButton *pCheckButton = dynamic_cast< CheckButton* >( panel );
+	if ( pCheckButton != NULL )
+	{
+		bool value = pCheckButton->IsSelected();
+		CheckButton *checkButtons[ PP_CHECKS ] = {
+			m_pCheck_HurtFX,
+			m_pCheck_GodRays,
+			m_pCheck_WaterEffects,
+			m_pCheck_Vignette,
+			m_pCheck_LensFlare,
+			m_pCheck_DreamBlur,
+			m_pCheck_ScreenBlur
+		};
+		for ( int i = 0; i < PP_CHECKS; ++i )
+		{
+			if ( checkButtons[ i ] == panel )
+			{
+				m_state.checks[ i ] = value;
+			}
+		}
+	}
+
 	OnPresetModified();
-	//if ( panel == m_pCheck_FirstPersonBody )
-	//{
-	//	m_pCheck_FirstPersonShadow->SetEnabled( m_pCheck_FirstPersonBody->IsSelected() );
-	//}
 }
 
 void CVGUIGstringOptions::UpdateLabels()
 {
-	m_pLabel_Value_CinematicBars->SetText( VarArgs( "%.1f", m_pSlider_CinematicBars_Size->GetValue() / 10.0f ) );
-	m_pLabel_Value_MotionBlur->SetText( VarArgs( "%.1f", m_pSlider_MotionBlur_Strength->GetValue() / 10.0f ) );
-	m_pLabel_Value_BloomFlare->SetText( VarArgs( "%.1f", m_pSlider_BloomFlare_Strength->GetValue() / 10.0f ) );
-	m_pLabel_Value_ExplosionBlur->SetText( VarArgs( "%.1f", m_pSlider_ExplosionBlur_Strength->GetValue() / 10.0f ) );
-	m_pLabel_Value_Desaturation->SetText( VarArgs( "%.1f", m_pSlider_Desaturation_Strength->GetValue() / 10.0f ) );
-	m_pLabel_Value_FilmGrain->SetText( VarArgs( "%.1f", m_pSlider_FilmGrain_Strength->GetValue() / 10.0f ) );
-	m_pLabel_Value_Bend->SetText( VarArgs( "%.1f", m_pSlider_Bend_Strength->GetValue() / 10.0f ) );
-	m_pLabel_Value_Chromatic->SetText( VarArgs( "%.1f", m_pSlider_Chromatic_Strength->GetValue() / 10.0f ) );
+	m_pLabel_Value_CinematicBars->SetText( VarArgs( "%.1f", m_state.val[ 0 ] ) );
+	m_pLabel_Value_MotionBlur->SetText( VarArgs( "%.1f", m_state.val[ 1 ] ) );
+	m_pLabel_Value_BloomFlare->SetText( VarArgs( "%.1f", m_state.val[ 2 ] ) );
+	m_pLabel_Value_ExplosionBlur->SetText( VarArgs( "%.1f", m_state.val[ 3 ] ) );
+	m_pLabel_Value_Desaturation->SetText( VarArgs( "%.1f", m_state.val[ 4 ] ) );
+	m_pLabel_Value_FilmGrain->SetText( VarArgs( "%.1f", m_state.val[ 5 ] ) );
+	m_pLabel_Value_Bend->SetText( VarArgs( "%.1f", m_state.val[ 6 ] ) );
+	m_pLabel_Value_Chromatic->SetText( VarArgs( "%.1f", m_state.val[ 7 ] ) );
 }
 
-void CVGUIGstringOptions::OnSliderMoved( KeyValues *pKV )
+void CVGUIGstringOptions::OnSliderMoved( Panel *panel )
 {
+	Slider *pSlider = dynamic_cast< Slider* >( panel );
+	if ( pSlider != NULL )
+	{
+		int value = pSlider->GetValue();
+
+		Slider *sliders[ PP_VALS ] = {
+			m_pSlider_CinematicBars_Size,
+			m_pSlider_MotionBlur_Strength,
+			m_pSlider_BloomFlare_Strength,
+			m_pSlider_ExplosionBlur_Strength,
+			m_pSlider_Desaturation_Strength,
+			m_pSlider_FilmGrain_Strength,
+			m_pSlider_Bend_Strength,
+			m_pSlider_Chromatic_Strength
+		};
+		for ( int i = 0; i < PP_VALS; ++i )
+		{
+			if ( sliders[ i ] == panel )
+			{
+				m_state.val[ i ] = value * 0.101f;
+			}
+		}
+	}
+
 	OnPresetModified();
 	UpdateLabels();
 }
@@ -305,37 +360,14 @@ void CVGUIGstringOptions::ApplyPreset( int index )
 		return;
 	}
 
-	ConVar *pVarChecks[] =
+	const PostProcessingState_t &p = presets[ index ];
+	for ( int c = 0; c < PP_CHECKS; ++c )
 	{
-		&cvar_gstring_drawhurtfx,
-		&cvar_gstring_drawgodrays,
-		&cvar_gstring_drawwatereffects,
-		&cvar_gstring_drawvignette,
-		&cvar_gstring_drawlensflare,
-		&cvar_gstring_drawdreamblur,
-		&cvar_gstring_drawscreenblur
-	};
-
-	ConVar *pVarValues[] =
-	{
-		&cvar_gstring_bars_scale,
-		&cvar_gstring_motionblur_scale,
-		&cvar_gstring_bloomflare_strength,
-		&cvar_gstring_explosionfx_strength,
-		&cvar_gstring_desaturation_strength,
-		&cvar_gstring_filmgrain_strength,
-		&cvar_gstring_bend_strength,
-		&cvar_gstring_chromatic_aberration
-	};
-
-	const Preset_t &p = presets[ index ];
-	for ( int c = 0; c < ARRAYSIZE( pVarChecks ); ++c )
-	{
-		pVarChecks[ c ]->SetValue( p.checks[ c ] ? 1 : int( 0 ) );
+		m_state.checks[ c ] = p.checks[ c ];
 	}
-	for ( int v = 0; v < ARRAYSIZE( pVarValues ); ++v )
+	for ( int v = 0; v < PP_VALS; ++v )
 	{
-		pVarValues[ v ]->SetValue( p.val[ v ] / scales[ v ] );
+		m_state.val[ v ] = p.val[ v ];
 	}
 
 	ReadValues( false );
@@ -344,43 +376,20 @@ void CVGUIGstringOptions::ApplyPreset( int index )
 
 int CVGUIGstringOptions::FindCurrentPreset()
 {
-	ConVar *pVarChecks[] =
-	{
-		&cvar_gstring_drawhurtfx,
-		&cvar_gstring_drawgodrays,
-		&cvar_gstring_drawwatereffects,
-		&cvar_gstring_drawvignette,
-		&cvar_gstring_drawlensflare,
-		&cvar_gstring_drawdreamblur,
-		&cvar_gstring_drawscreenblur
-	};
-
-	ConVar *pVarValues[] =
-	{
-		&cvar_gstring_bars_scale,
-		&cvar_gstring_motionblur_scale,
-		&cvar_gstring_bloomflare_strength,
-		&cvar_gstring_explosionfx_strength,
-		&cvar_gstring_desaturation_strength,
-		&cvar_gstring_filmgrain_strength,
-		&cvar_gstring_bend_strength,
-		&cvar_gstring_chromatic_aberration
-	};
-
 	for ( int i = 0; i < ARRAYSIZE( presets ); ++i )
 	{
-		const Preset_t &p = presets[ i ];
+		const PostProcessingState_t &p = presets[ i ];
 		bool bWrong = false;
-		for ( int c = 0; c < ARRAYSIZE( pVarChecks ); ++c )
+		for ( int c = 0; c < PP_CHECKS; ++c )
 		{
-			if ( pVarChecks[ c ]->GetBool() != p.checks[ c ] )
+			if ( m_state.checks[ c ] != p.checks[ c ] )
 			{
 				bWrong = true;
 			}
 		}
-		for ( int v = 0; v < ARRAYSIZE( pVarValues ); ++v )
+		for ( int v = 0; v < PP_VALS; ++v )
 		{
-			if ( !CloseEnough( pVarValues[ v ]->GetFloat() * scales[ v ], p.val[ v ] ) )
+			if ( !CloseEnough( m_state.val[ v ], p.val[ v ] ) )
 			{
 				bWrong = true;
 			}
@@ -396,6 +405,32 @@ int CVGUIGstringOptions::FindCurrentPreset()
 void CVGUIGstringOptions::OnPresetModified()
 {
 	m_pCBox_Preset->SetText( "#pp_preset_custom" );
+}
+
+void CVGUIGstringOptions::CvarToState()
+{
+	for ( int i = 0; i < PP_CHECKS; ++i )
+	{
+		m_state.checks[ i ] = m_pVarChecks[ i ]->GetBool();
+	}
+
+	for ( int i = 0; i < PP_VALS; ++i )
+	{
+		m_state.val[ i ] = m_pVarValues[ i ]->GetFloat() * scales[ i ];
+	}
+}
+
+void CVGUIGstringOptions::StateToCvar()
+{
+	for ( int i = 0; i < PP_CHECKS; ++i )
+	{
+		m_pVarChecks[ i ]->SetValue( m_state.checks[ i ] ? 1 : int( 0 ) );
+	}
+
+	for ( int i = 0; i < PP_VALS; ++i )
+	{
+		m_pVarValues[ i ]->SetValue( m_state.val[ i ] / scales[ i ] );
+	}
 }
 
 CON_COMMAND( vgui_showGstringOptions, "" )

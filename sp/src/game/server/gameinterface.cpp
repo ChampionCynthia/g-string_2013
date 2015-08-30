@@ -1366,6 +1366,11 @@ void CServerGameDLL::OnQueryCvarValueFinished( QueryCvarCookie_t iCookie, edict_
 // Called when a level is shutdown (including changing levels)
 void CServerGameDLL::LevelShutdown( void )
 {
+	// GSTRINGMIGRATION
+	extern void FreeScaledPhysicsCollider();
+	FreeScaledPhysicsCollider();
+	// END GSTRINGMIGRATION
+
 #ifndef NO_STEAM
 	IGameSystem::LevelShutdownPreClearSteamAPIContextAllSystems();
 

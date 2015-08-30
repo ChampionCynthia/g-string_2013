@@ -266,6 +266,10 @@ void QueueExplosionBlur( Vector origin, float lifetime )
 	e.creationtime = gpGlobals->curtime;
 	e.lifeduration = lifetime;
 	e.pos = origin;
+	if ( g_pGstringGlobals && g_pGstringGlobals->IsSpaceMap() )
+	{
+		e.lifeduration *= 0.3f;
+	}
 	g_hExplosionBlurQueue.AddToTail( e );
 }
 
@@ -307,6 +311,12 @@ void DrawExplosionBlur( int x, int y, int w, int h )
 		||*/ cvar_gstring_explosionfx_strength.GetFloat() <= 0.0f )
 		return;
 
+	float flStrength = cvar_gstring_explosionfx_strength.GetFloat();
+	if ( g_pGstringGlobals && g_pGstringGlobals->IsSpaceMap() )
+	{
+		//flStrength *= 0.4f;
+	}
+
 	for ( int i = 0; i < g_hExplosionBlurQueue.Count(); i++ )
 	{
 		ExpBlurHelper_t &e = g_hExplosionBlurQueue[i];
@@ -330,7 +340,7 @@ void DrawExplosionBlur( int x, int y, int w, int h )
 		float strength = RemapValClamped( dot, 0, 0.3f, 0, 1.0f );
 		strength *= RemapValClamped( dist, 256, 512, 1.0f, 0.0f );
 		strength *= Bias( e.GetAmt(), 0.65f );
-		strength *= cvar_gstring_explosionfx_strength.GetFloat();
+		strength *= flStrength;
 
 		if ( strength <= 0.0f )
 			continue;

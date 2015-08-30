@@ -47,7 +47,8 @@ private:
 //	bool m_bEnabled;
 //	EHANDLE m_hHealthProxy;
 //
-//	COutputEvent m_OnEnabled;
+	COutputEvent m_OnConversationStarted;
+	COutputEvent m_OnConversationFinished;
 //	COutputEvent m_OnDisabled;
 //#endif
 };

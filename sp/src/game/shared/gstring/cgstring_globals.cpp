@@ -2,6 +2,7 @@
 #include "cbase.h"
 #include "cgstring_globals.h"
 #include "gstring_player_shared.h"
+#include "movevars_shared.h"
 
 #define GSTRINGGLOBALSFLAGS_USERLIGHTSOURCE_ENABLED		0x01
 #define GSTRINGGLOBALSFLAGS_NIGHTVISION_ENABLED			0x02
@@ -70,6 +71,7 @@ CGstringGlobals::~CGstringGlobals()
 	if ( g_pGstringGlobals == this )
 	{
 		g_pGstringGlobals = NULL;
+		sv_gravity.Revert();
 	}
 }
 
@@ -88,9 +90,13 @@ void CGstringGlobals::Activate()
 {
 	BaseClass::Activate();
 
-	if ( m_bIsSpaceMap && physenv )
+	if ( m_bIsSpaceMap )
 	{
-		physenv->SetGravity( vec3_origin );
+		if ( physenv )
+		{
+			physenv->SetGravity( vec3_origin );
+		}
+		sv_gravity.SetValue( "0" );
 	}
 }
 

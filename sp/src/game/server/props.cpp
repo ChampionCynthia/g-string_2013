@@ -45,6 +45,7 @@
 
 // GSTRINGMIGRATION
 #include "cgstring_interaction.h"
+#include "UtlStringMap.h"
 // END GSTRINGMIGRATION
 
 // memdbgon must be the last include file in a .cpp file!!!
@@ -6006,6 +6007,20 @@ CPhysicsProp* CreatePhysicsProp( const char *pModelName, const Vector &vTraceSta
 	return pProp;
 }
 
+// GSTRINGMIGRATION
+static CUtlStringMap< CPhysCollide* > g_ScaledPhysicsCollider;
+static float g_flLastColliderScale = -1.0f;
+void FreeScaledPhysicsCollider()
+{
+	g_flLastColliderScale = -1.0f;
+	for ( int i = 0; i < g_ScaledPhysicsCollider.GetNumStrings(); ++i )
+	{
+		physcollision->DestroyCollide( g_ScaledPhysicsCollider[ g_ScaledPhysicsCollider.String( i ) ] );
+	}
+	g_ScaledPhysicsCollider.Purge();
+}
+// END GSTRINGMIGRATION
+
 //-----------------------------------------------------------------------------
 // Purpose: Scale the object to a new size, taking its render verts and physical verts into account
 //-----------------------------------------------------------------------------
@@ -6019,7 +6034,7 @@ bool UTIL_CreateScaledPhysObject( CBaseAnimating *pInstance, float flScale )
 
 	// Get our object
 	IPhysicsObject *pObject = pInstance->VPhysicsGetObject();
-	if ( pObject == NULL )
+	if ( pObject == NULL || !pObject->GetName() )
 	{
 		AssertMsg( 0, "UTIL_CreateScaledPhysObject: Failed to scale physics for object-- It has no physics." );
 		return false;
@@ -6034,8 +6049,19 @@ bool UTIL_CreateScaledPhysObject( CBaseAnimating *pInstance, float flScale )
 		return NULL;
 
 	CPhysCollide *pNewCollide = pCollide->solids[0];	// FIXME: Needs to iterate over the solids
-
-	if ( flScale != 1.0f )
+	
+// GSTRINGMIGRATION
+	const char *pszKey = pObject->GetName();
+	UtlSymId_t sym = g_ScaledPhysicsCollider.Find(pszKey);
+	if ( flScale != 1.0f && sym != g_ScaledPhysicsCollider.InvalidIndex() )
+	{
+		Assert( CloseEnough( g_flLastColliderScale, flScale ) || g_flLastColliderScale < 0.0f );
+		g_flLastColliderScale = flScale;
+		pNewCollide = g_ScaledPhysicsCollider[sym];
+	}
+	else
+// END GSTRINGMIGRATION
+		if ( flScale != 1.0f )
 	{
 		// Create a query to get more information from the collision object
 		ICollisionQuery *pQuery = physcollision->CreateQueryModel( pCollide->solids[0] );	// FIXME: This should iterate over all solids!
@@ -6082,6 +6108,10 @@ bool UTIL_CreateScaledPhysObject( CBaseAnimating *pInstance, float flScale )
 		pNewCollide = physcollision->ConvertConvexToCollide( pConvexes, nNumConvex );
 		if ( pNewCollide == NULL )
 			return false;
+		
+// GSTRINGMIGRATION
+		g_ScaledPhysicsCollider[pszKey] = pNewCollide;
+// END GSTRINGMIGRATION
 	}
 
 	// Get our solid info

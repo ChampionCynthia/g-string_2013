@@ -21,6 +21,10 @@
 
 #include "vgui/ILocalize.h"
 
+// GSTRINGMIGRATION
+#include "gstring/gstring_cvars.h"
+// END GSTRINGMIGRATION
+
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -1043,6 +1047,16 @@ void CHudWeaponSelection::ApplySchemeSettings(vgui::IScheme *pScheme)
 	{
 		SetBounds( x, y, screenWide - x, screenTall - y );
 	}
+
+	// GSTRINGMIGRATION
+	Vector selectedRGB, selectedHSV;
+	UTIL_StringToColor( m_SelectedFgColor, gstring_hud_color.GetString() );
+	RGBtoHSV( Vector( m_SelectedFgColor.r() / 255.0f, m_SelectedFgColor.g() / 255.0f, m_SelectedFgColor.b() / 255.0f ), selectedHSV );
+	selectedHSV.y *= 0.8f;
+	selectedHSV.z = MIN( 1.0f, selectedHSV.z * 2.0f );
+	HSVtoRGB( selectedHSV, selectedRGB );
+	m_SelectedFgColor.SetColor( selectedRGB.x * 255.0f, selectedRGB.y * 255.0f, selectedRGB.z * 255.0f );
+	// END GSTRINGMIGRATION
 }
 
 //-----------------------------------------------------------------------------

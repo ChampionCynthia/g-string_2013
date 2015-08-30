@@ -28,6 +28,10 @@ CLIENTEFFECT_REGISTER_BEGIN( PrecacheTracers )
 CLIENTEFFECT_MATERIAL( "effects/gunshiptracer" )
 CLIENTEFFECT_MATERIAL( "effects/combinemuzzle1" )
 CLIENTEFFECT_MATERIAL( "effects/combinemuzzle2_nocull" )
+// GSTRINGMIGRATION
+CLIENTEFFECT_MATERIAL( "effects/natotracer" )
+CLIENTEFFECT_MATERIAL( "effects/martiantracer" )
+// END GSTRINGMIGRATION
 CLIENTEFFECT_REGISTER_END()
 
 //-----------------------------------------------------------------------------
@@ -297,6 +301,72 @@ void AR2TracerCallback( const CEffectData &data )
 }
 
 DECLARE_CLIENT_EFFECT( "AR2Tracer", AR2TracerCallback );
+
+// GSTRINGMIGRATION
+void FX_SpaceTracer( Vector& start, Vector& end, int velocity, int sprite )
+{
+	VPROF_BUDGET( "FX_AR2Tracer", VPROF_BUDGETGROUP_PARTICLE_RENDERING );
+	
+	//Don't make small tracers
+	float dist;
+	Vector dir;
+
+	VectorSubtract( end, start, dir );
+	dist = VectorNormalize( dir );
+
+	// Don't make short tracers.
+	if ( dist < 128 )
+		return;
+
+	float length = random->RandomFloat( 128.0f, 256.0f );
+	float life = ( dist + length ) / velocity;	//NOTENOTE: We want the tail to finish its run as well
+	
+	//Add it
+	const char *pszEffect = sprite == 0 ? "effects/martiantracer" : "effects/natotracer";
+	FX_AddDiscreetLine( start, dir, velocity, length, dist, random->RandomFloat( 0.5f, 1.5f ), life, pszEffect );
+}
+
+void SpaceTracerCallback( const CEffectData &data )
+{
+	C_BasePlayer *player = C_BasePlayer::GetLocalPlayer();
+	
+	if ( player == NULL )
+		return;
+
+	// Grab the data
+	Vector vecStart = GetTracerOrigin( data );
+	float flVelocity = data.m_flScale;
+	bool bWhiz = (data.m_fFlags & TRACER_FLAG_WHIZ);
+	int iEntIndex = data.entindex();
+
+	if ( iEntIndex && iEntIndex == player->index )
+	{
+		Vector	foo = data.m_vStart;
+		QAngle	vangles;
+		Vector	vforward, vright, vup;
+
+		engine->GetViewAngles( vangles );
+		AngleVectors( vangles, &vforward, &vright, &vup );
+
+		VectorMA( data.m_vStart, 4, vright, foo );
+		foo[2] -= 0.5f;
+
+		FX_PlayerAR2Tracer( foo, (Vector&)data.m_vOrigin );
+		return;
+	}
+	
+	// Use default velocity if none specified
+	if ( !flVelocity )
+	{
+		flVelocity = 8000;
+	}
+
+	// Do tracer effect
+	FX_SpaceTracer( (Vector&)vecStart, (Vector&)data.m_vOrigin, flVelocity, bWhiz ? 1 : 0 );
+}
+
+DECLARE_CLIENT_EFFECT( "SpaceTracer", SpaceTracerCallback );
+// END GSTRINGMIGRATION
 
 //-----------------------------------------------------------------------------
 // Purpose: 

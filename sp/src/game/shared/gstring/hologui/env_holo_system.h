@@ -42,8 +42,10 @@ public:
 	virtual int UpdateTransmitState();
 
 	void InputPlayAnimation( inputdata_t &inputdata );
+	void SetEnabled( bool bEnabled );
 	void InputEnable( inputdata_t &inputdata );
 	void InputDisable( inputdata_t &inputdata );
+	void InputSetUIState( inputdata_t &inputdata );
 #else
 	void DestroyPanels();
 	void StartAnimation( const char *pszName );
@@ -77,6 +79,7 @@ private:
 	int m_iViewportWidth;
 	int m_iViewportHeight;
 	bool m_bIsAnimating;
+	int m_iUIStateLast;
 
 	CSpacecraftDataStub *m_pSpacecraftDataAdapter;
 	vgui::Panel *m_pRoot;

@@ -132,7 +132,7 @@ void CSpacecraftAIBase::Run(float flFrametime)
 	{
 		if (m_flEnemyUpdateTimer < gpGlobals->curtime)
 		{
-			float flUpdateDelay = 2.0f;
+			float flUpdateDelay = 0.5f;
 			UpdateEnemy(flUpdateDelay);
 			m_flEnemyUpdateTimer = gpGlobals->curtime + flUpdateDelay;
 		}
@@ -363,7 +363,7 @@ void CSpacecraftAIBase::Move_Pursuit(float flFrametime)
 	}
 	else
 	{
-		moveData.m_flForwardMove = 200.0f;
+		moveData.m_flForwardMove = 200.0f; // * m_pShip->GetSpeedMultiplier();
 	}
 
 	moveData.m_flUpMove = 0.0f;
@@ -381,7 +381,7 @@ void CSpacecraftAIBase::Move_Pursuit(float flFrametime)
 	else if (m_flSideTimer > gpGlobals->curtime)
 	{
 		moveData.m_flForwardMove = 0.0f;
-		moveData.m_flSideMove = 200.0f * m_flSideScale;
+		moveData.m_flSideMove = 200.0f * m_flSideScale; // * m_pShip->GetSpeedMultiplier();
 	}
 	else if (m_flSideTimer + 2.0f < gpGlobals->curtime)
 	{
@@ -403,7 +403,7 @@ void CSpacecraftAIBase::Move_Pursuit(float flFrametime)
 
 	if (m_flForwardTimer > gpGlobals->curtime)
 	{
-		moveData.m_flForwardMove = 200.0f;
+		moveData.m_flForwardMove = 200.0f; // * m_pShip->GetSpeedMultiplier();
 		moveData.m_flSideMove *= 0.1f;
 	}
 }
@@ -452,7 +452,7 @@ void CSpacecraftAIBase::Move_AttackStationary(float flFrametime)
 	moveData.m_flUpMove = 0.0f;
 
 	const float flDistanceTargetToEnemy = vecEnemy.Length();
-	moveData.m_flForwardMove = RemapValClamped(flDistanceTargetToEnemy, 196.0f, 380.0f, -100.0f, 200.0f);
+	moveData.m_flForwardMove = RemapValClamped(flDistanceTargetToEnemy, 196.0f, 380.0f, -100.0f, 200.0f * m_pShip->GetSpeedMultiplier());
 }
 
 void CSpacecraftAIBase::Move_FollowPath(float flFrametime)
@@ -470,6 +470,8 @@ void CSpacecraftAIBase::Move_FollowPath(float flFrametime)
 	QAngle angMove;
 	VectorAngles(vecEnemy, angMove);
 
+	//DebugDrawLine( vecOrigin, pPathTrack->GetAbsOrigin(), 255, 0, 0, true, 0.1f );
+
 	Quaternion qMoveDesired, qMoveCurrent;
 	AngleQuaternion(angMove, qMoveDesired);
 	AngleQuaternion(moveData.m_vecViewAngles, qMoveCurrent);
@@ -484,25 +486,21 @@ void CSpacecraftAIBase::Move_FollowPath(float flFrametime)
 	const float flDistanceTargetToEnemy = vecEnemy.Length();
 	CPathTrack *pNext = pPathTrack->GetNext();
 
+	moveData.m_flForwardMove = 200.0f * m_pShip->GetSpeedMultiplier();
 	if (pNext == NULL)
 	{
 		moveData.m_flForwardMove = RemapValClamped(flDistanceTargetToEnemy, 0.0f, 400.0f, 0.0f, 1.0f);
 		moveData.m_flForwardMove *= moveData.m_flForwardMove;
-		moveData.m_flForwardMove *= 200.0f;
+		moveData.m_flForwardMove *= 200.0f * m_pShip->GetSpeedMultiplier();
 
-		if (flDistanceTargetToEnemy < 32.0f)
+		if (flDistanceTargetToEnemy < 48.0f)
 		{
 			m_pShip->SetPathEntity(NULL);
 		}
 	}
-	else if (flDistanceTargetToEnemy < 32.0f)
+	else if (flDistanceTargetToEnemy < 48.0f)
 	{
-		moveData.m_flForwardMove = 200.0f;
 		m_pShip->SetPathEntity(pNext);
-	}
-	else
-	{
-		moveData.m_flForwardMove = 200.0f;
 	}
 }
 
@@ -560,7 +558,7 @@ void CSpacecraftAIBase::UpdateEnemy(float &flUpdateDelay)
 	CBaseEntity *pList[1024];
 	float flBestDistanceSqr = FLT_MAX;
 
-	const int count = UTIL_EntitiesInSphere(pList, 1024, m_pShip->GetAbsOrigin(), 1024.0f, 0);
+	const int count = UTIL_EntitiesInSphere(pList, 1024, m_pShip->GetAbsOrigin(), 4096.0f, 0);
 	for (int i = 0; i < count; ++i)
 	{
 		CBaseEntity *pEntity = pList[i];

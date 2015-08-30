@@ -23,6 +23,10 @@
 #include "client_textmessage.h"
 #include "VGuiMatSurface/IMatSystemSurface.h"
 
+// GSTRINGMIGRATION
+#include "gstring/gstring_cvars.h"
+// END GSTRINGMIGRATION
+
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -791,6 +795,7 @@ void CHudMessage::MessageAdd( const char *pName )
 		}
 	}
 
+	// GSTRINGMIGRATION
 	int iImage = -1;
 	int iNormalizedImageSize[ 2 ] = { 64, 64 };
 	if ( Q_stristr( pMessage->pMessage, "img://" ) == pMessage->pMessage )
@@ -818,6 +823,15 @@ void CHudMessage::MessageAdd( const char *pName )
 		}
 		SetupVGUITex( szFixedPath, iImage );
 	}
+	else if ( pMessage->r1 == 255 && pMessage->g1 == 229 && pMessage->b1 == 153 )
+	{
+		Color colHUD;
+		UTIL_StringToColor( colHUD, gstring_hud_color.GetString() );
+		pMessage->r1 = colHUD.r();
+		pMessage->g1 = colHUD.g();
+		pMessage->b1 = colHUD.b();
+	}
+	// END GSTRINGMIGRATION
 
 	for ( i = 0; i < maxHUDMessages; i++ )
 	{

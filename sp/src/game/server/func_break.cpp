@@ -985,7 +985,7 @@ void CBreakable::Die( void )
 		soundname = "Breakable.Ceiling";
 		break;
 	}
-    
+
 	if ( soundname )
 	{
 		if ( m_hBreaker && m_hBreaker->IsPlayer() )

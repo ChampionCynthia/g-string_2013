@@ -20,6 +20,10 @@
 #include "vgui_controls/AnimationController.h"
 #include "vgui/ILocalize.h"
 
+// GSTRINGMIGRATION
+#include "gstring/gstring_cvars.h"
+// END GSTRINGMIGRATION
+
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -75,6 +79,12 @@ void CHudBattery::Reset( void )
 {
 	SetLabelText(g_pVGuiLocalize->Find("#Valve_Hud_SUIT"));
 	SetDisplayValue(m_iBat);
+
+	// GSTRINGMIGRATION
+	Color colHUD;
+	UTIL_StringToColor( colHUD, gstring_hud_color.GetString() );
+	SetFgColor( colHUD );
+	// END GSTRINGMIGRATION
 }
 
 //-----------------------------------------------------------------------------

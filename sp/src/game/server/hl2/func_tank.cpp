@@ -44,6 +44,11 @@
 #include "hl2_player.h"
 #endif //HL2_DLL
 
+// GSTRINGMIGRATION
+#include "gstring/cgstring_globals.h"
+#include "gstring/cspacecraft.h"
+// END GSTRINGMIGRATION
+
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -166,6 +171,10 @@ BEGIN_DATADESC( CFuncTank )
 	DEFINE_OUTPUT(m_OnGotPlayerController,	"OnGotPlayerController"),
 	DEFINE_OUTPUT(m_OnLostPlayerController,	"OnLostPlayerController"),
 	DEFINE_OUTPUT(m_OnReadyToFire,			"OnReadyToFire"),
+
+	// GSTRINGMIGRATION
+	DEFINE_KEYFIELD( m_iSpaceFaction, FIELD_INTEGER, "spacefaction" ),
+	// END GSTRINGMIGRATION
 END_DATADESC()
 
 //-----------------------------------------------------------------------------
@@ -178,6 +187,10 @@ CFuncTank::CFuncTank()
 	m_bNPCInRoute = false;
 	m_flNextControllerSearch = 0;
 	m_bShouldFindNPCs = true;
+
+	// GSTRINGMIGRATION
+	m_iSpaceFaction = 0;
+	// END GSTRINGMIGRATION
 }
 
 //-----------------------------------------------------------------------------
@@ -889,6 +902,21 @@ bool CFuncTank::CreateVPhysics()
 
 void CFuncTank::Precache( void )
 {
+// GSTRINGMIGRATION
+	if ( m_iSpaceFaction != SPACEFACTION_NONE )
+	{
+		m_iEffectHandling = EH_SPACE_TURRET;
+		if ( m_iSpaceFaction == SPACEFACTION_MARTIAN )
+		{
+			m_iszSpriteFlash = AllocPooledString( "sprites/orangeglow1.spr" );
+		}
+		else
+		{
+			m_iszSpriteFlash = AllocPooledString( "sprites/blueglow1.spr" );
+		}
+	}
+// END GSTRINGMIGRATION
+
 	if ( m_iszSpriteSmoke != NULL_STRING )
 		PrecacheModel( STRING(m_iszSpriteSmoke) );
 	if ( m_iszSpriteFlash != NULL_STRING )
@@ -1534,6 +1562,60 @@ bool CFuncTank::InRange2( float flRange2 )
 void CFuncTank::Think( void )
 {
 	FuncTankPreThink();
+
+	// GSTRINGMIGRATION
+	if ( g_pGstringGlobals && g_pGstringGlobals->IsSpaceMap() )
+	{
+		if ( m_hTarget.Get() == NULL )
+		{
+			CBaseEntity *pEnemy = NULL;
+			CBaseEntity *pList[ 1024 ];
+			float flBestDistanceSqr = FLT_MAX;
+			Vector vecOrigin = GetAbsOrigin();
+			const CSpacecraft::AITEAM_e ownteam = m_iSpaceFaction == SPACEFACTION_MARTIAN ? CSpacecraft::AITEAM_MARTIAN : CSpacecraft::AITEAM_NATO;
+
+			const int count = UTIL_EntitiesInSphere( pList, 1024, vecOrigin, 2048.0f, 0 );
+			for ( int i = 0; i < count; ++i )
+			{
+				CBaseEntity *pEntity = pList[i];
+				CSpacecraft *pSpaceCraft = dynamic_cast<CSpacecraft*>(pEntity);
+				if (pSpaceCraft == NULL)
+				{
+					continue;
+				}
+
+				//if (pSpaceCraft->IsPlayerControlled())
+				//{
+				//	continue;
+				//}
+
+				const CSpacecraft::AITEAM_e team = pSpaceCraft->GetTeam();
+				if (team == ownteam)
+				{
+					continue;
+				}
+
+				Vector shipOrigin = pSpaceCraft->GetAbsOrigin();
+				float flDistanceSqr = (shipOrigin - vecOrigin).LengthSqr();
+
+				if (flDistanceSqr > flBestDistanceSqr)
+				{
+					continue;
+				}
+
+				flBestDistanceSqr = flDistanceSqr;
+				pEnemy = pSpaceCraft;
+			}
+
+			if ( pEnemy != NULL )
+			{
+				inputdata_t data;
+				data.value.SetEntity( pEnemy );
+				InputSetTargetEntity( data );
+			}
+		}
+	}
+	// END GSTRINGMIGRATION
 
 	m_hFuncTankTarget = NULL;
 
@@ -2189,10 +2271,32 @@ const char *CFuncTank::GetTracerType( void )
 
 	case EH_COMBINE_CANNON:
 		return "HelicopterTracer";
+
+// GSTRINGMIGRATION
+	case EH_SPACE_TURRET:
+		return "SpaceTracer";
+// GSTRINGMIGRATION
 	}
 
 	return NULL;
 }
+
+// GSTRINGMIGRATION
+void CFuncTank::MakeTracer( const Vector &vecTracerSrc, const trace_t &tr, int iTracerType )
+{
+	switch ( m_iSpaceFaction )
+	{
+	case SPACEFACTION_MARTIAN:
+		iTracerType = TRACER_LINE;
+		break;
+
+	case SPACEFACTION_NATO:
+		iTracerType = TRACER_LINE_AND_WHIZ;
+		break;
+	}
+	BaseClass::MakeTracer( vecTracerSrc, tr, iTracerType );
+}
+// GSTRINGMIGRATION
 
 //-----------------------------------------------------------------------------
 // Purpose: Fire targets and spawn sprites.

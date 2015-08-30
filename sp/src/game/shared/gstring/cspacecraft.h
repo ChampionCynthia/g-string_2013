@@ -15,6 +15,9 @@
 #include "cspacecraft_config.h"
 
 #define SPACECRAFT_SPAWNFLAG_IGNORE_PLAYER (1 << 0)
+#define SPACECRAFT_SPAWNFLAG_INVINCIBLE (1 << 1)
+
+#define SHIPNAME_MAX_LENGTH 32
 
 class CEnvHoloSystem;
 #ifdef CLIENT_DLL
@@ -135,6 +138,7 @@ public:
 	virtual int UpdateTransmitState() { return SetTransmitState(FL_EDICT_ALWAYS); } // GSTRING_INF
 
 	virtual void Precache();
+	virtual void Spawn();
 	virtual void Activate();
 	void OnPlayerEntered(CGstringPlayer *pPlayer);
 
@@ -146,6 +150,10 @@ public:
 	virtual int OnTakeDamage(const CTakeDamageInfo &info);
 	virtual void Event_Killed(const CTakeDamageInfo &info);
 
+	void RegisterHoloSystem( CEnvHoloSystem *pHoloSystem );
+
+	// AI
+	void InputSetAIState(inputdata_t &inputdata);
 	CBaseEntity *GetEnemy() const;
 	void SetEnemy(CBaseEntity *pEnemy);
 	void InputSetEnemy(inputdata_t &inputdata);
@@ -153,6 +161,15 @@ public:
 
 	CPathTrack *GetPathEntity() const;
 	void SetPathEntity(CPathTrack *pPathEntity);
+	void InputSetPathEntity(inputdata_t &inputdata);
+
+	float GetSpeedMultiplier() const { return m_flSpeedMultiplier; }
+	void SetSpeedMultiplier(float flSpeedMultiplier) { m_flSpeedMultiplier = flSpeedMultiplier; }
+	void InputSetSpeedMultiplier(inputdata_t &inputdata);
+
+	bool IsInvincible() const { return m_bInvincible; }
+	bool IsFrozen() const { return m_bIsFrozen; }
+	void InputSetFrozen(inputdata_t &inputdata);
 #else
 	virtual void NotifyShouldTransmit( ShouldTransmitState_t state );
 	virtual int GetHealth() const { return m_iHealth; }
@@ -186,19 +203,25 @@ private:
 	void OnPlayerTeamAttack(const CTakeDamageInfo &info);
 
 	string_t m_strSettingsName;
+	string_t m_strShipName;
 
 	float m_flFireDelay;
 	int m_iNextWeaponIndex;
 
 	ISpacecraftAI *m_pAI;
+	bool m_bHasExternalHoloSystem;
 
 	string_t m_strInitialEnemy;
 	EHANDLE m_hEnemy;
 
+	// AI
 	int m_iAIControlled;
 	int m_iAIState;
 	string_t m_strPathStartName;
 	CHandle<CPathTrack> m_hPathEntity;
+	float m_flSpeedMultiplier;
+	bool m_bInvincible;
+	bool m_bIsFrozen;
 
 	float m_flPlayerTeamAttackCooldown;
 	float m_flPlayerTeamAttackToleration;
@@ -240,6 +263,8 @@ private:
 
 	CUtlVector< int > m_WeaponAttachments;
 	float m_flBoostUsage;
+
+	CNetworkString( m_szShipName, SHIPNAME_MAX_LENGTH );
 
 	CNetworkVar(int, m_iShield);
 	CNetworkVar(int, m_iMaxShield);

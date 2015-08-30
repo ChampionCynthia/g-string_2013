@@ -42,7 +42,11 @@ enum FUNCTANK_EFFECT_HANDLING
 {
 	EH_NONE,			// Use the effect settings
 	EH_AR2,				// Use AR2 effects
-	EH_COMBINE_CANNON	// Large Combine cannon
+	EH_COMBINE_CANNON,	// Large Combine cannon
+
+	// GSTRINGMIGRATION
+	EH_SPACE_TURRET
+	// END GSTRINGMIGRATION
 };
 
 enum TANKBULLET
@@ -133,6 +137,9 @@ public:
 
 	virtual void DoMuzzleFlash( void );
 	virtual const char *GetTracerType( void );
+	// GSTRINGMIGRATION
+	virtual void MakeTracer( const Vector &vecTracerSrc, const trace_t &tr, int iTracerType );
+	// END GSTRINGMIGRATION
 
 protected:
 	virtual float GetShotSpeed() { return 0; }
@@ -348,6 +355,15 @@ private:
 	bool					m_bReadyToFire;
 
 	int						m_iEffectHandling;
+	// GSTRINGMIGRATION
+	enum SpaceFaction_e
+	{
+		SPACEFACTION_NONE = 0,
+		SPACEFACTION_MARTIAN,
+		SPACEFACTION_NATO
+	};
+	int						m_iSpaceFaction;
+	// END GSTRINGMIGRATION
 };
 
 #endif // FUNC_TANK_H

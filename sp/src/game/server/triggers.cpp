@@ -2829,6 +2829,8 @@ class CTriggerCamera : public CBaseEntity
 public:
 	DECLARE_CLASS( CTriggerCamera, CBaseEntity );
 
+	CTriggerCamera(); // GSTRINGMIGRATION
+
 	void Spawn( void );
 	bool KeyValue( const char *szKeyName, const char *szValue );
 	void Enable( void );
@@ -2864,6 +2866,9 @@ private:
 	int	  m_state;
 	Vector m_vecMoveDir;
 
+	// GSTRINGMIGRATION
+	float m_flAngularSpeed;
+	// END GSTRINGMIGRATION
 
 	string_t m_iszTargetAttachment;
 	int	  m_iAttachmentIndex;
@@ -2919,6 +2924,9 @@ BEGIN_DATADESC( CTriggerCamera )
 #endif
 	DEFINE_FIELD( m_nPlayerButtons, FIELD_INTEGER ),
 	DEFINE_FIELD( m_nOldTakeDamage, FIELD_INTEGER ),
+	// GSTRINGMIGRATION
+	DEFINE_KEYFIELD( m_flAngularSpeed, FIELD_FLOAT, "angularspeed" ),
+	// END GSTRINGMIGRATION
 
 	// Inputs
 	DEFINE_INPUTFUNC( FIELD_VOID, "Enable", InputEnable ),
@@ -2929,6 +2937,13 @@ BEGIN_DATADESC( CTriggerCamera )
 	DEFINE_OUTPUT( m_OnEndFollow, "OnEndFollow" ),
 
 END_DATADESC()
+
+// GSTRINGMIGRATION
+CTriggerCamera::CTriggerCamera()
+{
+	m_flAngularSpeed = 40.0f;
+}
+// END GSTRINGMIGRATION
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -3326,7 +3341,7 @@ void CTriggerCamera::FollowTarget( )
 			dy = dy - 360;
 
 		QAngle vecAngVel;
-		vecAngVel.Init( dx * 40 * gpGlobals->frametime, dy * 40 * gpGlobals->frametime, GetLocalAngularVelocity().z );
+		vecAngVel.Init( dx * m_flAngularSpeed * gpGlobals->frametime, dy * m_flAngularSpeed * gpGlobals->frametime, GetLocalAngularVelocity().z ); // GSTRINGMIGRATION
 		SetLocalAngularVelocity(vecAngVel);
 	}
 
@@ -3379,7 +3394,6 @@ void CTriggerCamera::Move()
 	{
 		// Subtract movement from the previous frame
 		m_moveDistance -= m_flSpeed * gpGlobals->frametime;
-
 		// Have we moved enough to reach the target?
 		if ( m_moveDistance <= 0 )
 		{

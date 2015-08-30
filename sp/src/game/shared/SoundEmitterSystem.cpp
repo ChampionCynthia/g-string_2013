@@ -34,6 +34,11 @@
 #define CRecipientFilter C_RecipientFilter
 #endif
 
+// GSTRINGMIGRATION
+#include "gstring/cgstring_globals.h"
+#include "gstring/gstring_player_shared.h"
+// END GSTRINGMIGRATION
+
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -1240,6 +1245,26 @@ void CBaseEntity::EmitSound( IRecipientFilter& filter, int iEntIndex, const char
 //			iEntIndex - 
 //			params - 
 //-----------------------------------------------------------------------------
+
+// GSTRINGMIGRATION
+inline bool ShouldEmitSound( CSharedEntity *pEntity, const EmitSound_t & params )
+{
+	if ( g_pGstringGlobals && g_pGstringGlobals->IsSpaceMap() )
+	{
+		CSharedPlayer *pLocal = LocalGstringPlayer();
+		if ( pLocal->IsInSpacecraft() )
+		{
+			if ( pEntity != pLocal && pEntity != pLocal->GetSpacecraft() )
+			{
+				DevMsg( "Skip entity sound: %s\n", params.m_pSoundName );
+				return false;
+			}
+		}
+	}
+	return true;
+}
+// END GSTRINGMIGRATION
+
 void CBaseEntity::EmitSound( IRecipientFilter& filter, int iEntIndex, const EmitSound_t & params )
 {
 	VPROF_BUDGET( "CBaseEntity::EmitSound", _T( "CBaseEntity::EmitSound" ) );
@@ -1252,6 +1277,12 @@ void CBaseEntity::EmitSound( IRecipientFilter& filter, int iEntIndex, const Emit
 	if ( pEntity )
 	{
 		pEntity->ModifyEmitSoundParams( const_cast< EmitSound_t& >( params ) );
+// GSTRINGMIGRATION
+		if ( iEntIndex != 0 && !ShouldEmitSound( pEntity, params ) )
+		{
+			return;
+		}
+// END GSTRINGMIGRATION
 	}
 
 	// VPROF( "CBaseEntity::EmitSound" );
@@ -1277,6 +1308,12 @@ void CBaseEntity::EmitSound( IRecipientFilter& filter, int iEntIndex, const Emit
 	if ( pEntity )
 	{
 		pEntity->ModifyEmitSoundParams( const_cast< EmitSound_t& >( params ) );
+// GSTRINGMIGRATION
+		if ( iEntIndex != 0 && !ShouldEmitSound( pEntity, params ) )
+		{
+			return;
+		}
+// END GSTRINGMIGRATION
 	}
 
 	// VPROF( "CBaseEntity::EmitSound" );

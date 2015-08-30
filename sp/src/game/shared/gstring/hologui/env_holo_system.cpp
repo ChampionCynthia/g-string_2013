@@ -1,6 +1,7 @@
 
 #include "cbase.h"
 #include "gstring/hologui/env_holo_system.h"
+#include "gstring/cspacecraft.h"
 
 #ifdef CLIENT_DLL
 #include "gstring/hologui/holo_ship_health_graphic.h"
@@ -13,8 +14,8 @@
 #include "gstring/hologui/holo_ship_objectives.h"
 #include "gstring/hologui/holo_ship_comm.h"
 #include "gstring/hologui/holo_ship_aim_info.h"
+#include "gstring/hologui/holo_ship_autopilot.h"
 
-#include "gstring/cspacecraft.h"
 #include "gstring/gstring_rendertargets.h"
 #include "gstring/cgstring_globals.h"
 
@@ -47,6 +48,7 @@ BEGIN_DATADESC( CEnvHoloSystem )
 	DEFINE_INPUTFUNC( FIELD_STRING, "PlayAnimation", InputPlayAnimation ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Enable", InputEnable ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Disable", InputDisable ),
+	DEFINE_INPUTFUNC( FIELD_INTEGER, "SetUIState", InputSetUIState ),
 
 	// DEFINE_FIELD( m_bLensflareEnabled,		FIELD_BOOLEAN ),
 
@@ -213,6 +215,7 @@ CEnvHoloSystem::CEnvHoloSystem()
 	, m_iViewportWidth( 0 )
 	, m_iViewportHeight( 0 )
 	, m_bIsAnimating( false )
+	, m_iUIStateLast( -1 )
 	, m_pSpacecraftDataAdapter( NULL )
 	, m_pRoot( NULL )
 	, m_pAnimationController( NULL )
@@ -260,6 +263,12 @@ void CEnvHoloSystem::Activate()
 	if ( m_hHoloEntity.Get() != NULL )
 	{
 		SetOwnerEntity( m_hHoloEntity );
+
+		CSpacecraft *pSpacecraft = dynamic_cast< CSpacecraft* >( m_hHoloEntity.Get() );
+		if ( pSpacecraft != NULL )
+		{
+			pSpacecraft->RegisterHoloSystem( this );
+		}
 	}
 }
 
@@ -283,16 +292,28 @@ void CEnvHoloSystem::InputPlayAnimation( inputdata_t &inputdata )
 	}
 }
 
+void CEnvHoloSystem::SetEnabled( bool bEnabled )
+{
+	m_bEnabled = bEnabled;
+	DispatchUpdateTransmitState();
+}
+
 void CEnvHoloSystem::InputEnable( inputdata_t &inputdata )
 {
-	m_bEnabled = true;
-	DispatchUpdateTransmitState();
+	SetEnabled( true );
 }
 
 void CEnvHoloSystem::InputDisable( inputdata_t &inputdata )
 {
-	m_bEnabled = false;
-	DispatchUpdateTransmitState();
+	SetEnabled( true );
+}
+
+void CEnvHoloSystem::InputSetUIState( inputdata_t &inputdata )
+{
+	if ( inputdata.value.FieldType() == FIELD_INTEGER || inputdata.value.Convert( FIELD_INTEGER ) )
+	{
+		m_iUIState = inputdata.value.Int();
+	}
 }
 
 #else
@@ -492,12 +513,43 @@ void CEnvHoloSystem::OnDataChanged( DataUpdateType_t type )
 			m_pAnimationController->UpdateAnimations( gpGlobals->curtime );
 			switch ( m_iUIState )
 			{
+				case 0:
+					{
+						StartAnimation( "shipdefault" );
+					}
+					break;
+
 				// Parked ship
 				case 1:
 					{
 						StartAnimation( "shipparked" );
 					}
 					break;
+
+				// Autopilot
+				case 2:
+					{
+						StartAnimation( "inautopilot" );
+					}
+					break;
+			}
+			m_iUIStateLast = m_iUIState;
+		}
+	}
+	else
+	{
+		if ( m_iUIState != m_iUIStateLast )
+		{
+			// Disable auto pilot
+			if ( m_iUIState == 0 && m_iUIStateLast == 2 )
+			{
+				StartAnimation( "disableautopilot" );
+			}
+
+			// Enable auto pilot
+			if ( m_iUIState == 2 && m_iUIStateLast == 0 )
+			{
+				StartAnimation( "enableautopilot" );
 			}
 		}
 	}
@@ -545,6 +597,7 @@ void CEnvHoloSystem::CreatePanels()
 	m_Panels.AddToTail( new CHoloShipObjectives( m_pRoot, pSpacecraft ) );
 	m_Panels.AddToTail( new CHoloShipComm( m_pRoot, pSpacecraft ) );
 	m_Panels.AddToTail( new CHoloShipAimInfo( m_pRoot, pSpacecraft ) );
+	m_Panels.AddToTail( new CHoloShipAutopilot( m_pRoot, pSpacecraft ) );
 
 	m_pAnimationController = new vgui::AnimationController( m_pRoot );
 	ReloadAnimationScript();
@@ -619,7 +672,11 @@ void CEnvHoloSystem::PreRenderPanels()
 
 	FOR_EACH_VEC( m_Panels, i )
 	{
-		m_Panels[ i ]->PreRenderHierarchy( pRenderContext, rect, width, height );
+		CHoloPanel *panel = m_Panels[ i ];
+		if ( panel->GetHoloAlpha() > 0.0f )
+		{
+			panel->PreRenderHierarchy( pRenderContext, rect, width, height );
+		}
 	}
 
 	vgui::surface()->DrawSetAlphaMultiplier( 1.0f );
@@ -635,7 +692,11 @@ void CEnvHoloSystem::DrawPanels()
 
 	FOR_EACH_VEC( m_Panels, i )
 	{
-		m_Panels[ i ]->DrawHierarchy( pRenderContext );
+		CHoloPanel *panel = m_Panels[ i ];
+		if ( panel->GetHoloAlpha() > 0.0f )
+		{
+			panel->DrawHierarchy( pRenderContext );
+		}
 	}
 }
 

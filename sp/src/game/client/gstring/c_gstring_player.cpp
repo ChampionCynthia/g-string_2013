@@ -733,8 +733,8 @@ void C_GstringPlayer::UpdateBodyModel()
 	}
 
 	// hide body while falling/swimming
-	if ( /*GetAbsVelocity().z < -300
-		||*/ GetWaterLevel() >= WL_Eyes )
+	if ( GetAbsVelocity().z < -400
+		|| GetWaterLevel() >= WL_Eyes )
 	{
 		vecOffsetDesired.x = -110.0f;
 		vecOffsetDesired.z = 200.0f;

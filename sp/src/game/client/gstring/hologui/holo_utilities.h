@@ -772,4 +772,84 @@ inline void CreateAimPanelDecor( IMesh *pMesh, int subDivCountX, int subDivCount
 	builder.End();
 }
 
+inline void CreateLineRect( IMesh *pMesh, float scale, float ratio, float lineSize )
+{
+	CMeshBuilder builder;
+	builder.Begin( pMesh, MATERIAL_QUADS, 4 );
+
+	const Vector lineSizeY( 0, lineSize, 0 );
+	const Vector lineSizeZ( 0, 0, lineSize );
+	const Vector offsetSide( 0, 0, scale / ratio * 2.0f );
+	const Vector offsetTop( 0, scale * ratio * 2.0f - lineSize * 2.0f, 0.0f );
+	const Vector start( 0, scale * ratio, scale / ratio );
+	
+	Vector v = start;
+	builder.Position3fv( v.Base() );
+	builder.AdvanceVertex();
+
+	v -= offsetSide;
+	builder.Position3fv( v.Base() );
+	builder.AdvanceVertex();
+
+	v -= lineSizeY;
+	builder.Position3fv( v.Base() );
+	builder.AdvanceVertex();
+	
+	v += offsetSide;
+	builder.Position3fv( v.Base() );
+	builder.AdvanceVertex();
+	
+	v.Init( start.x, -start.y, start.z );
+	builder.Position3fv( v.Base() );
+	builder.AdvanceVertex();
+
+	v -= offsetSide;
+	builder.Position3fv( v.Base() );
+	builder.AdvanceVertex();
+
+	v += lineSizeY;
+	builder.Position3fv( v.Base() );
+	builder.AdvanceVertex();
+	
+	v += offsetSide;
+	builder.Position3fv( v.Base() );
+	builder.AdvanceVertex();
+	
+	v = start;
+	v.y -= lineSize;
+	builder.Position3fv( v.Base() );
+	builder.AdvanceVertex();
+
+	v -= offsetTop;
+	builder.Position3fv( v.Base() );
+	builder.AdvanceVertex();
+
+	v -= lineSizeZ;
+	builder.Position3fv( v.Base() );
+	builder.AdvanceVertex();
+	
+	v += offsetTop;
+	builder.Position3fv( v.Base() );
+	builder.AdvanceVertex();
+
+	v.Init( start.x, start.y, -start.z + lineSize );
+	v.y -= lineSize;
+	builder.Position3fv( v.Base() );
+	builder.AdvanceVertex();
+
+	v -= offsetTop;
+	builder.Position3fv( v.Base() );
+	builder.AdvanceVertex();
+
+	v -= lineSizeZ;
+	builder.Position3fv( v.Base() );
+	builder.AdvanceVertex();
+	
+	v += offsetTop;
+	builder.Position3fv( v.Base() );
+	builder.AdvanceVertex();
+
+	builder.End();
+}
+
 #endif

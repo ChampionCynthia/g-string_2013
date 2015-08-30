@@ -90,15 +90,23 @@ BEGIN_DATADESC( CSpacecraft )
 	DEFINE_FIELD( m_iMaxShield, FIELD_INTEGER ),
 	DEFINE_FIELD( m_hHoloSystem, FIELD_EHANDLE ),
 	DEFINE_KEYFIELD( m_strSettingsName, FIELD_STRING, "settingsname" ),
+	DEFINE_KEYFIELD( m_strShipName, FIELD_STRING, "shipname" ),
 
 	// AI
 	DEFINE_KEYFIELD( m_iAIControlled, FIELD_INTEGER, "aicontrolled" ),
 	DEFINE_KEYFIELD( m_iAIState, FIELD_INTEGER, "aistate" ),
 	DEFINE_KEYFIELD( m_iAITeam, FIELD_INTEGER, "aiteam" ),
+	DEFINE_KEYFIELD( m_flSpeedMultiplier, FIELD_FLOAT, "aispeedmultiplier" ),
 
 	DEFINE_KEYFIELD( m_strInitialEnemy, FIELD_STRING, "initialenemy" ),
-	DEFINE_INPUTFUNC( FIELD_VOID, "SetEnemy", InputSetEnemy ),
+	DEFINE_INPUTFUNC( FIELD_INTEGER, "SetAIState", InputSetAIState ),
+	DEFINE_INPUTFUNC( FIELD_STRING, "SetEnemy", InputSetEnemy ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "ClearEnemy", InputClearEnemy ),
+	DEFINE_INPUTFUNC( FIELD_STRING, "SetPath", InputSetPathEntity ),
+	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetSpeedMultiplier", InputSetSpeedMultiplier ),
+	DEFINE_FIELD( m_bInvincible, FIELD_BOOLEAN ),
+	DEFINE_FIELD( m_bIsFrozen, FIELD_BOOLEAN ),
+	DEFINE_INPUTFUNC( FIELD_INTEGER, "SetFrozen", InputSetFrozen ),
 
 	DEFINE_FIELD( m_hPathEntity, FIELD_EHANDLE ),
 	DEFINE_KEYFIELD( m_strPathStartName, FIELD_STRING, "pathstartname" ),
@@ -134,6 +142,7 @@ IMPLEMENT_NETWORKCLASS_DT( CSpacecraft, CSpacecraft_DT )
 	SendPropBool( SENDINFO( m_bBoostSuspended ) ),
 	SendPropInt( SENDINFO( m_iAITeam ), CSpacecraft::AITEAM_BITS, SPROP_UNSIGNED ),
 	SendPropEHandle( SENDINFO( m_hHoloSystem ) ),
+	SendPropString( SENDINFO( m_szShipName ) )
 #else
 	RecvPropInt( RECVINFO( m_iHealth ) ),
 	RecvPropInt( RECVINFO( m_iMaxHealth ) ),
@@ -152,6 +161,7 @@ IMPLEMENT_NETWORKCLASS_DT( CSpacecraft, CSpacecraft_DT )
 	RecvPropBool( RECVINFO( m_bBoostSuspended ) ),
 	RecvPropInt( RECVINFO( m_iAITeam ) ),
 	RecvPropEHandle( RECVINFO( m_hHoloSystem ) ),
+	RecvPropString( RECVINFO( m_szShipName ) )
 #endif
 
 END_NETWORK_TABLE();
@@ -163,8 +173,12 @@ CSpacecraft::CSpacecraft()
 	: m_flFireDelay( 0.0f )
 	, m_iNextWeaponIndex( 0 )
 	, m_pAI( NULL )
+	, m_bHasExternalHoloSystem( false )
 	, m_iAIControlled( 0 )
 	, m_iAIState( 0 )
+	, m_flSpeedMultiplier( 1.0f )
+	, m_bInvincible( false )
+	, m_bIsFrozen( false )
 	, m_flCollisionDamageProtection( 0.0f )
 	, m_flShieldRegenerationTimer( 0.0f )
 	, m_flShieldRegeneratedTimeStamp( 0.0f )
@@ -194,7 +208,7 @@ CSpacecraft::CSpacecraft()
 CSpacecraft::~CSpacecraft()
 {
 #ifdef GAME_DLL
-	if ( m_hHoloSystem.Get() != NULL )
+	if ( !m_bHasExternalHoloSystem && m_hHoloSystem.Get() != NULL )
 	{
 		m_hHoloSystem->SetThink( &CBaseEntity::SUB_Remove );
 		m_hHoloSystem->SetNextThink( gpGlobals->curtime + 0.1f );
@@ -223,7 +237,12 @@ CSpacecraft::~CSpacecraft()
 #ifdef CLIENT_DLL
 const char *CSpacecraft::GetName() const
 {
-	return "Enemy";
+	if ( *m_szShipName.Get() )
+	{
+		return m_szShipName.Get();
+	}
+
+	return GetType() == IHoloTarget::ENEMY ? "holo_gui_generic_enemy" : "holo_gui_generic_friend";
 }
 
 float CSpacecraft::GetSize() const
@@ -283,6 +302,13 @@ void CSpacecraft::Precache()
 	PrecacheScriptSound( "Spacecraft.Boost.Deny" );
 }
 
+void CSpacecraft::Spawn()
+{
+	BaseClass::Spawn();
+
+	m_bInvincible = HasSpawnFlags( SPACECRAFT_SPAWNFLAG_INVINCIBLE );
+}
+
 void CSpacecraft::Activate()
 {
 	Precache();
@@ -296,6 +322,11 @@ void CSpacecraft::Activate()
 	if ( m_pAI != NULL )
 	{
 		m_pAI->EnterState((ISpacecraftAI::AISTATE_e) m_iAIState);
+	}
+
+	if ( STRING( m_strShipName ) )
+	{
+		Q_strncpy( m_szShipName.GetForModify(), STRING( m_strShipName ), SHIPNAME_MAX_LENGTH );
 	}
 
 	const CSpacecraftConfig *pConfig = CSpacecraftConfig::GetInstance();
@@ -344,6 +375,9 @@ void CSpacecraft::Activate()
 
 void CSpacecraft::OnPlayerEntered( CGstringPlayer *pPlayer )
 {
+	m_iAIControlled = 0;
+	SetAI( NULL );
+
 	SetOwnerEntity( pPlayer );
 
 	if ( !m_hHoloSystem )
@@ -356,6 +390,10 @@ void CSpacecraft::OnPlayerEntered( CGstringPlayer *pPlayer )
 		DispatchSpawn( pHoloSystem );
 		pHoloSystem->Activate();
 		m_hHoloSystem = pHoloSystem;
+	}
+	else
+	{
+		m_hHoloSystem->SetEnabled( true );
 	}
 }
 
@@ -473,7 +511,7 @@ int CSpacecraft::OnTakeDamage( const CTakeDamageInfo &info )
 		m_iShield = MAX( 0, GetShield() - flAbsorbed );
 	}
 
-	int ret = BaseClass::OnTakeDamage( newDamage );
+	const int ret = IsInvincible() ? 0 : BaseClass::OnTakeDamage( newDamage );
 
 	DispatchParticleEffect( m_Settings.m_strParticleDamage, newDamage.GetDamagePosition(), GetAbsAngles() );
 	if (ShouldPlaySounds())
@@ -500,8 +538,7 @@ int CSpacecraft::OnTakeDamage( const CTakeDamageInfo &info )
 
 	// Check for friendly fire
 	CBaseEntity *pAttacker = info.GetAttacker();
-	if ( ret > 0 &&
-		pAttacker != NULL &&
+	if ( pAttacker != NULL &&
 		pAttacker->IsPlayer() &&
 		GetTeam() == AITEAM_MARTIAN )
 	{
@@ -518,8 +555,8 @@ void CSpacecraft::Event_Killed( const CTakeDamageInfo &info )
 		CTakeDamageInfo playerDamage( info );
 		playerDamage.SetAttacker( pPlayer );
 		playerDamage.SetInflictor( pPlayer );
-		playerDamage.SetDamage( pPlayer->GetHealth() + 1 );
-		playerDamage.SetDamageType( DMG_GENERIC );
+		playerDamage.SetDamage( pPlayer->GetHealth() * 10 );
+		playerDamage.SetDamageType( DMG_GENERIC | DMG_VEHICLE | DMG_REMOVENORAGDOLL );
 		pPlayer->TakeDamage( playerDamage );
 
 		pPlayer->SetMoveType( MOVETYPE_NONE );
@@ -591,6 +628,20 @@ void CSpacecraft::Event_Killed( const CTakeDamageInfo &info )
 	m_OnKilled.FireOutput(info.GetAttacker(), this);
 }
 
+void CSpacecraft::RegisterHoloSystem( CEnvHoloSystem *pHoloSystem )
+{
+	m_hHoloSystem.Set( pHoloSystem );
+	m_bHasExternalHoloSystem = true;
+}
+
+void CSpacecraft::InputSetAIState(inputdata_t &inputdata)
+{
+	if (m_pAI != NULL && (inputdata.value.FieldType() == FIELD_INTEGER || inputdata.value.Convert(FIELD_INTEGER)))
+	{
+		m_pAI->EnterState((ISpacecraftAI::AISTATE_e)inputdata.value.Int());
+	}
+}
+
 CBaseEntity *CSpacecraft::GetEnemy() const
 {
 	return m_hEnemy;
@@ -622,6 +673,30 @@ CPathTrack *CSpacecraft::GetPathEntity() const
 void CSpacecraft::SetPathEntity(CPathTrack *pPathEntity)
 {
 	m_hPathEntity.Set( pPathEntity );
+}
+
+void CSpacecraft::InputSetPathEntity(inputdata_t &inputdata)
+{
+	if (inputdata.value.FieldType() == FIELD_STRING)
+	{
+		SetPathEntity(dynamic_cast<CPathTrack*>(gEntList.FindEntityByName( NULL, inputdata.value.String(), this )));
+	}
+}
+
+void CSpacecraft::InputSetSpeedMultiplier(inputdata_t &inputdata)
+{
+	if (inputdata.value.FieldType() == FIELD_FLOAT || inputdata.value.Convert(FIELD_FLOAT))
+	{
+		SetSpeedMultiplier(inputdata.value.Float());
+	}
+}
+
+void CSpacecraft::InputSetFrozen( inputdata_t &inputdata )
+{
+	if (inputdata.value.FieldType() == FIELD_INTEGER || inputdata.value.Convert(FIELD_INTEGER))
+	{
+		m_bIsFrozen = inputdata.value.Int() != 0;
+	}
 }
 
 void CSpacecraft::SimulateFire( CMoveData &moveData, float flFrametime )
@@ -946,7 +1021,8 @@ void CSpacecraft::ClientThink()
 		const bool bEngineRunning = m_iEngineLevel > ENGINELEVEL_STALLED;
 		const bool bEngineWasRunning = m_iEngineLevelLast > ENGINELEVEL_STALLED;
 
-		if ( bEngineRunning != bEngineWasRunning && ShouldPlaySounds() )
+		if ( ( bEngineRunning != bEngineWasRunning || bEngineRunning && m_iGUID_Engine < 0 ) &&
+			ShouldPlaySounds() )
 		{
 			m_flEngineVolume = flEngineVolumeTarget;
 			if ( bEngineRunning )
@@ -1208,7 +1284,26 @@ void CSpacecraft::SimulateMove( CMoveData &moveData, float flFrametime )
 	pPhysObject->GetVelocity( &vecOldImpulse, &angOldImpulse );
 	pPhysObject->GetPosition( &vecPhysPosition, &angPhysAngles );
 
-	AngleVectors( moveData.m_vecViewAngles, NULL, &vecRight, &vecUp );
+	QAngle viewangles = moveData.m_vecViewAngles;
+	float flForwardMove = moveData.m_flForwardMove;
+	float flSideMove = moveData.m_flSideMove;
+
+#ifdef GAME_DLL
+	if ( m_bIsFrozen )
+	{
+		viewangles = angPhysAngles;
+		flForwardMove = 0.0f;
+		flSideMove = 0.0f;
+
+		if ( IsPlayerControlled() )
+		{
+			CBasePlayer *pPlayer = assert_cast< CBasePlayer* >( GetOwnerEntity() );
+			pPlayer->SnapEyeAngles( viewangles );
+		}
+	}
+#endif
+
+	AngleVectors( viewangles, NULL, &vecRight, &vecUp );
 	AngleVectors( angPhysAngles, &vecFwd /*, &vecRight, &vecUp*/ );
 
 	m_AngularImpulse.SetX( angOldImpulse.x );
@@ -1225,8 +1320,8 @@ void CSpacecraft::SimulateMove( CMoveData &moveData, float flFrametime )
 		const bool bUseScreenMove = gstring_spacecraft_move_mode.GetBool();
 		const float flMaxMove = 200.0f;
 		Vector2D vecMove( vec2_origin );
-		vecMove.x = clamp( moveData.m_flForwardMove / flMaxMove, -1.0f, 1.0f );
-		vecMove.y = clamp( moveData.m_flSideMove / flMaxMove, -1.0f, 1.0f );
+		vecMove.x = clamp( flForwardMove / flMaxMove, -1.0f, 1.0f );
+		vecMove.y = clamp( flSideMove / flMaxMove, -1.0f, 1.0f );
 		if ( vecMove.LengthSqr() > 1.0f )
 		{
 			vecMove.NormalizeInPlace();
@@ -1321,7 +1416,7 @@ void CSpacecraft::SimulateMove( CMoveData &moveData, float flFrametime )
 	SetIdentityMatrix( matModel );
 	AngleMatrix( angPhysAngles, matModel );
 	MatrixInvert( matModel, matModelInv );
-	AngleMatrix( moveData.m_vecViewAngles, matTarget );
+	AngleMatrix( viewangles, matTarget );
 	ConcatTransforms( matModelInv, matTarget, matTargetLocal );
 	MatrixAngles( matTargetLocal, deltaAngle );
 
@@ -1374,6 +1469,9 @@ void CSpacecraft::SimulateMove( CMoveData &moveData, float flFrametime )
 	pPhysObject->GetVelocity( &m_PhysVelocity.GetForModify(), NULL );
 
 #ifdef GAME_DLL
-	SimulateFire( moveData, flFrametime );
+	if ( !m_bIsFrozen )
+	{
+		SimulateFire( moveData, flFrametime );
+	}
 #endif
 }

@@ -29,7 +29,8 @@ BEGIN_DATADESC( CPointHoloConversation )
 	DEFINE_INPUTFUNC( FIELD_VOID, "Interrupt", InputInterrupt ),
 	//DEFINE_INPUTFUNC( FIELD_VOID, "Disable", InputDisable ),
 
-	//DEFINE_OUTPUT( m_OnEnabled, "OnEnabled" ),
+	DEFINE_OUTPUT( m_OnConversationStarted, "OnConversationStarted" ),
+	DEFINE_OUTPUT( m_OnConversationFinished, "OnConversationFinished" ),
 	//DEFINE_OUTPUT( m_OnDisabled, "OnDisabled" ),
 
 END_DATADESC()
@@ -79,6 +80,7 @@ void CPointHoloConversation::InputStart( inputdata_t &inputdata )
 			}
 
 			AdvanceConversation();
+			m_OnConversationStarted.FireOutput( this, inputdata.pActivator );
 		}
 		else
 		{
@@ -186,6 +188,7 @@ void CPointHoloConversation::AdvanceConversation()
 	{
 		if ( m_flCurrentDuration <= gpGlobals->curtime )
 		{
+			m_OnConversationFinished.FireOutput( this, this );
 			SetThink( NULL );
 		}
 		return;

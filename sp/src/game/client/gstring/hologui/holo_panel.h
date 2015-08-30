@@ -74,6 +74,9 @@ public:
 		MATERIALTYPE_COUNT
 	};
 
+	float GetHoloAlpha() const { return m_flAlpha; }
+	float GetHoloScale() const { return m_flScale; }
+
 protected:
 	virtual void PreRender( IMatRenderContext *pRenderContext, Rect_t &position, int maxWidth, int maxHeight );
 	virtual void Draw( IMatRenderContext *pRenderContext );
@@ -86,9 +89,6 @@ protected:
 
 	const QAngle &GetAngles();
 	const Vector &GetOrigin();
-
-	float GetHoloAlpha() const { return m_flAlpha; }
-	float GetHoloScale() const { return m_flScale; }
 	Vector GetHoloOffset() const { return Vector( m_flOffsetX, m_flOffsetY, m_flOffsetZ ); }
 	QAngle GetHoloAngle() const { return QAngle( m_flAngleX, m_flAngleY, m_flAngleZ ); }
 
