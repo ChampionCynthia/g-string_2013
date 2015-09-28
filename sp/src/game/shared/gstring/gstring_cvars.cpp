@@ -19,6 +19,8 @@ ConVar cvar_gstring_drawdreamblur( "gstring_DrawDreamBlur", "1", FCVAR_ARCHIVE )
 ConVar cvar_gstring_drawlensflare( "gstring_DrawLensFlare", "1", FCVAR_ARCHIVE );
 //ConVar cvar_gstring_drawbloomflare( "gstring_DrawBloomFlare", "2", FCVAR_ARCHIVE );
 ConVar cvar_gstring_drawwatereffects( "gstring_DrawWaterEffects", "1", FCVAR_ARCHIVE );
+ConVar cvar_gstring_drawcinemaoverlay( "gstring_DrawCinemaOverlay", "1", FCVAR_ARCHIVE );
+
 
 ConVar cvar_gstring_bars_scale( "gstring_Bars_scale", "0", FCVAR_ARCHIVE );
 ConVar cvar_gstring_explosionfx_strength( "gstring_ExplosionFx_strength", "0.3", FCVAR_ARCHIVE );

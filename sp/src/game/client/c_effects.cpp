@@ -52,12 +52,11 @@ float MIN_SCREENSPACE_RAIN_WIDTH = 1;
 #ifndef _XBOX
 ConVar r_RainHack( "r_RainHack", "0", FCVAR_CHEAT );
 ConVar r_RainRadius( "r_RainRadius", "1500", FCVAR_CHEAT );
-ConVar r_RainSideVel( "r_RainSideVel", "130", FCVAR_CHEAT, "How much sideways velocity rain gets." );
+ConVar r_RainSideVel( "r_RainSideVel", "0", FCVAR_CHEAT, "How much sideways velocity rain gets." );
 
 ConVar r_RainSimulate( "r_RainSimulate", "1", FCVAR_CHEAT, "Enable/disable rain simulation." );
 ConVar r_DrawRain( "r_DrawRain", "1", FCVAR_CHEAT, "Enable/disable rain rendering." );
 ConVar r_RainProfile( "r_RainProfile", "0", FCVAR_CHEAT, "Enable/disable rain profiling." );
-
 
 //Precahce the effects
 CLIENTEFFECT_REGISTER_BEGIN( PrecachePrecipitation )
@@ -200,6 +199,7 @@ private:
 	
 	CUtlLinkedList<CPrecipitationParticle> m_Particles;
 	// GSTRINGMIGRATION
+	void SimulatePlayerRainEffects( float dt );
 	struct WorldSplash_t
 	{
 		Vector orig, normal;
@@ -276,7 +276,7 @@ static bool IsInAir( const Vector& position )
 // Globals
 //-----------------------------------------------------------------------------
 
-ConVar CClient_Precipitation::s_raindensity( "r_raindensity","0.001", FCVAR_CHEAT);
+ConVar CClient_Precipitation::s_raindensity( "r_raindensity","1", FCVAR_CHEAT);
 ConVar CClient_Precipitation::s_rainwidth( "r_rainwidth", "0.02", FCVAR_CHEAT );
 ConVar CClient_Precipitation::s_rainlength( "r_rainlength", "0.01f", FCVAR_CHEAT ); // GSTRINGMIGRATION
 ConVar CClient_Precipitation::s_rainspeed( "r_rainspeed", "600.0f", FCVAR_CHEAT );
@@ -333,19 +333,19 @@ inline bool CClient_Precipitation::SimulateRain( CPrecipitationParticle* pPartic
 	VectorMA( pParticle->m_Pos, dt, pParticle->m_Velocity, 
 				pParticle->m_Pos );
 
-		// wind blows rain around
+	// wind blows rain around
 	for ( int i = 0 ; i < 2 ; i++ )
-		{
+	{
 		if ( pParticle->m_Velocity[i] < s_WindVector[i] )
-			{
+		{
 			pParticle->m_Velocity[i] += ( 5 / pParticle->m_Mass );
 
 			// clamp
 			if ( pParticle->m_Velocity[i] > s_WindVector[i] )
 				pParticle->m_Velocity[i] = s_WindVector[i];
-			}
+		}
 		else if (pParticle->m_Velocity[i] > s_WindVector[i] )
-			{
+		{
 			pParticle->m_Velocity[i] -= ( 5 / pParticle->m_Mass );
 
 			// clamp.
@@ -354,51 +354,28 @@ inline bool CClient_Precipitation::SimulateRain( CPrecipitationParticle* pPartic
 		}
 	}
 
-
 	// GSTRINGMIGRATION
-	CTraceFilterHitAll filter;
-	int traceMask = ( MASK_SOLID | MASK_SHOT | MASK_WATER ) & ~CONTENTS_MONSTER;
-	trace_t tr;
-	UTIL_TraceLine( vOldPos, pParticle->m_Pos, traceMask, &filter, &tr );
+	//CTraceFilterHitAll filter;
+	//int traceMask = ( MASK_SOLID | MASK_SHOT | MASK_WATER ) & ~CONTENTS_MONSTER;
+	//trace_t tr;
+	//UTIL_TraceLine( vOldPos, pParticle->m_Pos, traceMask, &filter, &tr );
 
-	C_BasePlayer *pl = C_BasePlayer::GetLocalPlayer();
-	static CHudWaterEffects *pHudWaterFX = GET_HUDELEMENT( CHudWaterEffects );
+	//C_BasePlayer *pl = C_BasePlayer::GetLocalPlayer();
+	//static CHudWaterEffects *pHudWaterFX = GET_HUDELEMENT( CHudWaterEffects );
 
-	if ( pl != NULL &&
-		pHudWaterFX != NULL )
-	{
+	//if ( pl != NULL &&
+	//	pHudWaterFX != NULL )
+	//{
+	//	Vector mins = 1.5f * pl->WorldAlignMins() + pl->GetLocalOrigin();
+	//	Vector maxs = 1.5f * pl->WorldAlignMaxs() + pl->GetLocalOrigin();
 
-		Vector mins = 1.5f * pl->WorldAlignMins() + pl->GetLocalOrigin();
-		Vector maxs = 1.5f * pl->WorldAlignMaxs() + pl->GetLocalOrigin();
-
-		if ( IsPointInBox( tr.endpos, mins, maxs ) )
-		{
-			pHudWaterFX->SetDropMultiplier( max( 1, m_flDensity * 10000.0f ) );
-			pHudWaterFX->OnRainHit();
-		}
-	}
-
-	if ( tr.DidHit() )
-	{
-		if ( RandomInt( 0, 100 ) < r_RainSplashPercentage.GetInt() &&
-			(tr.endpos - MainViewOrigin()).LengthSqr() < (1024*1024) )
-		{
-			if ( tr.contents & MASK_WATER )
-			{
-				m_Splashes_Watersurface.AddToTail( tr.endpos );
-			}
-			else
-			{
-				WorldSplash_t s;
-				s.orig = tr.endpos;
-				s.normal = tr.plane.normal;
-				m_Splashes.AddToTail( s );
-			}
-		}
-
-		// Tell the framework it's time to remove the particle from the list
-		return false;
-	}
+	//	if ( IsPointInBox( tr.endpos, mins, maxs ) )
+	//	{
+	//		pHudWaterFX->SetDropMultiplier( max( 1, m_flDensity * 10000.0f ) );
+	//		pHudWaterFX->OnRainHit();
+	//	}
+	//}
+	//    << SNIP: splashes >>
 	// END GSTRINGMIGRATION
 
 	// We still want this particle
@@ -440,15 +417,57 @@ inline bool CClient_Precipitation::SimulateSnow( CPrecipitationParticle* pPartic
 					pParticle->m_Velocity[i] = s_WindVector[i];
 			}
 		}
-
 		return true;
 	}
-
 
 	// Kill the particle immediately!
 	return false;
 }
 
+// GSTRINGMIGRATION
+void CClient_Precipitation::SimulatePlayerRainEffects( float dt )
+{
+	dt = MAX( 0.005f, dt );
+	if ( RandomInt( 0, 100 ) > m_iServerDensity * 60.0f * dt )
+	{
+		return;
+	}
+
+	const Vector vMins = WorldAlignMins();
+	const Vector vMaxs = WorldAlignMaxs();
+
+	C_BasePlayer *pl = C_BasePlayer::GetLocalPlayer();
+	if ( pl == NULL )
+	{
+		return;
+	}
+
+	const Vector vecPlayerOrigin = pl->GetAbsOrigin();
+	if ( m_Particles.Count() == 0 ||
+		vecPlayerOrigin.x < vMins.x || vecPlayerOrigin.x > vMaxs.x ||
+		vecPlayerOrigin.y < vMins.y || vecPlayerOrigin.y > vMaxs.y )
+	{
+		return;
+	}
+
+	Vector vecStart = vecPlayerOrigin;
+	vecStart.z = vMaxs.z;
+
+	CTraceFilterHitAll filter;
+	trace_t tr;
+	UTIL_TraceLine( vecStart, vecPlayerOrigin, MASK_SHOT_HULL, &filter, &tr );
+
+	if ( tr.DidHit() && tr.m_pEnt == pl )
+	{
+		static CHudWaterEffects *pHudWaterFX = GET_HUDELEMENT( CHudWaterEffects );
+
+		if ( pHudWaterFX != NULL )
+		{
+			pHudWaterFX->OnRainHit();
+		}
+	}
+}
+// END GSTRINGMIGRATION
 
 void CClient_Precipitation::Simulate( float dt )
 {
@@ -489,7 +508,10 @@ void CClient_Precipitation::Simulate( float dt )
 
 	// Emit new particles
 	if ( IsEnabled() ) // GSTRINGMIGRATION
+	{
+		SimulatePlayerRainEffects( dt );
 		EmitParticles( dt );
+	}
 
 	// Simulate all the particles.
 	int iNext;
@@ -649,47 +671,82 @@ void CClient_Precipitation::Render()
 	// Create any queued up water splashes.
 	CreateWaterSplashes();
 
-	CFastTimer timer;
-	timer.Start();
+	//CFastTimer timer;
+	//timer.Start();
 
-	CMatRenderContextPtr pRenderContext( materials );
-	
-	// We want to do our calculations in view space.
-	VMatrix	tempView;
-	pRenderContext->GetMatrix( MATERIAL_VIEW, &tempView );
-	pRenderContext->MatrixMode( MATERIAL_VIEW );
-	pRenderContext->LoadIdentity();
-
-	// Force the user clip planes to use the old view matrix
-	pRenderContext->EnableUserClipTransformOverride( true );
-	pRenderContext->UserClipTransform( tempView );
-
-	// Draw all the rain tracers.
-	pRenderContext->Bind( m_MatHandle );
-	IMesh *pMesh = pRenderContext->GetDynamicMesh();
-	if ( pMesh )
+	// GSTRINGMIGRATION
+	if ( m_Particles.Count() > 0 )
 	{
-		CMeshBuilder mb;
-		mb.Begin( pMesh, MATERIAL_QUADS, m_Particles.Count() );
 
-		for ( int i=m_Particles.Head(); i != m_Particles.InvalidIndex(); i=m_Particles.Next( i ) )
+		CMatRenderContextPtr pRenderContext( materials );
+	
+		// We want to do our calculations in view space.
+		VMatrix	tempView;
+		pRenderContext->GetMatrix( MATERIAL_VIEW, &tempView );
+		pRenderContext->MatrixMode( MATERIAL_VIEW );
+		pRenderContext->LoadIdentity();
+
+		// Force the user clip planes to use the old view matrix
+		pRenderContext->EnableUserClipTransformOverride( true );
+		pRenderContext->UserClipTransform( tempView );
+
+		// Draw all the rain tracers.
+		pRenderContext->Bind( m_MatHandle );
+
+		const int iMaxIndices = MIN( 32768, pRenderContext->GetMaxIndicesToRender() );
+		const int iMaxVerts = MIN( 32768, pRenderContext->GetMaxVerticesToRender( m_MatHandle ) );
+		int iCount = m_Particles.Count();
+		const int iMaxCount = MIN( iMaxIndices / 6, iMaxVerts / 4 );
+		//if ( iCount > iMaxCount )
+		//{
+		//	con_nprint_s s;
+		//	s.color[0] = 1;
+		//	s.color[1] = 0.1;
+		//	s.color[2] = 0.05;
+		//	s.fixed_width_font = true;
+		//	s.index = 10;
+		//	s.time_to_live = 5;
+		//	engine->Con_NXPrintf( &s, "Too many rain particles: %i (max: %i)", iCount, iMaxCount );
+		//}
+
+		const int iRemainder = iCount % iMaxCount;
+		int iBatchCount = iCount / iMaxCount;
+		if ( iRemainder > 0 )
 		{
-			CPrecipitationParticle *p = &m_Particles[i];
-			RenderParticle( p, mb );
+			++iBatchCount;
 		}
 
-		mb.End( false, true );
-	}
+		int iParticle = m_Particles.Head();
+		while ( iBatchCount-- > 0 )
+		{
+			IMesh *pMesh = pRenderContext->GetDynamicMesh();
+			if ( pMesh )
+			{
+				int iLocalCount = iBatchCount == 0 ? iRemainder : iMaxCount;
+				CMeshBuilder mb;
+				mb.Begin( pMesh, MATERIAL_QUADS, iLocalCount );
 
-	pRenderContext->EnableUserClipTransformOverride( false );
-	pRenderContext->MatrixMode( MATERIAL_VIEW );
-	pRenderContext->LoadMatrix( tempView );
+				for (; iParticle != m_Particles.InvalidIndex() && iLocalCount > 0; iParticle = m_Particles.Next( iParticle ), --iLocalCount )
+				{
+					CPrecipitationParticle *p = &m_Particles[iParticle];
+					RenderParticle( p, mb );
+				}
 
-	if ( r_RainProfile.GetInt() )
-	{
-		timer.End();
-		engine->Con_NPrintf( 16, "Rain render    : %du", timer.GetDuration().GetMicroseconds() );
+				mb.End( false, true );
+			}
+		}
+
+		pRenderContext->EnableUserClipTransformOverride( false );
+		pRenderContext->MatrixMode( MATERIAL_VIEW );
+		pRenderContext->LoadMatrix( tempView );
 	}
+	// END GSTRINGMIGRATION
+
+	//if ( r_RainProfile.GetInt() )
+	//{
+		//timer.End();
+		//engine->Con_NPrintf( 16, "Rain render    : %du", timer.GetDuration().GetMicroseconds() );
+	//}
 }
 
 
@@ -1106,63 +1163,93 @@ void CClient_Precipitation::EmitParticles( float fTimeDelta )
 	Vector2D size;
 	Vector vel, org;
 
-		C_BasePlayer *pPlayer = C_BasePlayer::GetLocalPlayer();
-		if ( !pPlayer )
-		return;
-		Vector vPlayerCenter = pPlayer->WorldSpaceCenter();
+	C_BasePlayer *pPlayer = C_BasePlayer::GetLocalPlayer();
+	if ( !pPlayer )
+	return;
+	Vector vPlayerCenter = pPlayer->WorldSpaceCenter();
 
 		// Compute where to emit
 	if (!ComputeEmissionArea( org, size ))
 		return;
 
-		// clamp this to prevent creating a bunch of rain or snow at one time.
-		if( fTimeDelta > 0.075f )
-			fTimeDelta = 0.075f;
+	// clamp this to prevent creating a bunch of rain or snow at one time.
+	if( fTimeDelta > 0.075f )
+		fTimeDelta = 0.075f;
 
 		// FIXME: Compute the precipitation density based on computational power
-	float density = m_flDensity * ( m_iServerDensity / 100.0f );
+	float density = m_flDensity * ( m_iServerDensity / 100.0f ) * s_raindensity.GetFloat();
 
-		if (density > 0.01f) 
-			density = 0.01f;
+	if (density > 0.01f) 
+		density = 0.01f;
 
-		// Compute number of particles to emit based on precip density and emission area and dt
-		float fParticles = size[0] * size[1] * density * fTimeDelta + m_Remainder; 
-		int cParticles = (int)fParticles;
-		m_Remainder = fParticles - cParticles;
+	// Compute number of particles to emit based on precip density and emission area and dt
+	float fParticles = size[0] * size[1] * density * fTimeDelta + m_Remainder; 
+	int cParticles = (int)fParticles;
+	m_Remainder = fParticles - cParticles;
 
-		// calculate the max amount of time it will take this flake to fall.
-		// This works if we assume the wind doesn't have a z component
-		VectorCopy( s_WindVector, vel );
-		vel[2] -= GetSpeed();
+	// calculate the max amount of time it will take this flake to fall.
+	// This works if we assume the wind doesn't have a z component
+	VectorCopy( s_WindVector, vel );
+	vel[2] -= GetSpeed();
 
-		// Emit all the particles
-		for ( int i = 0 ; i < cParticles ; i++ )
+	// Emit all the particles
+	for ( int i = 0 ; i < cParticles ; i++ )
+	{
+		Vector vParticlePos = org;
+		vParticlePos[ 0 ] += size[ 0 ] * random->RandomFloat(0, 1);
+		vParticlePos[ 1 ] += size[ 1 ] * random->RandomFloat(0, 1);
+
+		// Figure out where the particle should lie in Z by tracing a line from the player's height up to the 
+		// desired height and making sure it doesn't hit a wall.
+		Vector vPlayerHeight = vParticlePos;
+		vPlayerHeight.z = vPlayerCenter.z;
+
+		const int traceMask = ( MASK_SOLID | MASK_SHOT | MASK_WATER ) & ~CONTENTS_MONSTER;
+
+		trace_t trace;
+		UTIL_TraceLine( vPlayerHeight, vParticlePos, traceMask, NULL, COLLISION_GROUP_NONE, &trace );
+		if ( trace.fraction < 1 )
 		{
-			Vector vParticlePos = org;
-			vParticlePos[ 0 ] += size[ 0 ] * random->RandomFloat(0, 1);
-			vParticlePos[ 1 ] += size[ 1 ] * random->RandomFloat(0, 1);
-
-			// Figure out where the particle should lie in Z by tracing a line from the player's height up to the 
-			// desired height and making sure it doesn't hit a wall.
-			Vector vPlayerHeight = vParticlePos;
-			vPlayerHeight.z = vPlayerCenter.z;
-
-			trace_t trace;
-			UTIL_TraceLine( vPlayerHeight, vParticlePos, MASK_SOLID_BRUSHONLY, NULL, COLLISION_GROUP_NONE, &trace );
-			if ( trace.fraction < 1 )
+			// If we hit a brush, then don't spawn the particle.
+			if ( trace.surface.flags & SURF_SKY )
 			{
-				// If we hit a brush, then don't spawn the particle.
-				if ( trace.surface.flags & SURF_SKY )
-				{
-					vParticlePos = trace.endpos;
-				}
-				else
-				{
-					continue;
-				}
+				vParticlePos = trace.endpos;
 			}
+			else
+			{
+				continue;
+			}
+		}
+
+		if ( trace.startsolid )
+		{
+			continue;
+		}
 
 		CreateRainOrSnowParticle( vParticlePos, vel );
+
+		// GSTRINGMIGRATION
+		// Create splashes
+		CTraceFilterHitAll filter;
+		UTIL_TraceLine( vParticlePos, vParticlePos - Vector( 0, 0, 1000 ), traceMask, &filter, &trace );
+		//UTIL_TraceLine( vParticlePos, vParticlePos - Vector( 0, 0, 1000 ), MASK_SOLID_BRUSHONLY, NULL, COLLISION_GROUP_NONE, &trace );
+		if ( trace.DidHit() &&
+			RandomInt( 0, 100 ) < r_RainSplashPercentage.GetInt() &&
+			( trace.endpos - MainViewOrigin() ).LengthSqr() < ( 1024 * 1024 ) )
+		{
+			if ( trace.contents & MASK_WATER )
+			{
+				m_Splashes_Watersurface.AddToTail( trace.endpos );
+			}
+			else
+			{
+				WorldSplash_t s;
+				s.orig = trace.endpos;
+				s.normal = trace.plane.normal;
+				m_Splashes.AddToTail( s );
+			}
+		}
+		// END GSTRINGMIGRATION
 	}
 }
 

@@ -67,6 +67,7 @@ private:
 	CNetworkVar( int, m_iRenderIndex );
 
 	CNetworkVar( bool, m_bEnabled );
+	CNetworkVar( bool, m_bIsCinemaEffect );
 };
 
 #ifdef CLIENT_DLL

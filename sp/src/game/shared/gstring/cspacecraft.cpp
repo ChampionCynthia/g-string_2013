@@ -307,6 +307,9 @@ void CSpacecraft::Spawn()
 	BaseClass::Spawn();
 
 	m_bInvincible = HasSpawnFlags( SPACECRAFT_SPAWNFLAG_INVINCIBLE );
+
+	m_hPathEntity = dynamic_cast<CPathTrack*>(gEntList.FindEntityByName( NULL, m_strPathStartName, this ));
+	m_hEnemy = gEntList.FindEntityByName( NULL, m_strInitialEnemy, this );
 }
 
 void CSpacecraft::Activate()
@@ -337,9 +340,6 @@ void CSpacecraft::Activate()
 
 	SetMoveType( MOVETYPE_VPHYSICS );
 	SetSolid( SOLID_VPHYSICS );
-
-	m_hPathEntity = dynamic_cast<CPathTrack*>(gEntList.FindEntityByName( NULL, m_strPathStartName, this ));
-	m_hEnemy = gEntList.FindEntityByName( NULL, m_strInitialEnemy, this );
 
 	if ( g_pGstringGlobals != NULL )
 	{
@@ -638,7 +638,8 @@ void CSpacecraft::InputSetAIState(inputdata_t &inputdata)
 {
 	if (m_pAI != NULL && (inputdata.value.FieldType() == FIELD_INTEGER || inputdata.value.Convert(FIELD_INTEGER)))
 	{
-		m_pAI->EnterState((ISpacecraftAI::AISTATE_e)inputdata.value.Int());
+		m_iAIState = inputdata.value.Int();
+		m_pAI->EnterState((ISpacecraftAI::AISTATE_e)m_iAIState);
 	}
 }
 
@@ -1287,6 +1288,7 @@ void CSpacecraft::SimulateMove( CMoveData &moveData, float flFrametime )
 	QAngle viewangles = moveData.m_vecViewAngles;
 	float flForwardMove = moveData.m_flForwardMove;
 	float flSideMove = moveData.m_flSideMove;
+	float flUpMove = moveData.m_flUpMove;
 
 #ifdef GAME_DLL
 	if ( m_bIsFrozen )
@@ -1294,6 +1296,7 @@ void CSpacecraft::SimulateMove( CMoveData &moveData, float flFrametime )
 		viewangles = angPhysAngles;
 		flForwardMove = 0.0f;
 		flSideMove = 0.0f;
+		flUpMove = 0.0f;
 
 		if ( IsPlayerControlled() )
 		{
@@ -1319,9 +1322,10 @@ void CSpacecraft::SimulateMove( CMoveData &moveData, float flFrametime )
 	{
 		const bool bUseScreenMove = gstring_spacecraft_move_mode.GetBool();
 		const float flMaxMove = 200.0f;
-		Vector2D vecMove( vec2_origin );
+		Vector vecMove( vec3_origin );
 		vecMove.x = clamp( flForwardMove / flMaxMove, -1.0f, 1.0f );
 		vecMove.y = clamp( flSideMove / flMaxMove, -1.0f, 1.0f );
+		vecMove.z = clamp( flUpMove / flMaxMove, -1.0f, 1.0f );
 		if ( vecMove.LengthSqr() > 1.0f )
 		{
 			vecMove.NormalizeInPlace();
@@ -1337,6 +1341,7 @@ void CSpacecraft::SimulateMove( CMoveData &moveData, float flFrametime )
 			EmitSound( "Spacecraft.Boost.Deny" );
 		}
 
+		const float flSideAccel = IsPlayerControlled() ? m_Settings.m_flAccelerationSide : m_Settings.m_flAcceleration;
 		if ( bUseScreenMove )
 		{
 			if ( !bCutOffEngines )
@@ -1349,7 +1354,7 @@ void CSpacecraft::SimulateMove( CMoveData &moveData, float flFrametime )
 
 			if ( vecMove.x != 0.0f )
 			{
-				vecImpulse += vecMove.x * vecUp * m_Settings.m_flAccelerationSide;
+				vecImpulse += vecMove.x * vecUp * flSideAccel;
 				bAccelerationEffects = true;
 			}
 		}
@@ -1374,7 +1379,13 @@ void CSpacecraft::SimulateMove( CMoveData &moveData, float flFrametime )
 		{
 			if ( vecMove.y != 0.0f )
 			{
-				vecImpulse += vecMove.y * vecRight * m_Settings.m_flAccelerationSide;
+				vecImpulse += vecMove.y * vecRight * flSideAccel;
+				bAccelerationEffects = true;
+			}
+
+			if ( vecMove.z != 0.0f )
+			{
+				vecImpulse += vecMove.z * vecUp * flSideAccel;
 				bAccelerationEffects = true;
 			}
 		}

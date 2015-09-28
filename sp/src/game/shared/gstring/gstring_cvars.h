@@ -19,6 +19,7 @@ extern ConVar cvar_gstring_drawdreamblur;
 //extern ConVar cvar_gstring_drawbloomflare;
 extern ConVar cvar_gstring_drawlensflare;
 extern ConVar cvar_gstring_drawwatereffects;
+extern ConVar cvar_gstring_drawcinemaoverlay;
 
 extern ConVar cvar_gstring_bars_scale;
 extern ConVar cvar_gstring_explosionfx_strength;

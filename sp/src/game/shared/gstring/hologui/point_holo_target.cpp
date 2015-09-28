@@ -92,6 +92,15 @@ CPointHoloTarget::~CPointHoloTarget()
 }
 
 #ifdef GAME_DLL
+int CPointHoloTarget::GetTargetType() const
+{
+	return m_iTargetType;
+}
+
+bool CPointHoloTarget::IsActive() const
+{
+	return m_bEnabled && m_hPositionProxy.m_Value.IsValid() == ( m_hPositionProxy.Get() != NULL );
+}
 
 void CPointHoloTarget::InputEnable( inputdata_t &inputdata )
 {
@@ -119,6 +128,7 @@ void CPointHoloTarget::Spawn()
 
 	m_bEnabled = HasSpawnFlags( 1 );
 	m_flHealth = -1.0f;
+	AddEFlags( EFL_FORCE_CHECK_TRANSMIT );
 }
 
 void CPointHoloTarget::Activate()

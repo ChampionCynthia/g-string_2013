@@ -4,7 +4,7 @@
 #include "cbase.h"
 
 #ifdef CLIENT_DLL
-#define HOLO_TARGET_MAX_DISTANCE 3000.0f
+#define HOLO_TARGET_MAX_DISTANCE 5000.0f //3000.0f
 class IHoloTarget
 {
 public:
@@ -41,6 +41,9 @@ class CPointHoloTarget : public CBaseEntity
 
 #ifdef GAME_DLL
 	DECLARE_DATADESC();
+
+	int GetTargetType() const;
+	bool IsActive() const;
 
 	void InputEnable( inputdata_t &inputdata );
 	void InputDisable( inputdata_t &inputdata );

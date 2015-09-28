@@ -9,6 +9,7 @@
 #else
 #include "cdll_client_int.h"
 #include "view_scene.h"
+#include "gstring/gstring_cvars.h"
 #endif
 
 static CUtlVector< CScreenoverlayMulti* > g_hScreenoverlayList;
@@ -111,6 +112,7 @@ IMPLEMENT_NETWORKCLASS_DT( CScreenoverlayMulti, CScreenoverlayMulti_DT )
 	SendPropInt( SENDINFO( m_iRenderIndex ) ),
 
 	SendPropBool( SENDINFO( m_bEnabled ) ),
+	SendPropBool( SENDINFO( m_bIsCinemaEffect ) ),
 #else
 	RecvPropInt( RECVINFO( m_iMaterialIndex ) ),
 
@@ -118,6 +120,7 @@ IMPLEMENT_NETWORKCLASS_DT( CScreenoverlayMulti, CScreenoverlayMulti_DT )
 	RecvPropInt( RECVINFO( m_iRenderIndex ) ),
 
 	RecvPropBool( RECVINFO( m_bEnabled ) ),
+	RecvPropBool( RECVINFO( m_bIsCinemaEffect ) ),
 #endif
 
 END_NETWORK_TABLE();
@@ -170,7 +173,9 @@ void CScreenoverlayMulti::Activate()
 
 	Assert( m_strOverlayMaterial.ToCStr() && m_strOverlayMaterial.ToCStr()[0] != '\0' );
 
-	m_iMaterialIndex = PrecacheMaterialGetIndex( m_strOverlayMaterial.ToCStr() );
+	const char *pszMaterial = m_strOverlayMaterial.ToCStr();
+	m_iMaterialIndex = PrecacheMaterialGetIndex( pszMaterial );
+	m_bIsCinemaEffect = pszMaterial && Q_stristr( pszMaterial, "supercinema" ) != NULL;
 	
 	Assert( m_iMaterialIndex >= 0 );
 
@@ -225,6 +230,14 @@ void CScreenoverlayMulti::OnDataChanged( DataUpdateType_t t )
 
 void CScreenoverlayMulti::RenderOverlay( int x, int y, int w, int h )
 {
+	if ( m_bIsCinemaEffect )
+	{
+		if ( !cvar_gstring_drawcinemaoverlay.GetBool() )
+		{
+			return;
+		}
+	}
+
 	DrawScreenEffectMaterial( m_matOverlay, x, y, w, h );
 }
 

@@ -1,12 +1,36 @@
 #include "cbase.h"
 #include "cgstring_player.h"
 #include "cspacecraft_ai.h"
+#include "gstring/hologui/point_holo_target.h"
 #include "in_buttons.h"
 #include "gstring/gstring_util.h"
 
 #include "spaceai/statemachine.h"
 
+#define MAX_PUSH_IDLE_DISTANCE 24.0f
+#define MAX_PUSH_DISTANCE 64.0f
+
 extern bool g_bAIDisabledByUser;
+
+class CTraceFilterSkipSpacecrafts : public CTraceFilterSimple
+{
+public:
+	CTraceFilterSkipSpacecrafts( int collisionGroup ) :
+		CTraceFilterSimple( NULL, collisionGroup )
+	{
+	}
+
+	virtual bool ShouldHitEntity( IHandleEntity *pHandleEntity, int contentsMask )
+	{
+		CBaseEntity *pEntity = EntityFromEntityHandle( pHandleEntity );
+		CSpacecraft *pSpacecraft = dynamic_cast< CSpacecraft* >( pEntity );
+		if ( pSpacecraft )
+		{
+			return false;
+		}
+		return CTraceFilterSimple::ShouldHitEntity( pHandleEntity, contentsMask );
+	}
+};
 
 CON_COMMAND(gstring_spacecraftai_debug_spawn, "")
 {
@@ -61,6 +85,7 @@ CSpacecraftAIBase::CSpacecraftAIBase(CSpacecraft *pShip)
 	, m_ThinkFunc(NULL)
 	, m_MoveFunc(NULL)
 	, m_flNextThink(0.0f)
+	, m_vecPushMove(vec3_origin)
 	, m_vecMoveTarget(vec3_origin)
 	, m_flRotationSuppressTimer(-1.0f)
 	, m_flRotationSpeedBlend(1.0f)
@@ -75,6 +100,7 @@ CSpacecraftAIBase::CSpacecraftAIBase(CSpacecraft *pShip)
 	moveData.m_vecViewAngles.Init();
 	moveData.m_flForwardMove = 0.0f;
 	moveData.m_flSideMove = 0.0f;
+	moveData.m_flUpMove = 0.0f;
 
 	//SetNextThink(0.0f, &CSpacecraftAIBase::Think_ShootSalvoes);
 	//SetMove( &CSpacecraftAIBase::Move_Follow );
@@ -128,6 +154,7 @@ void CSpacecraftAIBase::EnterState(AISTATE_e state)
 
 void CSpacecraftAIBase::Run(float flFrametime)
 {
+	m_vecPushMove.Init();
 	if (!g_bAIDisabledByUser)
 	{
 		if (m_flEnemyUpdateTimer < gpGlobals->curtime)
@@ -165,7 +192,23 @@ void CSpacecraftAIBase::Run(float flFrametime)
 
 	Fire_UpdateProjectilePosition(flFrametime);
 
+	// Apply push
+	Vector vecOldMove( moveData.m_flForwardMove, moveData.m_flSideMove, moveData.m_flUpMove );
+	if ( m_vecPushMove.LengthSqr() > 0.01f )
+	{
+		const float flMaxPush = 150.0f;
+		Vector vecFwd, vecRight, vecUp;
+		AngleVectors( moveData.m_vecViewAngles, &vecFwd, &vecRight, &vecUp );
+		moveData.m_flForwardMove -= flMaxPush * DotProduct( vecFwd, m_vecPushMove );
+		moveData.m_flSideMove -= flMaxPush * DotProduct( vecRight, m_vecPushMove );
+		moveData.m_flUpMove -= flMaxPush * DotProduct( vecUp, m_vecPushMove );
+	}
+
 	m_pShip->SimulateMove(moveData, flFrametime);
+
+	moveData.m_flForwardMove = vecOldMove.x;
+	moveData.m_flSideMove = vecOldMove.y;
+	moveData.m_flUpMove = vecOldMove.z;
 
 	moveData.m_nOldButtons = moveData.m_nButtons;
 }
@@ -234,6 +277,8 @@ void CSpacecraftAIBase::Move_Idle(float flFrametime)
 	moveData.m_flUpMove = 0.0f;
 	moveData.m_flForwardMove = 0.0f;
 
+	PerformAvoidance(false, MAX_PUSH_IDLE_DISTANCE);
+
 	if (GetEnemy() != NULL)
 	{
 		EnterState(ISpacecraftAI::AISTATE_ATTACK_AND_CHASE);
@@ -294,13 +339,23 @@ void CSpacecraftAIBase::Move_Follow(float flFrametime)
 void CSpacecraftAIBase::Move_Pursuit(float flFrametime)
 {
 	CBaseEntity *pEnemy(GetEnemy());
+	CPointHoloTarget *pTarget = dynamic_cast< CPointHoloTarget* >( pEnemy );
+	if (pTarget && !pTarget->IsActive())
+	{
+		if (m_hTemporaryEnemy == pEnemy)
+		{
+			m_hTemporaryEnemy.Term();
+		}
+		pEnemy = NULL;
+	}
+
 	if (pEnemy == NULL)
 	{
 		EnterState(ISpacecraftAI::AISTATE_IDLE);
 		return;
 	}
 
-	Vector vecOrigin = m_pShip->GetAbsOrigin();
+	const Vector vecOrigin = m_pShip->GetAbsOrigin();
 	Vector vecEnemy = pEnemy->GetAbsOrigin() - vecOrigin;
 
 	if (vecEnemy.LengthSqr() > Sqr(200.0f))
@@ -324,11 +379,16 @@ void CSpacecraftAIBase::Move_Pursuit(float flFrametime)
 		m_vecMoveTarget = pEnemy->GetAbsOrigin() + vecEnemyUp * RandomFloat(40.0f, 80.0f);
 	}
 
-	vecEnemy = m_vecMoveTarget - m_pShip->GetAbsOrigin();
-	QAngle angMove;
-	VectorAngles(vecEnemy, angMove);
+	vecEnemy = m_vecMoveTarget - vecOrigin;
 
-	if ((m_vecMoveTarget - m_pShip->GetAbsOrigin()).LengthSqr() < Sqr(50.0f))
+	Vector vecTarget = vecOrigin + vecEnemy;
+	FindPathTo( vecTarget );
+	vecEnemy = vecTarget - vecOrigin;
+
+	QAngle angMove;
+	VectorAngles( vecEnemy, angMove );
+
+	if ( ( m_vecMoveTarget - vecOrigin ).LengthSqr() < Sqr(50.0f) )
 	{
 		m_flRotationSuppressTimer = gpGlobals->curtime + RandomFloatExp(2.0f, 6.0f, 2.0f);
 		m_flRotationSpeedBlend = 0.0f;
@@ -369,7 +429,7 @@ void CSpacecraftAIBase::Move_Pursuit(float flFrametime)
 	moveData.m_flUpMove = 0.0f;
 	moveData.m_nButtons |= IN_SPEED;
 
-	Vector vecOpponent = pEnemy->GetAbsOrigin() - m_pShip->GetAbsOrigin();
+	Vector vecOpponent = pEnemy->GetAbsOrigin() - vecOrigin;
 	Vector vecFwd;
 	AngleVectors(moveData.m_vecViewAngles, &vecFwd);
 
@@ -406,6 +466,8 @@ void CSpacecraftAIBase::Move_Pursuit(float flFrametime)
 		moveData.m_flForwardMove = 200.0f; // * m_pShip->GetSpeedMultiplier();
 		moveData.m_flSideMove *= 0.1f;
 	}
+
+	PerformAvoidance(true, MAX_PUSH_DISTANCE);
 }
 
 void CSpacecraftAIBase::Move_AttackStationary(float flFrametime)
@@ -434,7 +496,7 @@ void CSpacecraftAIBase::Move_AttackStationary(float flFrametime)
 	Quaternion qMoveDesired, qMoveCurrent;
 	AngleQuaternion(angMove, qMoveDesired);
 	AngleQuaternion(moveData.m_vecViewAngles, qMoveCurrent);
-	QuaternionSlerp(qMoveCurrent, qMoveDesired, gpGlobals->frametime * m_flRotationSpeedBlend * 5.0f, qMoveCurrent);
+	QuaternionSlerp(qMoveCurrent, qMoveDesired, gpGlobals->frametime * 5.0f, qMoveCurrent);
 	QuaternionAngles(qMoveCurrent, moveData.m_vecViewAngles);
 
 	Vector vecOpponent = pEnemy->GetAbsOrigin() - m_pShip->GetAbsOrigin();
@@ -465,7 +527,10 @@ void CSpacecraftAIBase::Move_FollowPath(float flFrametime)
 	}
 
 	Vector vecOrigin = m_pShip->GetAbsOrigin();
-	Vector vecEnemy = pPathTrack->GetAbsOrigin() - vecOrigin;
+	Vector vecTarget( pPathTrack->GetAbsOrigin() );
+	FindPathTo( vecTarget );
+
+	Vector vecEnemy = vecTarget - vecOrigin;
 
 	QAngle angMove;
 	VectorAngles(vecEnemy, angMove);
@@ -475,13 +540,14 @@ void CSpacecraftAIBase::Move_FollowPath(float flFrametime)
 	Quaternion qMoveDesired, qMoveCurrent;
 	AngleQuaternion(angMove, qMoveDesired);
 	AngleQuaternion(moveData.m_vecViewAngles, qMoveCurrent);
-	QuaternionSlerp(qMoveCurrent, qMoveDesired, MIN(1.0f, gpGlobals->frametime * m_flRotationSpeedBlend * 250.0f), qMoveCurrent);
+	QuaternionSlerp(qMoveCurrent, qMoveDesired, MIN(1.0f, gpGlobals->frametime * 250.0f), qMoveCurrent);
 	QuaternionAngles(qMoveCurrent, moveData.m_vecViewAngles);
 
 	moveData.m_nButtons &= ~IN_ATTACK;
 	moveData.m_nButtons &= ~IN_SPEED;
 
 	moveData.m_flUpMove = 0.0f;
+	moveData.m_flSideMove = 0.0f;
 
 	const float flDistanceTargetToEnemy = vecEnemy.Length();
 	CPathTrack *pNext = pPathTrack->GetNext();
@@ -489,18 +555,135 @@ void CSpacecraftAIBase::Move_FollowPath(float flFrametime)
 	moveData.m_flForwardMove = 200.0f * m_pShip->GetSpeedMultiplier();
 	if (pNext == NULL)
 	{
-		moveData.m_flForwardMove = RemapValClamped(flDistanceTargetToEnemy, 0.0f, 400.0f, 0.0f, 1.0f);
+		moveData.m_flForwardMove = RemapValClamped(flDistanceTargetToEnemy, 0.0f, 400.0f, 0.5f, 1.0f);
 		moveData.m_flForwardMove *= moveData.m_flForwardMove;
 		moveData.m_flForwardMove *= 200.0f * m_pShip->GetSpeedMultiplier();
+	}
+	
+	// Apply push based on avoidance vector
+	PerformAvoidance(true, MAX_PUSH_DISTANCE);
 
-		if (flDistanceTargetToEnemy < 48.0f)
+	const float flContradicting = m_vecPushMove.LengthSqr() > 0.01f ? DotProduct( m_vecPushMove.Normalized(), vecEnemy / flDistanceTargetToEnemy ) : 0.0f;
+	const float flPathMaxDistance = 48.0f + MAX_PUSH_DISTANCE * flContradicting * 2.0f;
+
+	// Jump to next path entity
+	if (flDistanceTargetToEnemy < flPathMaxDistance)
+	{
+		inputdata_t data;
+		data.pActivator = m_pShip;
+		data.pCaller = m_pShip;
+		pPathTrack->InputPass( data );
+		m_pShip->SetPathEntity( pNext );
+	}
+}
+
+void CSpacecraftAIBase::FindPathTo( Vector &target )
+{
+	const bool bDebug = false;
+	const Vector vecOrigin = m_pShip->GetAbsOrigin();
+	Vector vecTargetDelta = target - vecOrigin;
+
+	// Try to steer next to target
+	CTraceFilterSkipSpacecrafts filter( COLLISION_GROUP_DEBRIS );
+	const Vector vecHull( 10, 10, 10 );
+	trace_t tr;
+
+	UTIL_TraceHull( vecOrigin, vecOrigin + vecTargetDelta * 1.4f, -vecHull, vecHull, MASK_SOLID, &filter, &tr );
+
+	if ( tr.DidHit() )
+	{
+		//DebugDrawLine( tr.startpos, tr.endpos, 255, 0, 0, true, 0.05f );
+		Vector right, up;
+		const float flOffsetDistance = 256.0f;
+		VectorVectors( vecTargetDelta.Normalized(), right, up );
+		Vector vecOffsets[4] = {
+			vecTargetDelta + up * flOffsetDistance,
+			vecTargetDelta - up * flOffsetDistance,
+			vecTargetDelta + right * flOffsetDistance,
+			vecTargetDelta - right * flOffsetDistance
+		};
+
+		bool bValidTarget = false;
+		for ( int i = 0; i < 4; ++i )
 		{
-			m_pShip->SetPathEntity(NULL);
+			UTIL_TraceHull( vecOrigin, vecOrigin + vecOffsets[ i ] * 1.4f, -vecHull, vecHull, MASK_SOLID, &filter, &tr );
+			if ( !tr.DidHit() )
+			{
+				vecTargetDelta = vecOffsets[ i ];
+				// Success
+				if ( bDebug )
+				{
+					DebugDrawLine( tr.startpos, tr.endpos, 0, 255, 0, true, 0.05f );
+				}
+				bValidTarget = true;
+				break;
+			}
+		}
+
+		if ( !bValidTarget )
+		{
+			// If that doesn't work, go backwards for a while
+			UTIL_TraceHull( vecOrigin, vecOrigin - vecTargetDelta * 0.8f, -vecHull, vecHull, MASK_SOLID, &filter, &tr );
+			if ( !tr.DidHit() )
+			{
+				vecTargetDelta = vecTargetDelta * -0.8f;
+				// Success
+				if ( bDebug )
+				{
+					DebugDrawLine( tr.startpos, tr.endpos, 0, 255, 0, true, 0.05f );
+				}
+			}
+			else if ( bDebug )
+			{
+				// Failed
+				DebugDrawLine( tr.startpos, tr.endpos, 255, 0, 0, true, 0.05f );
+				DebugDrawLine( tr.startpos, vecOrigin - vecTargetDelta * 0.8f, 255, 0, 255, true, 0.05f );
+			}
 		}
 	}
-	else if (flDistanceTargetToEnemy < 48.0f)
+	else if ( bDebug )
 	{
-		m_pShip->SetPathEntity(pNext);
+		// No problem
+		DebugDrawLine( tr.startpos, tr.endpos, 0, 255, 0, true, 0.05f );
+	}
+
+	target = vecOrigin + vecTargetDelta;
+}
+
+void CSpacecraftAIBase::PerformAvoidance(bool bAvoidPlayer, float flMaxDistance)
+{
+	if (!m_pShip->HasSpawnFlags( SPACECRAFT_SPAWNFLAG_AVOID_OTHER_SHIPS ))
+	{
+		return;
+	}
+
+	Vector vecOrigin = m_pShip->GetAbsOrigin();
+
+	// Avoid other ships
+	static CBaseEntity *pList[ 64 ];
+	const int count = UTIL_EntitiesInSphere(pList, 64, vecOrigin, flMaxDistance, 0);
+
+	for (int i = 0; i < count; ++i)
+	{
+		CSpacecraft *pShip = dynamic_cast< CSpacecraft* >( pList[ i ] );
+		if ( pShip == NULL || pShip == m_pShip )
+		{
+			continue;
+		}
+
+		if (pShip->IsPlayerControlled() && !bAvoidPlayer)
+		{
+			continue;
+		}
+
+		Vector vecDelta = pShip->GetAbsOrigin() - vecOrigin;
+		if ( vecDelta.LengthSqr() < 1.0f )
+		{
+			continue;
+		}
+
+		float distance = vecDelta.NormalizeInPlace();
+		m_vecPushMove += vecDelta * distance / flMaxDistance;
 	}
 }
 
@@ -563,26 +746,44 @@ void CSpacecraftAIBase::UpdateEnemy(float &flUpdateDelay)
 	{
 		CBaseEntity *pEntity = pList[i];
 		CSpacecraft *pSpaceCraft = dynamic_cast<CSpacecraft*>(pEntity);
-		if (pSpaceCraft == NULL || pSpaceCraft == m_pShip)
+		CPointHoloTarget *pTarget = dynamic_cast<CPointHoloTarget*>(pEntity);
+		if (pTarget == NULL && pSpaceCraft == NULL || pSpaceCraft == m_pShip)
 		{
 			continue;
 		}
 
-		if (bIgnorePlayer && pSpaceCraft->IsPlayerControlled())
+		if (pSpaceCraft)
 		{
-			continue;
+			if (bIgnorePlayer && pSpaceCraft->IsPlayerControlled())
+			{
+				continue;
+			}
+
+			const CSpacecraft::AITEAM_e team = pSpaceCraft->GetTeam();
+			if (team == ownteam)
+			{
+				continue;
+			}
 		}
 
-		//CSpacecraftAIBase *pAI = (CSpacecraftAIBase*)pSpaceCraft->GetAI();
-
-		const CSpacecraft::AITEAM_e team = pSpaceCraft->GetTeam();
-		if (team == ownteam)
+		if (pTarget)
 		{
-			continue;
+			if (!pTarget->IsActive())
+			{
+				continue;
+			}
+
+			const int iTargetType = pTarget->GetTargetType();
+			if (iTargetType == 0 ||
+				iTargetType == 1 && ownteam == CSpacecraft::AITEAM_MARTIAN ||
+				iTargetType == 2 && ownteam == CSpacecraft::AITEAM_NATO)
+			{
+				continue;
+			}
 		}
 
-		Vector shipOrigin = pSpaceCraft->GetAbsOrigin();
-		float flDistanceSqr = (shipOrigin - ownOrigin).LengthSqr();
+		Vector enemyOrigin = pEntity->GetAbsOrigin();
+		float flDistanceSqr = (enemyOrigin - ownOrigin).LengthSqr();
 
 		if (flDistanceSqr > flBestDistanceSqr)
 		{
@@ -590,7 +791,7 @@ void CSpacecraftAIBase::UpdateEnemy(float &flUpdateDelay)
 		}
 
 		flBestDistanceSqr = flDistanceSqr;
-		pEnemy = pSpaceCraft;
+		pEnemy = pEntity;
 	}
 
 	//CGstringPlayer *pPlayer = LocalGstringPlayer();

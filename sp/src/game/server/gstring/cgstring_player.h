@@ -13,8 +13,9 @@ public:
 
 	CGstringPlayer();
 
-	void Precache();
-	void Spawn();
+	virtual void Precache();
+	virtual void Spawn();
+	virtual void Activate();
 
 	bool IsNightvisionActive() const;
 	void SetNightvisionActive( bool bActive );

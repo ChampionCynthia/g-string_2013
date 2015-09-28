@@ -61,7 +61,6 @@ void CHudWaterEffects::Reset( void )
 
 	m_flRainRegisterTimer = 0;
 	m_flDropSpawnTimer = 0;
-	m_flDropAmountMultiplier = 1.0f;
 	m_bSubmerged_Last = false;
 	m_flRainOverlay_Alpha = 0;
 }
@@ -174,11 +173,6 @@ void CHudWaterEffects::ApplySchemeSettings(vgui::IScheme *pScheme)
 void CHudWaterEffects::OnRainHit()
 {
 	m_flRainRegisterTimer = CFrameTimeHelper::GetCurrentTime() + 1.0f;
-}
-
-void CHudWaterEffects::SetDropMultiplier( float m )
-{
-	m_flDropAmountMultiplier = m;
 }
 
 void CHudWaterEffects::PlayerEffect_Emerge()

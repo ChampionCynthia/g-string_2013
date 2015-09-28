@@ -430,6 +430,9 @@ void CHoloShipAim::DrawTargets( IMatRenderContext *pRenderContext )
 			AngleMatrix( an, rr );
 			ConcatTransforms( temp, rr, mat );
 
+			const float flDistanceFraction = position.Length() / HOLO_TARGET_MAX_DISTANCE;
+			MatrixScaleBy( 1.05f - flDistanceFraction * 0.7f, mat );
+
 			pRenderContext->LoadMatrix( mat );
 
 			if ( bOffScreen )

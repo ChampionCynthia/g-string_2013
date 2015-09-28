@@ -94,18 +94,20 @@ void CHoloShipAutopilot::Draw( IMatRenderContext *pRenderContext )
 	BaseClass::Draw( pRenderContext );
 
 	// Draw glow
-	//matrix3x4_t viewMatrixInv = CurrentHoloViewMatrixInverted();
-	//MatrixSetTranslation( Vector( 0, 270 * m_flScale * 0.5f, -0.5f ), viewMatrixInv );
-	//pRenderContext->MultMatrixLocal( viewMatrixInv );
+	pRenderContext->PushMatrix();
+	matrix3x4_t viewMatrixInv = CurrentHoloViewMatrixInverted();
+	MatrixSetTranslation( Vector( 0, 270 * m_flScale * 0.5f, -1.0f ), viewMatrixInv );
+	pRenderContext->MultMatrixLocal( viewMatrixInv );
 
-	//GetColorVar( MATERIALTYPE_GLOW )->SetVecValue( HOLO_COLOR_DEFAULT );
-	//SetHoloAlpha( 0.03f, MATERIALTYPE_GLOW );
+	GetColorVar( MATERIALTYPE_GLOW )->SetVecValue( HOLO_COLOR_WARNING );
+	SetHoloAlpha( 0.03f, MATERIALTYPE_GLOW );
 
-	//const float flScale = 3.0f;
-	//const float flRatio = 3.0f;
-	//IMesh *pMeshGlow = pRenderContext->GetDynamicMesh( true, 0, 0, GetMaterial( MATERIALTYPE_GLOW ) );
-	//CreateTexturedRect( pMeshGlow, flScale * -flRatio, -flScale, flScale * 2 * flRatio, flScale * 2 );
-	//pMeshGlow->Draw();
+	const float flScale = 3.0f;
+	const float flRatio = 3.0f;
+	IMesh *pMeshGlow = pRenderContext->GetDynamicMesh( true, 0, 0, GetMaterial( MATERIALTYPE_GLOW ) );
+	CreateTexturedRect( pMeshGlow, flScale * -flRatio, -flScale, flScale * 2 * flRatio, flScale * 2 );
+	pMeshGlow->Draw();
+	pRenderContext->PopMatrix();
 
 	// Draw outline
 	pRenderContext->PushMatrix();
@@ -134,7 +136,7 @@ void CHoloShipAutopilot::Draw( IMatRenderContext *pRenderContext )
 
 	pRenderContext->PushMatrix();
 
-	MatrixSetTranslation( Vector( 0.0f, -0.3f, -1.3f ), mat );
+	MatrixSetTranslation( Vector( 0.0f, 0.1f, -1.3f ), mat );
 	pRenderContext->MultMatrixLocal( mat );
 	m_pMeshIcon->Draw();
 

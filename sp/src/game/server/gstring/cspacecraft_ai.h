@@ -37,6 +37,9 @@ private:
 	//void Move_FollowLeader(float flFrametime);
 	void Move_FollowPath(float flFrametime);
 
+	void FindPathTo( Vector &target );
+	void PerformAvoidance(bool bAvoidPlayer, float flMaxDistance);
+
 	void Fire_UpdateProjectilePosition(float frametime);
 
 	void UpdateEnemy(float &flUpdateDelay);
@@ -55,6 +58,7 @@ private:
 	float m_flNextThink;
 
 	CMoveData moveData;
+	Vector m_vecPushMove;
 	EHANDLE m_hTemporaryEnemy;
 	Vector m_vecMoveTarget;
 	float m_flRotationSuppressTimer;

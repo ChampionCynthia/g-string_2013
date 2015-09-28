@@ -76,6 +76,13 @@ void CGstringPlayer::Spawn()
 	m_Local.m_iHideHUD |= HIDEHUD_SPACECRAFT;
 }
 
+void CGstringPlayer::Activate()
+{
+	BaseClass::Activate();
+
+	RemoveFlag( FL_GODMODE );
+}
+
 void CGstringPlayer::DoReloadAnim()
 {
 	m_nReloadParity = (m_nReloadParity+1) & ((1 << EF_MUZZLEFLASH_BITS) - 1);

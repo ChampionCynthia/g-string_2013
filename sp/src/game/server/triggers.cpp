@@ -850,6 +850,7 @@ int CTriggerHurt::HurtAllTouchers( float dt )
 			CBaseEntity *pTouch = link->entityTouched;
 			if ( pTouch )
 			{
+				// GSTRINGMIGRATION
 				bool bShouldHit = true;
 				if ( m_bTraceDamage )
 				{
@@ -871,6 +872,7 @@ int CTriggerHurt::HurtAllTouchers( float dt )
 						bShouldHit = tr.DidHit() && tr.m_pEnt == pTouch;
 					}
 				}
+				// END GSTRINGMIGRATION
 
 				if ( bShouldHit && HurtEntity( pTouch, fldmg ) )
 				{

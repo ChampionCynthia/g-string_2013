@@ -46,7 +46,6 @@ private:
 	bool m_bSubmerged_Last;
 	float m_flRainRegisterTimer;
 	float m_flDropSpawnTimer;
-	float m_flDropAmountMultiplier;
 
 	float m_flRainOverlay_Alpha;
 
