@@ -1,2 +1,13 @@
-default: 
+default:  fxctmp9_tmp\SDK_skin_ps30.inc shaders\fxc\SDK_skin_ps30.vcs
+
+fxctmp9_tmp\SDK_skin_ps30.inc shaders\fxc\SDK_skin_ps30.vcs: SDK_skin_ps20b.fxc common_fxc.h shader_constant_register_map.h common_hlsl_cpp_consts.h common_pragmas.h common_flashlight_fxc.h common_vertexlitgeneric_dx9.h common_ps_fxc.h
+	perl ..\..\devtools\bin\fxc_prep.pl   -source "..\.." SDK_skin_ps20b.fxc-----SDK_skin_ps30
+	echo SDK_skin_ps20b.fxc>> filestocopy.txt
+	echo common_fxc.h>> filestocopy.txt
+	echo shader_constant_register_map.h>> filestocopy.txt
+	echo common_hlsl_cpp_consts.h>> filestocopy.txt
+	echo common_pragmas.h>> filestocopy.txt
+	echo common_flashlight_fxc.h>> filestocopy.txt
+	echo common_vertexlitgeneric_dx9.h>> filestocopy.txt
+	echo common_ps_fxc.h>> filestocopy.txt
 

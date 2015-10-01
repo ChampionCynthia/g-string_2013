@@ -854,32 +854,28 @@ float DoCascadedShadow( sampler depthSampler, sampler randomSampler, float3 worl
 	float3 closePosition, float3 worldPosition, int nShadowLevel, float3 cascadedStepData,
 	float2 vScreenPos, float4 vShadowTweaks, const bool bCheckDot = true )
 {
-	float shadow = 0.0;
 	float cascadedDot = bCheckDot ? dot( -lightDirection, worldNormal ) : abs( dot( -lightDirection, worldNormal ) );
-	if ( cascadedDot >= 0.0f )
-	{
-		cascadedDot = saturate( cascadedDot * 12.0 );
 
-		float weight = 0.0f;
+	// 0.0 samples far cascade, 1.0 samples close cascade.
+	float blendCascades = step(closePosition.x, 0.49) * step(0.01, closePosition.x) *
+		step(closePosition.y, 0.99) * step(0.01, closePosition.y);
 
-		if ( abs( floor( closePosition.x * 2.04 - 0.01 ) ) > 0.001 || abs( floor( closePosition.y * 1.02 - 0.01 ) ) > 0.001 )
-		{
-			closePosition.xy = closePosition.xy * cascadedStepData.x + cascadedStepData.yz;
-			weight = saturate( saturate( abs( closePosition.x * 4.0 - 3.0 ) - 0.9 ) * 10.0 +
-				saturate( abs( closePosition.y * 2.0 - 1.0 ) - 0.9 ) * 10.0 );
-		}
-		
-		if ( nShadowLevel == NVIDIA_PCF_POISSON )
-			//shadow = DoShadowPoisson16Sample( depthSampler, randomSampler, closePosition, vScreenPos, vShadowTweaks, true, false );
-			shadow = DoShadowNvidiaPCF5x5Gaussian( depthSampler, closePosition, float2( 1.0 / 2048.0, 1.0 / 1024.0 ) );
-		else if( nShadowLevel == ATI_NOPCF )
-			shadow = DoShadowPoisson16Sample( depthSampler, randomSampler, closePosition, vScreenPos, vShadowTweaks, false, false );
-		else //if( nShadowLevel == ATI_NO_PCF_FETCH4 )
-			shadow = DoShadowPoisson16Sample( depthSampler, randomSampler, closePosition, vScreenPos, vShadowTweaks, false, true );
-		
-		shadow = lerp( shadow, 1.0, weight ) * cascadedDot;
-	}
-	return shadow;
+	// Select the cascade.
+	closePosition.xy = lerp(closePosition.xy * cascadedStepData.x + cascadedStepData.yz, closePosition.xy, blendCascades);
+
+	float shadow;
+	if ( nShadowLevel == NVIDIA_PCF_POISSON )
+		shadow = DoShadowNvidiaPCF5x5Gaussian( depthSampler, closePosition, float2( 1.0 / 2048.0, 1.0 / 1024.0 ) );
+	else if( nShadowLevel == ATI_NOPCF )
+		shadow = DoShadowPoisson16Sample( depthSampler, randomSampler, closePosition, vScreenPos, vShadowTweaks, false, false );
+	else //if( nShadowLevel == ATI_NO_PCF_FETCH4 )
+		shadow = DoShadowPoisson16Sample( depthSampler, randomSampler, closePosition, vScreenPos, vShadowTweaks, false, true );
+
+	float weight = lerp( saturate( saturate( abs( closePosition.x * 4.0 - 3.0 ) - 0.9 ) * 10.0 +
+		saturate( abs( closePosition.y * 2.0 - 1.0 ) - 0.9 ) * 10.0 ), 0.0f, blendCascades);
+	shadow = lerp( shadow, 1.0, weight ) * saturate( cascadedDot * 12.0 );
+
+	return lerp(0.0, shadow, step(0.0, cascadedDot));
 }
 #endif
 

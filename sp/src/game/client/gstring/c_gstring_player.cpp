@@ -1056,7 +1056,7 @@ void C_GstringPlayer::GetSpacecraftCameraFirstPerson( Vector &origin, QAngle &an
 	{
 		Vector vecFwd;
 		AngleVectors( targetAngles, &vecFwd );
-		targetOrigin += vecFwd * 0.55f;
+		targetOrigin += vecFwd * 0.72f;
 	}
 
 	Quaternion viewQuat, physQuat, finalQuat;
