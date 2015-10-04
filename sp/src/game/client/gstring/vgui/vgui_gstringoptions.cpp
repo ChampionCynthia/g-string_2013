@@ -35,7 +35,7 @@ static PostProcessingState_t presets[] =
 	// bw
 	{ false, false, false, false, false, false, false, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f },
 	// bw red
-	{ false, false, false, false, false, false, false, 0.0f, 0.0f, 0.0f, 0.0f, 0.5f, 0.0f, 0.0f, 0.0f },
+	//{ false, false, false, false, false, false, false, 0.0f, 0.0f, 0.0f, 0.0f, 0.5f, 0.0f, 0.0f, 0.0f },
 	// 70 mm
 	{ true, true, true, true, true, true, true, 1.0f, 0.2f, 0.8f, 0.1f, 0.1f, 0.2f, 0.7f, 0.6f },
 	// none
@@ -90,7 +90,7 @@ CVGUIGstringOptions::CVGUIGstringOptions( VPANEL parent, const char *pName ) : B
 	m_pCBox_Preset->AddItem( "#pp_preset_filmnoir", NULL );
 	m_pCBox_Preset->AddItem( "#pp_preset_filmnoir_red", NULL );
 	m_pCBox_Preset->AddItem( "#pp_preset_bw", NULL );
-	m_pCBox_Preset->AddItem( "#pp_preset_bw_red", NULL );
+	//m_pCBox_Preset->AddItem( "#pp_preset_bw_red", NULL );
 	m_pCBox_Preset->AddItem( "#pp_preset_70mm", NULL );
 	m_pCBox_Preset->AddItem( "#pp_preset_none", NULL );
 	m_pCBox_Preset->AddActionSignalTarget( this );
@@ -193,22 +193,7 @@ void CVGUIGstringOptions::OnCommand( const char *cmd )
 	}
 	else if ( !Q_stricmp( cmd, "defaults" ) )
 	{
-		cvar_gstring_drawhurtfx.Revert();
-		cvar_gstring_drawvignette.Revert();
-		cvar_gstring_drawgodrays.Revert();
-		cvar_gstring_drawscreenblur.Revert();
-		cvar_gstring_drawdreamblur.Revert();
-		cvar_gstring_drawlensflare.Revert();
-		cvar_gstring_drawwatereffects.Revert();
-
-		cvar_gstring_explosionfx_strength.Revert();
-		cvar_gstring_bars_scale.Revert();
-		cvar_gstring_motionblur_scale.Revert();
-		cvar_gstring_bloomflare_strength.Revert();
-		cvar_gstring_desaturation_strength.Revert();
-		cvar_gstring_filmgrain_strength.Revert();
-		cvar_gstring_bend_strength.Revert();
-		cvar_gstring_chromatic_aberration.Revert();
+		m_pCBox_Preset->ActivateItem( 0 );
 
 		gstring_hud_color.Revert();
 
@@ -216,7 +201,9 @@ void CVGUIGstringOptions::OnCommand( const char *cmd )
 		UpdateLabels();
 	}
 	else
+	{
 		BaseClass::OnCommand( cmd );
+	}
 }
 
 void CVGUIGstringOptions::ApplySchemeSettings( vgui::IScheme *pScheme )
@@ -229,13 +216,13 @@ void CVGUIGstringOptions::ApplySchemeSettings( vgui::IScheme *pScheme )
 
 void CVGUIGstringOptions::ReadValues( bool bUpdatePreset )
 {
-#define CVAR_CHECK_SELECTED( x, y ) ( y->SetSelected( x.GetBool(), false ) )
+#define CVAR_CHECK_SELECTED( x, y ) ( y->SetSelectedNoMessage( x.GetBool() ) )
 //#define CVAR_SLIDER_INTEGER( x, y, ratio ) ( y->SetValue( x.GetFloat() * ratio, false ) )
 
 	CVAR_CHECK_SELECTED( gstring_firstpersonbody_enable, m_pCheck_FirstPersonBody );
 	CVAR_CHECK_SELECTED( gstring_volumetrics_enabled, m_pCheck_LightVolumetrics );
 
-#define CVAR_STATE_CHECK_SELECTED( i, y ) ( y->SetSelected( m_state.checks[ i ], false ) )
+#define CVAR_STATE_CHECK_SELECTED( i, y ) ( y->SetSelectedNoMessage( m_state.checks[ i ] ) )
 #define CVAR_STATE_SLIDER_INTEGER( i, y ) ( y->SetValue( m_state.val[ i ] * 10.1f, false ) )
 	
 	CVAR_STATE_CHECK_SELECTED( 0, m_pCheck_HurtFX );

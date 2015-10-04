@@ -24,7 +24,7 @@ ConVar mat_disable_lightwarp( "mat_disable_lightwarp", "0" );
 ConVar mat_disable_fancy_blending( "mat_disable_fancy_blending", "0" );
 ConVar mat_fullbright( "mat_fullbright","0", FCVAR_CHEAT );
 extern ConVar r_flashlight_version2;
-static ConVar gstring_csm_blend_tweak( "gstring_csm_blend_tweak", "3" );
+static ConVar gstring_csm_blend_tweak( "gstring_csm_blend_tweak", "15" );
 
 static int gs_iFilterMode;
 static const char *const gs_CSMShaderNames[] = {

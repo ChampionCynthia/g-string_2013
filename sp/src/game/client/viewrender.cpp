@@ -2006,7 +2006,7 @@ void CViewRender::UpdateCascadedShadow( const CViewSetup &view, CascadedConfigMo
 
 	switch ( mode )
 	{
-	case CASCADEDCONFIG_FAR: // !bSpaceMap
+	case CASCADEDCONFIG_NORMAL:
 		{
 			ShadowConfig_t &closeShadow = shadowConfigs[ 0 ];
 			ShadowConfig_t &farShadow = shadowConfigs[ 1 ];
@@ -2020,7 +2020,7 @@ void CViewRender::UpdateCascadedShadow( const CViewSetup &view, CascadedConfigMo
 		}
 		break;
 
-	case CASCADEDCONFIG_CLOSE: // bFirstPersonSpace
+	case CASCADEDCONFIG_SPACE:
 		{
 			ShadowConfig_t &closeShadow = shadowConfigs[ 0 ];
 			ShadowConfig_t &farShadow = shadowConfigs[ 1 ];
@@ -2039,12 +2039,12 @@ void CViewRender::UpdateCascadedShadow( const CViewSetup &view, CascadedConfigMo
 
 	C_BasePlayer *pPlayer = C_BasePlayer::GetLocalPlayer();
 
-	Vector vecCascadeOrigin( ( mode == CASCADEDCONFIG_CLOSE ) ? view.origin :
+	Vector vecCascadeOrigin( ( mode == CASCADEDCONFIG_SPACE ) ? view.origin :
 		pPlayer ? pPlayer->GetRenderOrigin() : vec3_origin );
 	vecCascadeOrigin -= vecFwd * 1024.0f;
 
 	// This can only be set once per frame, not per shadow view. Fuckers.
-	if ( mode == CASCADEDCONFIG_CLOSE )
+	if ( mode == CASCADEDCONFIG_SPACE )
 	{
 		pRenderContext->SetShadowDepthBiasFactors( 1.0f, 0.000005f );
 	}
@@ -2551,8 +2551,8 @@ void CViewRender::RenderView( const CViewSetup &view, int nClearFlags, int whatT
 		0.0f : GetNightvisionMinLighting() );
 	
 	const bool bSpaceMap = g_pGstringGlobals != NULL && g_pGstringGlobals->IsSpaceMap();
-	const bool bFirstPersonSpace = bSpaceMap && gstring_spacecraft_firstperson.GetBool();
-	CascadedConfigMode cascadedMode = bSpaceMap ? bFirstPersonSpace ? CASCADEDCONFIG_CLOSE : CASCADEDCONFIG_NORMAL : CASCADEDCONFIG_FAR;
+	//const bool bFirstPersonSpace = bSpaceMap && gstring_spacecraft_firstperson.GetBool();
+	CascadedConfigMode cascadedMode = bSpaceMap ? CASCADEDCONFIG_SPACE : CASCADEDCONFIG_NORMAL;
 	// END GSTRINGMIGRATION
 
 	pRenderContext.SafeRelease(); // don't want to hold for long periods in case in a locking active share thread mode // GSTRINGMIGRATION
@@ -2623,7 +2623,7 @@ void CViewRender::RenderView( const CViewSetup &view, int nClearFlags, int whatT
 		if( !g_pIntroData )
 		{
 			ViewDrawScene( cascadedMode, bDrew3dSkybox, nSkyboxVisible, view, nClearFlags, VIEW_MAIN,
-				( whatToDraw & RENDERVIEW_DRAWVIEWMODEL ) != 0 && bFirstPersonSpace );
+				( whatToDraw & RENDERVIEW_DRAWVIEWMODEL ) != 0 );
 		}
 		else
 		{
@@ -2675,7 +2675,7 @@ void CViewRender::RenderView( const CViewSetup &view, int nClearFlags, int whatT
 
 		// Now actually draw the viewmodel
 		// GSTRINGMIGRATION
-		if ( !bFirstPersonSpace )
+		if ( !bSpaceMap )
 		{
 			DrawViewModels( view, whatToDraw & RENDERVIEW_DRAWVIEWMODEL, false );
 		}
@@ -2799,7 +2799,7 @@ void CViewRender::RenderView( const CViewSetup &view, int nClearFlags, int whatT
 			{
 				DrawBarsAndGrain( view.x, view.y, view.width, view.height );
 
-				if ( !bFirstPersonSpace )
+				if ( !bSpaceMap )
 				{
 					DrawVignette( view.x, view.y, view.width, view.height );
 				}

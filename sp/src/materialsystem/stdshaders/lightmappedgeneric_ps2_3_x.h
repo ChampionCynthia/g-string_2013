@@ -532,8 +532,14 @@ HALF4 main( PS_INPUT i ) : COLOR
 		g_CascadedForward, closePosition, i.worldPos_projPosZ.xyz, FLASHLIGHTDEPTHFILTERMODE, g_CascadedStepData,
 		vProjPos.xy / vProjPos.z, float4( 0.0005, 0.0, 0.0, 0.0 ) );
 
-	float flShadowMask = 1.0f - saturate( length( cross( g_AmbientLightIdentifier, diffuseLighting - g_AmbientLightMin ) )
-		* g_AmbientLightScale );
+	float3 lightDelta = diffuseLighting - g_AmbientLightMin;
+	lightDelta -= dot( g_AmbientLightIdentifier, lightDelta ) * g_AmbientLightIdentifier;
+	float flShadowMask = lightDelta.x * lightDelta.x + lightDelta.y * lightDelta.y + lightDelta.z * lightDelta.z;
+	flShadowMask = 1.0f - saturate( flShadowMask * g_AmbientLightScale );
+	
+	//float flShadowMask = 1.0f - saturate( length( cross( g_AmbientLightIdentifier, diffuseLighting - g_AmbientLightMin ) )
+	//	* g_AmbientLightScale );
+	
 	diffuseLighting = min( diffuseLighting, lerp( diffuseLighting, g_AmbientLightMin, flShadow * flShadowMask ) );
 #endif
 

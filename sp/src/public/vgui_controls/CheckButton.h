@@ -65,7 +65,8 @@ public:
 	~CheckButton();
 
 	// Check the button
-	virtual void SetSelected(bool state, bool bTriggerChangeMessage = true);
+	virtual void SetSelected(bool state);
+	virtual void SetSelectedNoMessage(bool state);
 
 	// sets whether or not the state of the check can be changed
 	// if this is set to false, then no input in the code or by the user can change it's state
