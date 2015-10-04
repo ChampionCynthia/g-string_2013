@@ -428,7 +428,13 @@ inline bool CClient_Precipitation::SimulateSnow( CPrecipitationParticle* pPartic
 void CClient_Precipitation::SimulatePlayerRainEffects( float dt )
 {
 	dt = MAX( 0.005f, dt );
-	if ( RandomInt( 0, 100 ) > m_iServerDensity * 60.0f * dt )
+	if ( r_RainProfile.GetBool() )
+	{
+		const int base = 15 + entindex() % 20;
+		engine->Con_NPrintf( base + 1, "HUD fx: dt %f, frame chance %f", dt, m_iServerDensity * 60.0f * dt );
+	}
+
+	if ( RandomInt( 0, 200 ) > m_iServerDensity * 60.0f * dt )
 	{
 		return;
 	}
@@ -534,10 +540,12 @@ void CClient_Precipitation::Simulate( float dt )
 		}
 	}
 
-	if ( r_RainProfile.GetInt() )
+	if ( r_RainProfile.GetBool() )
 	{
 		timer.End();
-		engine->Con_NPrintf( 15, "Rain simulation: %du (%d tracers)", timer.GetDuration().GetMicroseconds(), m_Particles.Count() );
+		const int base = 15 + entindex() % 20;
+		engine->Con_NPrintf( base, "Rain simulation: %du (%d particles, %f density, %i server density)",
+			timer.GetDuration().GetMicroseconds(), m_Particles.Count(), m_flDensity, m_iServerDensity );
 	}
 }
 

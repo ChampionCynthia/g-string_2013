@@ -24,6 +24,7 @@
 #include "rumble_shared.h"
 #include "gamestats.h"
 #include "decals.h"
+#include "hl2_shareddefs.h"
 
 #ifdef PORTAL
 	#include "portal_util_shared.h"
@@ -35,8 +36,10 @@
 //#define BOLT_MODEL			"models/crossbow_bolt.mdl"
 #define BOLT_MODEL	"models/weapons/w_missile_closed.mdl"
 
-#define BOLT_AIR_VELOCITY	2500
-#define BOLT_WATER_VELOCITY	1500
+// GSTRINGMIGRATION
+#define BOLT_AIR_VELOCITY	3500
+#define BOLT_WATER_VELOCITY	2500
+// END GSTRINGMIGRATION
 
 extern ConVar sk_plr_dmg_crossbow;
 extern ConVar sk_npc_dmg_crossbow;
@@ -228,11 +231,20 @@ void CCrossbowBolt::BoltTouch( CBaseEntity *pOther )
 
 		if( GetOwnerEntity() && GetOwnerEntity()->IsPlayer() && pOther->IsNPC() )
 		{
-			CTakeDamageInfo	dmgInfo( this, GetOwnerEntity(), sk_plr_dmg_crossbow.GetFloat(), DMG_NEVERGIB );
+			// GSTRINGMIGRATION
+			// Get proper impact hitbox.
+			trace_t trHitbox;
+			Vector vecShotDelta = ( tr.endpos - tr.startpos ).Normalized();
+			UTIL_TraceLine( tr.startpos, tr.endpos + vecShotDelta  * 50, MASK_SHOT, NULL, &trHitbox );
+			//DebugDrawLine( tr.startpos, tr.endpos + vecShotDelta * 50, 255, 0, 0, false, 5 );
+
+			CTakeDamageInfo	dmgInfo( this, GetOwnerEntity(), sk_plr_dmg_crossbow.GetFloat(), DMG_SNIPER | DMG_NEVERGIB );
 			dmgInfo.AdjustPlayerDamageInflictedForSkillLevel();
 			CalculateMeleeDamageForce( &dmgInfo, vecNormalizedVel, tr.endpos, 0.7f );
 			dmgInfo.SetDamagePosition( tr.endpos );
+			tr.physicsbone = trHitbox.physicsbone;
 			pOther->DispatchTraceAttack( dmgInfo, vecNormalizedVel, &tr );
+			// END GSTRINGMIGRATION
 
 			CBasePlayer *pPlayer = ToBasePlayer( GetOwnerEntity() );
 			if ( pPlayer )
@@ -243,7 +255,7 @@ void CCrossbowBolt::BoltTouch( CBaseEntity *pOther )
 		}
 		else
 		{
-			CTakeDamageInfo	dmgInfo( this, GetOwnerEntity(), sk_plr_dmg_crossbow.GetFloat(), DMG_BULLET | DMG_NEVERGIB );
+			CTakeDamageInfo	dmgInfo( this, GetOwnerEntity(), sk_plr_dmg_crossbow.GetFloat(), DMG_SNIPER | DMG_BULLET | DMG_NEVERGIB ); // GSTRINGMIGRATION
 			CalculateMeleeDamageForce( &dmgInfo, vecNormalizedVel, tr.endpos, 0.7f );
 			dmgInfo.SetDamagePosition( tr.endpos );
 			pOther->DispatchTraceAttack( dmgInfo, vecNormalizedVel, &tr );
@@ -359,7 +371,7 @@ void CCrossbowBolt::BoltTouch( CBaseEntity *pOther )
 				//DispatchEffect( "BoltImpact", data );
 				// END GSTRINGMIGRATION
 				
-				UTIL_ImpactTrace( &tr, DMG_BULLET );
+				UTIL_ImpactTrace( &tr, DMG_SNIPER | DMG_BULLET ); // GSTRINGMIGRATION
 
 				AddEffects( EF_NODRAW );
 				SetTouch( NULL );
@@ -384,7 +396,7 @@ void CCrossbowBolt::BoltTouch( CBaseEntity *pOther )
 			// Put a mark unless we've hit the sky
 			if ( ( tr.surface.flags & SURF_SKY ) == false )
 			{
-				UTIL_ImpactTrace( &tr, DMG_BULLET );
+				UTIL_ImpactTrace( &tr, DMG_SNIPER | DMG_BULLET ); // GSTRINGMIGRATION
 			}
 
 			UTIL_Remove( this );

@@ -20,6 +20,7 @@
 // GSTRINGMIGRATION
 #include "gstring/c_clientpartialragdoll.h"
 #include "gstring/cgstring_globals.h"
+#include "hl2_shareddefs.h"
 // END GSTRINGMIGRATION
 
 // memdbgon must be the last include file in a .cpp file!!!
@@ -101,11 +102,26 @@ IterationRetval_t CRagdollEnumerator::EnumElement( IHandleEntity *pHandleEntity 
 //-----------------------------------------------------------------------------
 bool FX_AffectRagdolls( Vector vecOrigin, Vector vecStart, int iDamageType )
 {
+	// GSTRINGMIGRATION
 	// don't do this when lots of ragdolls are simulating
 	//if ( s_RagdollLRU.CountRagdolls(true) > 1 )
 	//	return false;
+
+	// HACK: Crossbow only sends a short impact trace. Extend it artifically towards the player.
+	if ( ( iDamageType & DMG_SNIPER ) != 0 )
+	{
+		C_BasePlayer *pLocal = C_BasePlayer::GetLocalPlayer();
+		const float flLengthPlayer = ( pLocal->EyePosition() - vecOrigin ).Length();
+		Vector vecDelta = ( vecStart - vecOrigin );
+		const float flLengthImpact = vecDelta.NormalizeInPlace();
+		vecStart = vecOrigin + vecDelta * MAX( flLengthImpact, flLengthPlayer );
+	}
+	// END GSTRINGMIGRATION
+
 	Ray_t shotRay;
 	shotRay.Init( vecStart, vecOrigin );
+
+	//DebugDrawLine( vecStart, vecOrigin, 255, 0, 255, false, 5.0f );
 
 	CRagdollEnumerator ragdollEnum( shotRay, iDamageType );
 	partition->EnumerateElementsAlongRay( PARTITION_CLIENT_RESPONSIVE_EDICTS, shotRay, false, &ragdollEnum );

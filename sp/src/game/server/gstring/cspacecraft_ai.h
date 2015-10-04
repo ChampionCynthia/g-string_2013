@@ -2,7 +2,6 @@
 #define SPACECRAFT_AI_H
 
 #include "gstring/cspacecraft.h"
-#include "gstring/spaceai/spacecraftstate.h"
 
 class CStateMachine;
 

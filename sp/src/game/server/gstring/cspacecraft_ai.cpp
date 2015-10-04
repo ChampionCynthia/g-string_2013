@@ -5,8 +5,6 @@
 #include "in_buttons.h"
 #include "gstring/gstring_util.h"
 
-#include "spaceai/statemachine.h"
-
 #define MAX_PUSH_IDLE_DISTANCE 24.0f
 #define MAX_PUSH_DISTANCE 64.0f
 
@@ -128,22 +126,22 @@ void CSpacecraftAIBase::EnterState(AISTATE_e state)
 	switch (state)
 	{
 	case AISTATE_IDLE:
-		SetNextThink(RandomFloat(0.25f, 0.6f), &CSpacecraftAIBase::Think_Idle);
+		SetNextThink(gpGlobals->curtime + RandomFloat(0.25f, 0.6f), &CSpacecraftAIBase::Think_Idle);
 		SetMove(&CSpacecraftAIBase::Move_Idle);
 		break;
 
 	case AISTATE_ATTACK_AND_CHASE:
-		SetNextThink(0.0f, &CSpacecraftAIBase::Think_ShootSalvoes);
+		SetNextThink(gpGlobals->curtime + 0.01f, &CSpacecraftAIBase::Think_ShootSalvoes);
 		SetMove(&CSpacecraftAIBase::Move_Pursuit);
 		break;
 
 	case AISTATE_ATTACK_AND_IDLE:
-		SetNextThink(0.0f, &CSpacecraftAIBase::Think_ShootSalvoes);
+		SetNextThink(gpGlobals->curtime + 0.01f, &CSpacecraftAIBase::Think_ShootSalvoes);
 		SetMove(&CSpacecraftAIBase::Move_AttackStationary);
 		break;
 
 	case AISTATE_APPROACH_TARGET:
-		SetNextThink(RandomFloat(0.25f, 0.6f), &CSpacecraftAIBase::Think_Idle);
+		SetNextThink(gpGlobals->curtime + RandomFloat(0.25f, 0.6f), &CSpacecraftAIBase::Think_Idle);
 		SetMove(&CSpacecraftAIBase::Move_FollowPath);
 		break;
 

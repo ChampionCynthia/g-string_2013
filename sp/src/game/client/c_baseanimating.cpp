@@ -65,6 +65,7 @@
 #include "gstring/c_gibconfig.h"
 #include "gstring/c_gstring_util.h"
 #include "engine/ivmodelinfo.h"
+#include "hl2_shareddefs.h"
 // END GSTRINGMIGRATION
 
 // memdbgon must be the last include file in a .cpp file!!!
@@ -4712,12 +4713,13 @@ C_BaseAnimating *C_BaseAnimating::BecomeRagdollOnClient()
 	int iBloodColor = BloodColor();
 	C_BaseCombatCharacter *pCombatChar = dynamic_cast< C_BaseCombatCharacter* >( this );
 	const bool bExplosionImpact = ( pCombatChar != NULL && ( pCombatChar->GetKillDamageType() & DMG_BLAST ) != 0 );
+	const bool bSniperImpact = ( pCombatChar != NULL && ( pCombatChar->GetKillDamageType() & DMG_SNIPER ) != 0 );
 
-	const float flGibbingChance = ( pCombatChar && ( pCombatChar->GetKillDamageType() & DMG_BLAST ) != 0 ) ?
+	const float flGibbingChance = bExplosionImpact ?
 		gstring_gibbing_explosion_chance.GetFloat() : gstring_gibbing_chance.GetFloat();
 
 	if ( C_GibConfig::GetInstance()->GetGibsForModel( params, gibModels, &pszGibGroup, &pszGoreGroup, &pszGoreMaterial )
-		&& RandomFloat() <= flGibbingChance / 100.0f )
+		&& ( bSniperImpact || RandomFloat() <= flGibbingChance / 100.0f ) )
 	{
 		// create gibs based on configs
 		FOR_EACH_VEC( gibModels, i )

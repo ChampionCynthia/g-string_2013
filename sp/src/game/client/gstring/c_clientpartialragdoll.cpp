@@ -1,5 +1,7 @@
 
 #include "cbase.h"
+#include "hl2_shareddefs.h"
+
 #include "c_clientpartialragdoll.h"
 #include "c_gstring_util.h"
 #include "c_gibconfig.h"
@@ -125,7 +127,10 @@ void C_ClientPartialRagdoll::ImpactTrace( trace_t *pTrace, int iDamageType, cons
 
 		int index = decalsystem->GetDecalIndexForName( pszDecalName );
 		Vector vecDir = pTrace->endpos - pTrace->startpos;
-		vecDir.NormalizeInPlace();
+		if ( vecDir.LengthSqr() > FLT_EPSILON )
+		{
+			vecDir.NormalizeInPlace();
+		}
 
 		if ( index >= 0 )
 		{
@@ -157,8 +162,9 @@ void C_ClientPartialRagdoll::ImpactTrace( trace_t *pTrace, int iDamageType, cons
 
 	const float flGibbingChance = ( ( iDamageType & DMG_BLAST ) != 0 ) ?
 		gstring_gibbing_explosion_chance.GetFloat() : gstring_gibbing_chance.GetFloat();
+	const bool bSniperImpact = ( iDamageType & DMG_SNIPER ) != 0;
 
-	if ( RandomFloat() > flGibbingChance / 100.0f )
+	if ( !bSniperImpact && RandomFloat() > flGibbingChance / 100.0f )
 		return;
 
 	CStudioHdr *pHdr = GetModelPtr();
@@ -250,7 +256,14 @@ void C_ClientPartialRagdoll::ImpactTrace( trace_t *pTrace, int iDamageType, cons
 						STRING( m_strRecursiveGoreMaterialName ) );
 					pRecursiveRagdoll->SetShrinkingEnabled( true );
 
-					pRecursiveRagdoll->m_vecForce = ( pTrace->endpos - pTrace->startpos ).Normalized() * RandomFloat( 15000.0f, 35000.0f );
+					Vector vecDelta = pTrace->endpos - pTrace->startpos;
+					if ( vecDelta.LengthSqr() <= FLT_EPSILON )
+					{
+						vecDelta = RandomVector( -1, 1 );
+					}
+					vecDelta.NormalizeInPlace();
+
+					pRecursiveRagdoll->m_vecForce = vecDelta * RandomFloat( 15000.0f, 35000.0f );
 					pRecursiveRagdoll->m_nForceBone = pTrace->physicsbone;
 
 					pRecursiveRagdoll->SetBloodColor( BloodColor() );

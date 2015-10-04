@@ -366,6 +366,14 @@ void CBaseHLBludgeonWeapon::Swing( int bIsSecondary )
 		
 		// See if we happened to hit water
 		ImpactWater( swingStart, testEnd );
+
+		// GSTRINGMIGRATION
+		CEffectData data;
+		data.m_vStart = traceHit.startpos;
+		data.m_vOrigin = traceHit.endpos;
+		data.m_nDamageType = DMG_BULLET;
+		DispatchEffect( "RagdollImpact", data );
+		// END GSTRINGMIGRATION
 	}
 	else
 	{

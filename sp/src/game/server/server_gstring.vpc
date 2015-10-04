@@ -35,32 +35,6 @@ $Project "Server (G-String)"
 				$File	"gstring\hologui\point_holo_conversation.cpp"
 				$File	"gstring\hologui\point_holo_conversation.h"
 			}
-			
-			$Folder "Space AI"
-			{
-				$File	"gstring\spaceai\componentfactory.cpp"
-				$File	"gstring\spaceai\componentfactory.h"
-				$File	"gstring\spaceai\spacecraftstate.cpp"
-				$File	"gstring\spaceai\spacecraftstate.h"
-				$File	"gstring\spaceai\statemachine.cpp"
-				$File	"gstring\spaceai\statemachine.h"
-				
-				$File	"gstring\spaceai\iaction.cpp"
-				$File	"gstring\spaceai\iaction.h"
-				$File	"gstring\spaceai\icommand.h"
-				$File	"gstring\spaceai\icondition.cpp"
-				$File	"gstring\spaceai\icondition.h"
-				$File	"gstring\spaceai\imove.cpp"
-				$File	"gstring\spaceai\imove.h"
-				
-				$File	"gstring\spaceai\action_change_state.cpp"
-				$File	"gstring\spaceai\action_set_player_as_enemy.cpp"
-				
-				$File	"gstring\spaceai\condition_player_distance.cpp"
-				$File	"gstring\spaceai\condition_player_visible.cpp"
-				
-				$File	"gstring\spaceai\move_idle_position.cpp"
-			}
 		}
 	
 		$File	"ai_eventresponse.cpp"
