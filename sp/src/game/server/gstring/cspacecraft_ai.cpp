@@ -123,25 +123,26 @@ CSpacecraftAIBase::~CSpacecraftAIBase()
 
 void CSpacecraftAIBase::EnterState(AISTATE_e state)
 {
+	float flThinkTime = RandomFloat( 0.25f, 1.0f );
 	switch (state)
 	{
 	case AISTATE_IDLE:
-		SetNextThink(gpGlobals->curtime + RandomFloat(0.25f, 0.6f), &CSpacecraftAIBase::Think_Idle);
+		SetNextThink(flThinkTime, &CSpacecraftAIBase::Think_Idle);
 		SetMove(&CSpacecraftAIBase::Move_Idle);
 		break;
 
 	case AISTATE_ATTACK_AND_CHASE:
-		SetNextThink(gpGlobals->curtime + 0.01f, &CSpacecraftAIBase::Think_ShootSalvoes);
+		SetNextThink(flThinkTime, &CSpacecraftAIBase::Think_ShootSalvoes);
 		SetMove(&CSpacecraftAIBase::Move_Pursuit);
 		break;
 
 	case AISTATE_ATTACK_AND_IDLE:
-		SetNextThink(gpGlobals->curtime + 0.01f, &CSpacecraftAIBase::Think_ShootSalvoes);
+		SetNextThink(flThinkTime, &CSpacecraftAIBase::Think_ShootSalvoes);
 		SetMove(&CSpacecraftAIBase::Move_AttackStationary);
 		break;
 
 	case AISTATE_APPROACH_TARGET:
-		SetNextThink(gpGlobals->curtime + RandomFloat(0.25f, 0.6f), &CSpacecraftAIBase::Think_Idle);
+		SetNextThink(flThinkTime, &CSpacecraftAIBase::Think_Idle);
 		SetMove(&CSpacecraftAIBase::Move_FollowPath);
 		break;
 

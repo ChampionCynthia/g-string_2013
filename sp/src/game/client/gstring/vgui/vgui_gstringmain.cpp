@@ -4,6 +4,7 @@
 #include "gstring/gstring_cvars.h"
 #include "gstring/vgui/vgui_gstringmain.h"
 #include "ienginevgui.h"
+#include "engine/IEngineSound.h"
 
 #include "vgui_controls/Panel.h"
 #include <vgui/ISurface.h>
@@ -46,6 +47,7 @@ CVGUIGstringMain *GetGstringMain()
 
 CVGUIGstringMain::CVGUIGstringMain( VPANEL parent, const char *pName ) : BaseClass( NULL, pName )
 	, m_ilastSize( 0 )
+	, m_bRain( false )
 {
 	SetParent( parent );
 	SetVisible( true );
@@ -100,6 +102,10 @@ void CVGUIGstringMain::PerformLayout()
 	UpdateLayoutVisibility();
 }
 
+int rainSound = -1;
+int scannerEngineSound = -1;
+int menuWindSound = -1;
+
 void CVGUIGstringMain::OnThink()
 {
 	surface()->MovePopupToBack( GetVPanel() );
@@ -115,6 +121,21 @@ void CVGUIGstringMain::OnThink()
 	{
 		bWasIngame = bIsIngame;
 		UpdateLayoutVisibility();
+	}
+
+	// Play rain sound
+	const bool bIsPlayingRainSound = rainSound >= 0 && enginesound->IsSoundStillPlaying(rainSound);
+	if (m_bRain && !bIsPlayingRainSound)
+	{
+		enginesound->EmitAmbientSound("vgui/slow_rain.wav", 1.0f, PITCH_NORM, 0, 0);
+		rainSound = enginesound->GetGuidForLastSoundEmitted();
+	}
+	// Play wind sound
+	const bool bIsPlayingMenuWindSound = menuWindSound >= 0 && enginesound->IsSoundStillPlaying(menuWindSound);
+	if (!bIsPlayingMenuWindSound)
+	{
+		enginesound->EmitAmbientSound("vgui/stormy_wind.wav", 1.0f, PITCH_NORM, 0, 0);
+		menuWindSound = enginesound->GetGuidForLastSoundEmitted();
 	}
 
 	// for some reason the immediate layout update after resolution change
@@ -351,7 +372,7 @@ pFnLayerRoutine( _scanner_00 )
 		}
 
 		pParticle_star = new vParticle();
-		pParticle_star->CreateQuadRenderer( "vgui/menu/glow_star" );
+		pParticle_star->CreateQuadRenderer( "vgui/menu/glow_scanner" );
 		pParticle_star->SetStartColor( Vector( 1, 0.6f, 0.5f ) );
 
 		vParticleOperatorBase *pOp = new vParticleOperator_AlphaFade(0);
@@ -373,7 +394,7 @@ pFnLayerRoutine( _scanner_00 )
 	}
 	else
 	{
-		pParticle_star->vecPos.Init( w * 0.87f, t * 0.545f );
+		pParticle_star->vecPos.Init( w * 0.881f, t * 0.494f );
 		pParticle_star->SetStartSize_Relative( sin( CFrameTimeHelper::GetCurrentTime() * 10.0f ) * 40 + 40 );
 
 		//pParticle_lightshaft->vecPos.Init( w * 0.5f, t * 0.45f );
@@ -392,7 +413,26 @@ pFnLayerRoutine( _scanner_00 )
 		float path_x = sw * 3.0f;
 		float move_y = sin( CFrameTimeHelper::GetCurrentTime() ) * st * 0.02f;
 
-		l->SetPos( path_x * frac - path_x * x_offset, st * frac * y_offset + move_y );
+		int scannerXPos = path_x * frac - path_x * x_offset;
+		l->SetPos( scannerXPos, st * frac * y_offset + move_y );
+		const int soundPosition = scannerXPos + 0.92f * w;
+		const bool playEngineSound = soundPosition > 0 && soundPosition < sw;
+
+		// Play or stop scanner sound
+		const bool bIsPlayingEngineSound = scannerEngineSound >= 0 && enginesound->IsSoundStillPlaying(scannerEngineSound);
+		if (playEngineSound != bIsPlayingEngineSound)
+		{
+			if (playEngineSound)
+			{
+				enginesound->EmitAmbientSound("vgui/scanner_engine.wav", 1.0f, PITCH_NORM, 0, 0);
+				scannerEngineSound = enginesound->GetGuidForLastSoundEmitted();
+			}
+			else
+			{
+				enginesound->StopSoundByGuid(scannerEngineSound);
+				scannerEngineSound = -1;
+			}
+		}
 
 		static float nextDustEmission = 0.0f;
 
@@ -434,7 +474,7 @@ pFnLayerRoutine( _clouds_00 )
 
 		if ( flNextSpawn < CFrameTimeHelper::GetCurrentTime() )
 		{
-			flNextSpawn = CFrameTimeHelper::GetCurrentTime() + RandomFloat( 0.1f, 1.0f );
+			flNextSpawn = CFrameTimeHelper::GetCurrentTime() + RandomFloat( 0.1f, 0.8f );
 
 			int w, t;
 			l->GetSize( w, t );
@@ -443,15 +483,15 @@ pFnLayerRoutine( _clouds_00 )
 
 			p->CreateQuadRenderer( GetSmokeMaterial() );
 
-			p->vecPos.Init( w * RandomFloat( 0, 1 ), t * RandomFloat( 0.9f, 1.3f ) );
+			p->vecPos.Init( w * RandomFloat( -0.2f, 1 ), t * RandomFloat( 0.25f, 0.4f ) );
 			p->vecVelocity.Init( w * RandomFloat( 0.01f, 0.1f ), 0.0f );
 			p->flAngle = RandomFloat( 0, 360.0f );
 
 			p->SetLifeDuration( RandomFloat( 4.0f, 6.0f ) );
-			p->SetStartSize_Relative( RandomFloat( 450, 600 ) );
+			p->SetStartSize_Relative( RandomFloat( 250, 350 ) );
 			p->SetStartAlpha( 0 );
-			float c = RandomFloat( 0.2f, 0.3f );
-			p->SetStartColor( Vector( c, c, c * 1.5f ) );
+			float c = RandomFloat( 0.7f, 0.9f );
+			p->SetStartColor( Vector( c, c * 0.8f, c * 0.35f ) );
 
 			vParticleOperatorBase *pOp = new vParticleOperator_AlphaFade(RandomFloat( 0.3f, 0.6f ) );
 			pOp->GetImpulseGenerator()->mode = vParticleImpulseGen::PARTICLEIMPULSEGENERATOR_LIFETIME_SINE;
@@ -560,6 +600,27 @@ pFnLayerRoutine( _sparks_00 )
 
 		if ( flNextSpark < CFrameTimeHelper::GetCurrentTime() )
 		{
+			const char *sparkSounds[] = {
+				"vgui/spark1.wav",
+				"vgui/spark2.wav",
+				"vgui/spark3.wav",
+				"vgui/spark4.wav",
+				"vgui/spark5.wav",
+				"vgui/spark6.wav",
+				"vgui/zap1.wav",
+				"vgui/zap2.wav",
+				"vgui/zap3.wav",
+				"vgui/zap4.wav",
+				"vgui/zap5.wav",
+				"vgui/zap6.wav",
+				"vgui/zap7.wav",
+				"vgui/zap8.wav",
+				"vgui/zap9.wav",
+			};
+			const int sparkSoundCount = ARRAYSIZE(sparkSounds);
+			const int sparkSoundIndex = RandomInt(0, sparkSoundCount - 1);
+			enginesound->EmitAmbientSound(sparkSounds[sparkSoundIndex], 1.0f, PITCH_NORM, 0, 0);
+
 			flNextSpark = CFrameTimeHelper::GetCurrentTime() + RandomFloat( 10, 20 );
 
 			int w, t;
@@ -667,16 +728,17 @@ pFnLayerRoutine( _paint_ppe_menu_fx )
 void CVGUIGstringMain::LoadBackground00( Vector &vOrigin, QAngle &vAng, float &vFOV )
 {
 	float flTime = CFrameTimeHelper::GetCurrentTime();
-	bool bRain = ( int(flTime * 10000.0f) % 2 ) != 0; //RandomInt( 0, 3 ) != 0;
+	m_bRain = ( int(flTime * 10000.0f) % 2 ) != 0; //RandomInt( 0, 3 ) != 0;
 
-	CVGUIMenuLayer *pLayer = new CVGUIMenuLayer( this, true );
+	CVGUIMenuLayer *pLayer;
+	pLayer = new CVGUIMenuLayer( this, true );
 	pLayer->SetBackgroundImage( "vgui/menu/bg_00_layer_00" );
 	//pLayer->SetIngameRenderingEnabled( false );
 	m_hLayer_Background.AddToTail( pLayer );
 
-	pLayer = new CVGUIMenuLayer( this, true );
-	pLayer->SetRoutine( _lightShafts_00 );
-	m_hLayer_Background.AddToTail( pLayer );
+	//pLayer = new CVGUIMenuLayer( this, true );
+	//pLayer->SetRoutine( _lightShafts_00 );
+	//m_hLayer_Background.AddToTail( pLayer );
 
 	pLayer = new CVGUIMenuLayer( this, true );
 	pLayer->SetBackgroundImage( "vgui/menu/bg_00_layer_01" );
@@ -697,7 +759,7 @@ void CVGUIGstringMain::LoadBackground00( Vector &vOrigin, QAngle &vAng, float &v
 	pLayer->SetRoutine( _sparks_00 );
 	m_hLayer_Background.AddToTail( pLayer );
 
-	if ( bRain )
+	if ( m_bRain )
 	{
 		pLayer = new CVGUIMenuLayer( this, true );
 		pLayer->SetRoutine( _rain_scene );
@@ -737,10 +799,11 @@ void CVGUIGstringMain::LoadBackground00( Vector &vOrigin, QAngle &vAng, float &v
 
 	m_pWrappedMenu->MoveToFront();
 
-	if ( bRain )
+	if ( m_bRain )
 	{
 		pLayer = new CVGUIMenuLayer( this, true, true );
 		pLayer->SetRoutine( _rain_screen );
 		m_hLayer_Top.AddToTail( pLayer );
 	}
+
 }

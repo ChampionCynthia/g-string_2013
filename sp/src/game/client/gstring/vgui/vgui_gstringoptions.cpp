@@ -25,21 +25,21 @@ extern ConVar gstring_volumetrics_enabled;
 static PostProcessingState_t presets[] =
 {
 	// Subtle
-	{ true, true, true, true, true, true, false, 0.0f, 0.3f, 0.7f, 0.3f, 0.0f, 0.1f, 0.2f, 0.2f },
+	{ true, true, true, true, true, true, false, true, 0.0f, 0.3f, 0.7f, 0.3f, 0.0f, 0.1f, 0.2f, 0.2f },
 	// Vibrant
-	{ true, true, true, true, true, true, true, 0.0f, 0.7f, 1.0f, 0.5f, 0.0f, 0.2f, 0.6f, 0.8f },
+	{ true, true, true, true, true, true, true, true, 0.0f, 0.7f, 1.0f, 0.5f, 0.0f, 0.2f, 0.6f, 0.8f },
 	// film noir
-	{ true, true, true, true, true, true, true, 0.0f, 0.8f, 1.0f, 0.5f, 1.0f, 0.3f, 0.2f, 0.9f },
+	{ true, true, true, true, true, true, true, true, 0.0f, 0.8f, 1.0f, 0.5f, 1.0f, 0.3f, 0.2f, 0.9f },
 	// film noir red
-	{ true, true, true, true, true, true, true, 0.0f, 0.8f, 1.0f, 0.5f, 0.5f, 0.3f, 0.2f, 0.9f },
+	{ true, true, true, true, true, true, true, true, 0.0f, 0.8f, 1.0f, 0.5f, 0.5f, 0.3f, 0.2f, 0.9f },
 	// bw
-	{ false, false, false, false, false, false, false, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f },
+	{ false, false, false, false, false, false, false, false, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f },
 	// bw red
 	//{ false, false, false, false, false, false, false, 0.0f, 0.0f, 0.0f, 0.0f, 0.5f, 0.0f, 0.0f, 0.0f },
 	// 70 mm
-	{ true, true, true, true, true, true, true, 1.0f, 0.2f, 0.8f, 0.1f, 0.1f, 0.2f, 0.7f, 0.6f },
+	{ true, true, true, true, true, true, true, true, 1.0f, 0.2f, 0.8f, 0.1f, 0.1f, 0.2f, 0.7f, 0.6f },
 	// none
-	{ false, false, false, false, false, false, false, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },
+	{ false, false, false, false, false, false, false, false, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },
 };
 
 static float scales[ PP_VALS ] = {
@@ -51,6 +51,13 @@ static float scales[ PP_VALS ] = {
 	5.0f,
 	1.0f,
 	100.0f
+};
+
+static Color HUDColors[ HUDCOLOR_VALS ] = {
+	Color( 255, 229, 153, 255 ),
+	Color( 255, 128, 0, 255 ),
+	Color( 255, 255, 255, 255 ),
+	Color( 164, 164, 164, 255 ),
 };
 
 CVGUIGstringOptions::CVGUIGstringOptions( VPANEL parent, const char *pName ) : BaseClass( NULL, pName )
@@ -84,6 +91,7 @@ CVGUIGstringOptions::CVGUIGstringOptions( VPANEL parent, const char *pName ) : B
 	CREATE_VGUI_CHECKBOX( m_pCheck_LensFlare, "check_lensflare", pPagePostProcessing );
 	CREATE_VGUI_CHECKBOX( m_pCheck_DreamBlur, "check_dreamblur", pPagePostProcessing );
 	CREATE_VGUI_CHECKBOX( m_pCheck_ScreenBlur, "check_screenblur", pPagePostProcessing );
+	CREATE_VGUI_CHECKBOX( m_pCheck_CinemaOverlay, "check_cinemaoverlay", pPagePostProcessing );
 	m_pCBox_Preset = new ComboBox( pPagePostProcessing, "combo_preset", 10, false );
 	m_pCBox_Preset->AddItem( "#pp_preset_subtle", NULL );
 	m_pCBox_Preset->AddItem( "#pp_preset_vibrant", NULL );
@@ -119,6 +127,12 @@ CVGUIGstringOptions::CVGUIGstringOptions( VPANEL parent, const char *pName ) : B
 	//CREATE_VGUI_CHECKBOX( m_pCheck_FirstPersonShadow, "check_first_person_shadow", pPageGame );
 	CREATE_VGUI_CHECKBOX( m_pCheck_LightVolumetrics, "check_volumetrics", pPageGame );
 
+	m_pCBox_HUDColorPreset = new ComboBox( pPageGame, "cbox_color_preset", 10, false );
+	m_pCBox_HUDColorPreset->AddItem( "#options_game_hud_color_preset_default", NULL );
+	m_pCBox_HUDColorPreset->AddItem( "#options_game_hud_color_preset_orange", NULL );
+	m_pCBox_HUDColorPreset->AddItem( "#options_game_hud_color_preset_white", NULL );
+	m_pCBox_HUDColorPreset->AddItem( "#options_game_hud_color_preset_dark", NULL );
+	m_pCBox_HUDColorPreset->AddActionSignalTarget( this );
 	m_pHUDColorPicker = new CColorPickerButton( pPageGame, "hud_color_picker_button", this );
 
 	pPageGame->LoadControlSettings( "resource/gstring_options_page_game.res" );
@@ -139,6 +153,7 @@ CVGUIGstringOptions::CVGUIGstringOptions( VPANEL parent, const char *pName ) : B
 	m_pVarChecks[ 4 ] = &cvar_gstring_drawlensflare;
 	m_pVarChecks[ 5 ] = &cvar_gstring_drawdreamblur;
 	m_pVarChecks[ 6 ] = &cvar_gstring_drawscreenblur;
+	m_pVarChecks[ 7 ] = &cvar_gstring_drawcinemaoverlay;
 	m_pVarValues[ 0 ] = &cvar_gstring_bars_scale;
 	m_pVarValues[ 1 ] = &cvar_gstring_motionblur_scale;
 	m_pVarValues[ 2 ] = &cvar_gstring_bloomflare_strength;
@@ -232,6 +247,7 @@ void CVGUIGstringOptions::ReadValues( bool bUpdatePreset )
 	CVAR_STATE_CHECK_SELECTED( 4, m_pCheck_LensFlare );
 	CVAR_STATE_CHECK_SELECTED( 5, m_pCheck_DreamBlur );
 	CVAR_STATE_CHECK_SELECTED( 6, m_pCheck_ScreenBlur );
+	CVAR_STATE_CHECK_SELECTED( 7, m_pCheck_CinemaOverlay );
 	CVAR_STATE_SLIDER_INTEGER( 0, m_pSlider_CinematicBars_Size );
 	CVAR_STATE_SLIDER_INTEGER( 1, m_pSlider_MotionBlur_Strength );
 	CVAR_STATE_SLIDER_INTEGER( 2, m_pSlider_BloomFlare_Strength );
@@ -243,6 +259,16 @@ void CVGUIGstringOptions::ReadValues( bool bUpdatePreset )
 
 	UTIL_StringToColor( m_colHUD, gstring_hud_color.GetString() );
 	m_pHUDColorPicker->SetColor( m_colHUD );
+
+	for ( int i = 0; i < HUDCOLOR_VALS; ++i )
+	{
+		const Color &col = HUDColors[ i ];
+		if ( col == m_colHUD )
+		{
+			m_pCBox_HUDColorPreset->ActivateItem( i );
+			break;
+		}
+	}
 
 	if ( bUpdatePreset )
 	{
@@ -274,7 +300,8 @@ void CVGUIGstringOptions::OnCheckButtonChecked( Panel *panel )
 			m_pCheck_Vignette,
 			m_pCheck_LensFlare,
 			m_pCheck_DreamBlur,
-			m_pCheck_ScreenBlur
+			m_pCheck_ScreenBlur,
+			m_pCheck_CinemaOverlay
 		};
 		for ( int i = 0; i < PP_CHECKS; ++i )
 		{
@@ -332,7 +359,17 @@ void CVGUIGstringOptions::OnSliderMoved( Panel *panel )
 
 void CVGUIGstringOptions::OnTextChanged( KeyValues *pKV )
 {
-	ApplyPreset( m_pCBox_Preset->GetActiveItem() );
+	Panel *p = (Panel*)pKV->GetPtr( "panel" );
+	if ( p == m_pCBox_Preset )
+	{
+		ApplyPreset( m_pCBox_Preset->GetActiveItem() );
+	}
+	else if ( p == m_pCBox_HUDColorPreset )
+	{
+		const Color &col = HUDColors[ m_pCBox_HUDColorPreset->GetActiveItem() ];
+		m_colHUD = col;
+		m_pHUDColorPicker->SetColor( col );
+	}
 }
 
 void CVGUIGstringOptions::OnPicked( KeyValues *pKV )

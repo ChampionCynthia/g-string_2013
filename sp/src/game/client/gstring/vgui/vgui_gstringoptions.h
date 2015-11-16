@@ -10,8 +10,9 @@
 // m_pCheck_HurtFX, m_pCheck_GodRays, m_pCheck_WaterEffects, m_pCheck_Vignette, m_pCheck_LensFlare, m_pCheck_DreamBlur, m_pCheck_ScreenBlur
 // m_pSlider_CinematicBars_Size, m_pSlider_MotionBlur_Strength, m_pSlider_BloomFlare_Strength, m_pSlider_ExplosionBlur_Strength,
 //		m_pSlider_Desaturation_Strength, m_pSlider_FilmGrain_Strength, m_pSlider_Bend_Strength, m_pSlider_Chromatic_Strength
-#define PP_CHECKS 7
+#define PP_CHECKS 8
 #define PP_VALS 8
+#define HUDCOLOR_VALS 4
 struct PostProcessingState_t
 {
 	bool checks[PP_CHECKS];
@@ -61,6 +62,7 @@ private:
 	vgui::CheckButton	*m_pCheck_LensFlare;
 	vgui::CheckButton	*m_pCheck_DreamBlur;
 	vgui::CheckButton	*m_pCheck_ScreenBlur;
+	vgui::CheckButton	*m_pCheck_CinemaOverlay;
 
 	vgui::Slider		*m_pSlider_CinematicBars_Size;
 	vgui::Slider		*m_pSlider_MotionBlur_Strength;
@@ -80,6 +82,7 @@ private:
 	vgui::Label			*m_pLabel_Value_Bend;
 	vgui::Label			*m_pLabel_Value_Chromatic;
 
+	vgui::ComboBox		*m_pCBox_HUDColorPreset;
 	CColorPickerButton	*m_pHUDColorPicker;
 	Color m_colHUD;
 

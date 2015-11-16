@@ -53,7 +53,7 @@ private:
 	CVGUIMenuEmbedded *m_pWrappedMenu;
 
 	float m_flNextDepth;
-
+	bool m_bRain;
 	int m_ilastSize;
 };
 

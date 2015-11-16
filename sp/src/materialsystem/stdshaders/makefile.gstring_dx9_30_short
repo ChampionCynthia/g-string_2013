@@ -1,13 +1,12 @@
-default:  fxctmp9_tmp\SDK_lightmappedgeneric_filter0_ps30.inc shaders\fxc\SDK_lightmappedgeneric_filter0_ps30.vcs
+default:  fxctmp9_tmp\decalmodulate_ps30.inc shaders\fxc\decalmodulate_ps30.vcs
 
-fxctmp9_tmp\SDK_lightmappedgeneric_filter0_ps30.inc shaders\fxc\SDK_lightmappedgeneric_filter0_ps30.vcs: SDK_lightmappedgeneric_filter0_ps30.fxc common_lightmappedgeneric_fxc.h common_fxc.h common_hlsl_cpp_consts.h common_pragmas.h common_flashlight_fxc.h lightmappedgeneric_ps2_3_x.h common_ps_fxc.h
-	perl ..\..\devtools\bin\fxc_prep.pl   -source "..\.." SDK_lightmappedgeneric_filter0_ps30.fxc-----SDK_lightmappedgeneric_filter0_ps30
-	echo SDK_lightmappedgeneric_filter0_ps30.fxc>> filestocopy.txt
-	echo common_lightmappedgeneric_fxc.h>> filestocopy.txt
+fxctmp9_tmp\decalmodulate_ps30.inc shaders\fxc\decalmodulate_ps30.vcs: decalmodulate_ps2x.fxc common_fxc.h shader_constant_register_map.h common_hlsl_cpp_consts.h common_pragmas.h common_vertexlitgeneric_dx9.h common_ps_fxc.h
+	perl ..\..\devtools\bin\fxc_prep.pl   -source "..\.." decalmodulate_ps2x.fxc-----decalmodulate_ps30
+	echo decalmodulate_ps2x.fxc>> filestocopy.txt
 	echo common_fxc.h>> filestocopy.txt
+	echo shader_constant_register_map.h>> filestocopy.txt
 	echo common_hlsl_cpp_consts.h>> filestocopy.txt
 	echo common_pragmas.h>> filestocopy.txt
-	echo common_flashlight_fxc.h>> filestocopy.txt
-	echo lightmappedgeneric_ps2_3_x.h>> filestocopy.txt
+	echo common_vertexlitgeneric_dx9.h>> filestocopy.txt
 	echo common_ps_fxc.h>> filestocopy.txt
 

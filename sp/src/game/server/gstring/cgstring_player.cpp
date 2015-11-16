@@ -81,6 +81,8 @@ void CGstringPlayer::Activate()
 	BaseClass::Activate();
 
 	RemoveFlag( FL_GODMODE );
+	m_takedamage = DAMAGE_YES;
+	RemoveSolidFlags( FSOLID_NOT_SOLID );
 }
 
 void CGstringPlayer::DoReloadAnim()
