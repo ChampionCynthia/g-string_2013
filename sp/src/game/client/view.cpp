@@ -328,6 +328,19 @@ void CViewRender::Init( void ) // GSTRINGMIGRATION
 #if defined( CSTRIKE_DLL )
 	m_flLastFOV = default_fov.GetFloat();
 #endif
+
+	ITexture *depthOld = materials->FindTexture( "_rt_FullFrameDepth", TEXTURE_GROUP_RENDER_TARGET );
+	int flags = depthOld->GetFlags();
+ 
+	materials->BeginRenderTargetAllocation();
+	materials->CreateNamedRenderTargetTextureEx(
+			"_rt_FullFrame16",
+			0, 0, RT_SIZE_FULL_FRAME_BUFFER_ROUNDED_UP,
+			IMAGE_FORMAT_RGBA16161616F,
+			MATERIAL_RT_DEPTH_NONE,
+			flags,
+			0);
+	materials->EndRenderTargetAllocation();
 }
 
 //-----------------------------------------------------------------------------
@@ -754,6 +767,8 @@ void CViewRender::SetUpViews()
 	{
 		view.fovViewmodel = v_viewmodel_fov_space.GetFloat();
 	}
+
+	view.fovViewmodel = MAX(1, view.fovViewmodel);
 
 	if ( UseVR() )
 	{

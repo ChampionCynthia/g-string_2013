@@ -403,6 +403,12 @@ void CHud::SetRenderingStage( HUDRENDERSTAGE_t stage )
 	OnRendermodeChanged();
 }
 
+CHud::HUDRENDERSTAGE_t CHud::GetRenderingStage() const
+{
+	return (HUDRENDERSTAGE_t)m_iRenderingStage;
+}
+// END GSTRINGMIGRATION
+
 //-----------------------------------------------------------------------------
 // Purpose: This is called every time the DLL is loaded
 //-----------------------------------------------------------------------------

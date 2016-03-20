@@ -76,8 +76,10 @@ public:
 		if ( g_bRollingCredits && m_iCreditsType == CREDITS_INTRO )
 			 g_bRollingCredits = false;
 
-		return IsActive(); 
+		return IsActive();
 	}
+
+	virtual CHud::HUDRENDERSTAGE_t	GetRenderStage(){ return CHud::HUDRENDERSTAGE_DEFAULT_HUD; };
 
 protected:
 	virtual void Paint();
@@ -580,6 +582,12 @@ void CHudCredits::ApplySchemeSettings( IScheme *pScheme )
 
 void CHudCredits::Paint()
 {
+	// Stupid shit doesn't work in ShouldDraw for whatever reason. Does for every other HUD element AS IT SHOULD.
+	if (gHUD.GetRenderingStage() == CHud::HUDRENDERSTAGE_PRE_HDR)
+		return;
+	if (gHUD.GetRenderingStage() == CHud::HUDRENDERSTAGE_PRE_BARS)
+		return;
+
 	if ( m_iCreditsType == CREDITS_LOGO )
 	{
 		DrawLogo();

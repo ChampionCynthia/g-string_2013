@@ -2708,6 +2708,22 @@ void CViewRender::RenderView( const CViewSetup &view, int nClearFlags, int whatT
 			UpdateScreenEffectTexture( 0, view.x, view.y, view.width, view.height );
 		}
 
+		if ( !bBuildingCubemaps && !bSpaceMap && ShouldDrawDoF() )
+		{
+			ITexture *pRenderTarget = materials->FindTexture( "_rt_FullFrame16", TEXTURE_GROUP_RENDER_TARGET );
+
+			if ( pRenderTarget == NULL )
+				return;
+
+			render->Push3DView( view, VIEW_CLEAR_DEPTH | VIEW_CLEAR_COLOR, pRenderTarget, GetFrustum() );
+			ClearDoF( view.x, view.y, view.width, view.height );
+			DrawWorldAndEntities( false, view, VIEW_CLEAR_DEPTH );
+			DrawViewModels( view, true, false );
+			render->PopView( GetFrustum() );
+
+			DrawDoF( view.x, view.y, view.width, view.height, view.m_eStereoEye );
+		}
+
 		if ( !bBuildingCubemaps )
 		{
 			DrawScreenGaussianBlur( view.x, view.y, view.width, view.height );

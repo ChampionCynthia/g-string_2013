@@ -1,22 +1,50 @@
-default:  fxctmp9_tmp\decalmodulate_ps20.inc shaders\fxc\decalmodulate_ps20.vcs fxctmp9_tmp\decalmodulate_ps20b.inc shaders\fxc\decalmodulate_ps20b.vcs
+default:  fxctmp9_tmp\sky_ps20.inc shaders\fxc\sky_ps20.vcs fxctmp9_tmp\sky_ps20b.inc shaders\fxc\sky_ps20b.vcs fxctmp9_tmp\sky_hdr_compressed_ps20.inc shaders\fxc\sky_hdr_compressed_ps20.vcs fxctmp9_tmp\sky_hdr_compressed_ps20b.inc shaders\fxc\sky_hdr_compressed_ps20b.vcs fxctmp9_tmp\sky_hdr_compressed_rgbs_ps20.inc shaders\fxc\sky_hdr_compressed_rgbs_ps20.vcs fxctmp9_tmp\sky_hdr_compressed_rgbs_ps20b.inc shaders\fxc\sky_hdr_compressed_rgbs_ps20b.vcs
 
-fxctmp9_tmp\decalmodulate_ps20.inc shaders\fxc\decalmodulate_ps20.vcs: decalmodulate_ps2x.fxc common_fxc.h shader_constant_register_map.h common_hlsl_cpp_consts.h common_pragmas.h common_vertexlitgeneric_dx9.h common_ps_fxc.h
-	perl ..\..\devtools\bin\fxc_prep.pl   -source "..\.." decalmodulate_ps2x.fxc-----decalmodulate_ps20
-	echo decalmodulate_ps2x.fxc>> filestocopy.txt
+fxctmp9_tmp\sky_ps20.inc shaders\fxc\sky_ps20.vcs: sky_ps2x.fxc common_fxc.h common_hlsl_cpp_consts.h common_pragmas.h common_ps_fxc.h
+	perl ..\..\devtools\bin\fxc_prep.pl   -source "..\.." sky_ps2x.fxc-----sky_ps20
+	echo sky_ps2x.fxc>> filestocopy.txt
 	echo common_fxc.h>> filestocopy.txt
-	echo shader_constant_register_map.h>> filestocopy.txt
 	echo common_hlsl_cpp_consts.h>> filestocopy.txt
 	echo common_pragmas.h>> filestocopy.txt
-	echo common_vertexlitgeneric_dx9.h>> filestocopy.txt
 	echo common_ps_fxc.h>> filestocopy.txt
 
-fxctmp9_tmp\decalmodulate_ps20b.inc shaders\fxc\decalmodulate_ps20b.vcs: decalmodulate_ps2x.fxc common_fxc.h shader_constant_register_map.h common_hlsl_cpp_consts.h common_pragmas.h common_vertexlitgeneric_dx9.h common_ps_fxc.h
-	perl ..\..\devtools\bin\fxc_prep.pl   -source "..\.." decalmodulate_ps2x.fxc-----decalmodulate_ps20b
-	echo decalmodulate_ps2x.fxc>> filestocopy.txt
+fxctmp9_tmp\sky_ps20b.inc shaders\fxc\sky_ps20b.vcs: sky_ps2x.fxc common_fxc.h common_hlsl_cpp_consts.h common_pragmas.h common_ps_fxc.h
+	perl ..\..\devtools\bin\fxc_prep.pl   -source "..\.." sky_ps2x.fxc-----sky_ps20b
+	echo sky_ps2x.fxc>> filestocopy.txt
 	echo common_fxc.h>> filestocopy.txt
-	echo shader_constant_register_map.h>> filestocopy.txt
 	echo common_hlsl_cpp_consts.h>> filestocopy.txt
 	echo common_pragmas.h>> filestocopy.txt
-	echo common_vertexlitgeneric_dx9.h>> filestocopy.txt
+	echo common_ps_fxc.h>> filestocopy.txt
+
+fxctmp9_tmp\sky_hdr_compressed_ps20.inc shaders\fxc\sky_hdr_compressed_ps20.vcs: sky_hdr_compressed_ps2x.fxc common_fxc.h common_hlsl_cpp_consts.h common_pragmas.h common_ps_fxc.h
+	perl ..\..\devtools\bin\fxc_prep.pl   -source "..\.." sky_hdr_compressed_ps2x.fxc-----sky_hdr_compressed_ps20
+	echo sky_hdr_compressed_ps2x.fxc>> filestocopy.txt
+	echo common_fxc.h>> filestocopy.txt
+	echo common_hlsl_cpp_consts.h>> filestocopy.txt
+	echo common_pragmas.h>> filestocopy.txt
+	echo common_ps_fxc.h>> filestocopy.txt
+
+fxctmp9_tmp\sky_hdr_compressed_ps20b.inc shaders\fxc\sky_hdr_compressed_ps20b.vcs: sky_hdr_compressed_ps2x.fxc common_fxc.h common_hlsl_cpp_consts.h common_pragmas.h common_ps_fxc.h
+	perl ..\..\devtools\bin\fxc_prep.pl   -source "..\.." sky_hdr_compressed_ps2x.fxc-----sky_hdr_compressed_ps20b
+	echo sky_hdr_compressed_ps2x.fxc>> filestocopy.txt
+	echo common_fxc.h>> filestocopy.txt
+	echo common_hlsl_cpp_consts.h>> filestocopy.txt
+	echo common_pragmas.h>> filestocopy.txt
+	echo common_ps_fxc.h>> filestocopy.txt
+
+fxctmp9_tmp\sky_hdr_compressed_rgbs_ps20.inc shaders\fxc\sky_hdr_compressed_rgbs_ps20.vcs: sky_hdr_compressed_rgbs_ps2x.fxc common_fxc.h common_hlsl_cpp_consts.h common_pragmas.h common_ps_fxc.h
+	perl ..\..\devtools\bin\fxc_prep.pl   -source "..\.." sky_hdr_compressed_rgbs_ps2x.fxc-----sky_hdr_compressed_rgbs_ps20
+	echo sky_hdr_compressed_rgbs_ps2x.fxc>> filestocopy.txt
+	echo common_fxc.h>> filestocopy.txt
+	echo common_hlsl_cpp_consts.h>> filestocopy.txt
+	echo common_pragmas.h>> filestocopy.txt
+	echo common_ps_fxc.h>> filestocopy.txt
+
+fxctmp9_tmp\sky_hdr_compressed_rgbs_ps20b.inc shaders\fxc\sky_hdr_compressed_rgbs_ps20b.vcs: sky_hdr_compressed_rgbs_ps2x.fxc common_fxc.h common_hlsl_cpp_consts.h common_pragmas.h common_ps_fxc.h
+	perl ..\..\devtools\bin\fxc_prep.pl   -source "..\.." sky_hdr_compressed_rgbs_ps2x.fxc-----sky_hdr_compressed_rgbs_ps20b
+	echo sky_hdr_compressed_rgbs_ps2x.fxc>> filestocopy.txt
+	echo common_fxc.h>> filestocopy.txt
+	echo common_hlsl_cpp_consts.h>> filestocopy.txt
+	echo common_pragmas.h>> filestocopy.txt
 	echo common_ps_fxc.h>> filestocopy.txt
 

@@ -20,6 +20,7 @@ extern ConVar cvar_gstring_drawdreamblur;
 extern ConVar cvar_gstring_drawlensflare;
 extern ConVar cvar_gstring_drawwatereffects;
 extern ConVar cvar_gstring_drawcinemaoverlay;
+extern ConVar cvar_gstring_drawdof;
 
 extern ConVar cvar_gstring_bars_scale;
 extern ConVar cvar_gstring_explosionfx_strength;
@@ -40,6 +41,15 @@ extern ConVar cvar_gstring_chromatic_aberration;
 
 extern ConVar gstring_spacecraft_firstperson;
 extern ConVar gstring_hud_color;
+
+extern ConVar gstring_dof_autofocus;
+extern ConVar gstring_dof_focaldistance;
+extern ConVar gstring_dof_focallength;
+extern ConVar gstring_dof_aperture;
+extern ConVar gstring_dof_smooth_speed;
+extern ConVar gstring_dof_max_distance;
+extern ConVar gstring_dof_radius;
+
 #endif
 
 

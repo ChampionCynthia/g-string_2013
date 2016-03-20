@@ -36,7 +36,7 @@ enum
 };
 
 // Do spiffy things according to the material hit
-void PerformCustomEffects( const Vector &vecOrigin, trace_t &tr, const Vector &shotDir, int iMaterial, int iScale, int nFlags = 0 );
+void PerformCustomEffects( const Vector &vecOrigin, trace_t &tr, const Vector &shotDir, int iMaterial, int iScale, int nFlags = 0, int nDamageType = 0 );
 
 // Play the correct impact sound according to the material hit
 void PlayImpactSound( C_BaseEntity *pServerEntity, trace_t &tr, Vector &vecServerOrigin, int nServerSurfaceProp );

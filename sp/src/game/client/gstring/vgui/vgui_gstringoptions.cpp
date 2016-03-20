@@ -25,7 +25,7 @@ extern ConVar gstring_volumetrics_enabled;
 static PostProcessingState_t presets[] =
 {
 	// Subtle
-	{ true, true, true, true, true, true, false, true, 0.0f, 0.3f, 0.7f, 0.3f, 0.0f, 0.1f, 0.2f, 0.2f },
+	{ true, true, true, true, true, true, false, true, 0.0f, 0.3f, 0.7f, 0.3f, 0.2f, 0.1f, 0.2f, 0.2f },
 	// Vibrant
 	{ true, true, true, true, true, true, true, true, 0.0f, 0.7f, 1.0f, 0.5f, 0.0f, 0.2f, 0.6f, 0.8f },
 	// film noir

@@ -106,7 +106,7 @@ void ImpactCallback( const CEffectData &data )
 	if ( Impact( vecOrigin, vecStart, iMaterial, iDamageType, iHitbox, pEntity, tr ) )
 	{
 		// Check for custom effects based on the Decal index
-		PerformCustomEffects( vecOrigin, tr, vecShotDir, iMaterial, 1.0 );
+		PerformCustomEffects( vecOrigin, tr, vecShotDir, iMaterial, 1.0, 0, data.m_nDamageType ); // GSTRINGMIGRATION
 	}
 
 	PlayImpactSound( pEntity, tr, vecOrigin, nSurfaceProp );

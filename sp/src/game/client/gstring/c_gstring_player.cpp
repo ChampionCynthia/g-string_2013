@@ -71,6 +71,7 @@ C_GstringPlayer::C_GstringPlayer()
 	, m_flInteractionBodyTransitionBlend( 0.0f )
 	, m_vecInteractionViewOrigin( vec3_origin )
 	, m_angInteractionViewAngles( vec3_angle )
+	, m_vecMouseOffset( vec2_origin )
 {
 	m_nReloadParity = 0;
 	m_bHasUseEntity = false;

@@ -26,6 +26,7 @@ BEGIN_DATADESC( CGstringPlayer )
 
 	DEFINE_FIELD( m_bNightvisionActive, FIELD_BOOLEAN ),
 	DEFINE_FIELD( m_nReloadParity, FIELD_CHARACTER ),
+	DEFINE_FIELD( m_hInteractionBody, FIELD_EHANDLE ),
 
 END_DATADESC()
 

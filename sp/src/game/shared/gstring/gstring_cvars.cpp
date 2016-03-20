@@ -20,6 +20,7 @@ ConVar cvar_gstring_drawlensflare( "gstring_DrawLensFlare", "1", FCVAR_ARCHIVE )
 //ConVar cvar_gstring_drawbloomflare( "gstring_DrawBloomFlare", "2", FCVAR_ARCHIVE );
 ConVar cvar_gstring_drawwatereffects( "gstring_DrawWaterEffects", "1", FCVAR_ARCHIVE );
 ConVar cvar_gstring_drawcinemaoverlay( "gstring_DrawCinemaOverlay", "1", FCVAR_ARCHIVE );
+ConVar cvar_gstring_drawdof( "gstring_DrawDoF", "0", FCVAR_ARCHIVE );
 
 
 ConVar cvar_gstring_bars_scale( "gstring_Bars_scale", "0", FCVAR_ARCHIVE );
@@ -40,4 +41,13 @@ ConVar cvar_gstring_nightvision_minlighting( "gstring_nightvision_minlighting", 
 
 ConVar cvar_gstring_drawhurtfx( "gstring_DrawHurtFX", "1", FCVAR_ARCHIVE );
 ConVar gstring_hud_color( "gstring_hud_color", "255 229 153 255", FCVAR_ARCHIVE );
+
+
+ConVar gstring_dof_autofocus( "gstring_dof_autofocus", "1", FCVAR_ARCHIVE );
+ConVar gstring_dof_focaldistance( "gstring_dof_focaldistance", "200", FCVAR_ARCHIVE );
+ConVar gstring_dof_focallength( "gstring_dof_focallength", "4500", FCVAR_ARCHIVE );
+ConVar gstring_dof_aperture( "gstring_dof_aperture", "0.04", FCVAR_ARCHIVE );
+ConVar gstring_dof_smooth_speed( "gstring_dof_smooth_speed", "150", FCVAR_ARCHIVE );
+ConVar gstring_dof_max_distance( "gstring_dof_max_distance", "5000", FCVAR_ARCHIVE );
+ConVar gstring_dof_radius( "gstring_dof_radius", "0.022", FCVAR_ARCHIVE );
 #endif

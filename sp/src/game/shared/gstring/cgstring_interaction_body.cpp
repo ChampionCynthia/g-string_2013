@@ -17,7 +17,7 @@
 
 BEGIN_DATADESC( CGstringInteractionBody )
 
-	//DEFINE_FIELD( m_hInteractiveObject, FIELD_EHANDLE ),
+	DEFINE_FIELD( m_hInteraction, FIELD_EHANDLE ),
 
 	//DEFINE_KEYFIELD( m_strInteractiveObjectName, FIELD_STRING, "interactive_object" ),
 	//DEFINE_KEYFIELD( m_strPlayerSequenceName, FIELD_STRING, "player_sequence_name" ),

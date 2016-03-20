@@ -190,6 +190,7 @@ public:
 	CUtlVector< CHudElement * >	m_HudList;
 
 	void						SetRenderingStage( HUDRENDERSTAGE_t stage ); // GSTRINGMIGRATION
+	HUDRENDERSTAGE_t			GetRenderingStage() const; // GSTRINGMIGRATION
 
 private:
 	void						InitFonts();

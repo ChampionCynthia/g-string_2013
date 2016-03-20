@@ -14,4 +14,4 @@
 //SDK_lightmappedgeneric_filter2_ps30.fxc
 //SDK_lightmappedgeneric_vs20.fxc
 
-decalmodulate_ps2x.fxc
+//decalmodulate_ps2x.fxc

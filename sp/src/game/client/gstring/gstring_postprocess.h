@@ -34,6 +34,10 @@ float GetNightvisionMinLighting();
 
 void DrawHurtFX( int x, int y, int w, int h );
 
+bool ShouldDrawDoF();
+void ClearDoF( int x, int y, int w, int h );
+void DrawDoF( int x, int y, int w, int h, StereoEye_t stereoEye );
+
 void ResetEffects();
 
 #endif

@@ -29,6 +29,8 @@
 #define VIGNETTE_EDITOR_NAME "ppe_vignette"
 #define NIGHTVISION_EDITOR_NAME "ppe_nightvision"
 #define HURTFX_EDITOR_NAME "ppe_hurtfx"
+#define DOF_EDITOR_NAME "ppe_dof"
+#define DOFCLEAR_EDITOR_NAME "ppe_dof_clear"
 
 float GetSceneFadeScalar()
 {
@@ -850,6 +852,72 @@ void DrawHurtFX( int x, int y, int w, int h )
 	pVar_HurtFX_Params->SetVecValue( params.x, params.y * flHurtFXEnable, params.z * flHurtFXEnable );
 
 	shaderEdit->DrawPPEOnDemand( iHurtFXIndex, x, y, w, h );
+}
+
+/**
+ * DoF
+ */
+
+bool ShouldDrawDoF()
+{
+	if ( !ShouldDrawCommon() )
+		return false;
+	return cvar_gstring_drawdof.GetBool();
+}
+
+void ClearDoF( int x, int y, int w, int h )
+{
+	DEFINE_SHADEREDITOR_MATERIALVAR( DOFCLEAR_EDITOR_NAME, "clear", "$MUTABLE_01", pVar_ClearValue );
+
+	// pVar_ClearValue->SetFloatValue( 30000.0f / 192.0f );
+	pVar_ClearValue->SetFloatValue( gstring_dof_max_distance.GetFloat() / 192.0f );
+
+	static const int iDofIndex = shaderEdit->GetPPEIndex( DOFCLEAR_EDITOR_NAME );
+	shaderEdit->DrawPPEOnDemand( iDofIndex, x, y, w, h );
+}
+
+void DrawDoF( int x, int y, int w, int h, StereoEye_t stereoEye )
+{
+	DEFINE_SHADEREDITOR_MATERIALVAR( DOF_EDITOR_NAME, "coc", "$MUTABLE_01", pVar_DistanceLengthAperature );
+	DEFINE_SHADEREDITOR_MATERIALVAR( DOF_EDITOR_NAME, "blur0", "$MUTABLE_01", pVar_BlurRadius0 );
+	DEFINE_SHADEREDITOR_MATERIALVAR( DOF_EDITOR_NAME, "blur1", "$MUTABLE_01", pVar_BlurRadius1 );
+	DEFINE_SHADEREDITOR_MATERIALVAR( DOF_EDITOR_NAME, "blur2", "$MUTABLE_01", pVar_BlurRadius2 );
+
+	float focalLength = gstring_dof_focallength.GetFloat();
+	float focalDistance = gstring_dof_focaldistance.GetFloat();
+	float aperture = gstring_dof_aperture.GetFloat();
+	if (gstring_dof_autofocus.GetBool())
+	{
+		Vector vecForward;
+		AngleVectors(MainViewAngles(), &vecForward);
+
+		trace_t tr;
+		UTIL_TraceLine( MainViewOrigin(), MainViewOrigin() + vecForward * MAX_TRACE_LENGTH, MASK_SOLID | MASK_VISIBLE_AND_NPCS,
+			C_BasePlayer::GetLocalPlayer(), COLLISION_GROUP_NONE, &tr );
+
+		focalDistance = (tr.endpos - tr.startpos).Length();
+		if (tr.DidHit() && tr.surface.flags & SURF_SKY)
+		{
+			focalDistance = 30000.0f;
+		}
+	}
+
+	focalDistance = MIN( focalDistance, gstring_dof_max_distance.GetFloat() );
+
+	static float smoothFocalDistance = focalDistance;
+	if ( stereoEye != STEREO_EYE_RIGHT )
+	{
+		//smoothFocalDistance = Approach( focalDistance, smoothFocalDistance, gpGlobals->frametime * gstring_dof_smooth_speed.GetFloat() );
+		smoothFocalDistance += ( focalDistance - smoothFocalDistance ) * MIN( 1.0f, gpGlobals->frametime * gstring_dof_smooth_speed.GetFloat() );
+	}
+
+	pVar_DistanceLengthAperature->SetVecValue( smoothFocalDistance, focalLength, aperture );
+	pVar_BlurRadius0->SetFloatValue( gstring_dof_radius.GetFloat() );
+	pVar_BlurRadius1->SetFloatValue( gstring_dof_radius.GetFloat() );
+	pVar_BlurRadius2->SetFloatValue( gstring_dof_radius.GetFloat() );
+
+	static const int iDofIndex = shaderEdit->GetPPEIndex( DOF_EDITOR_NAME );
+	shaderEdit->DrawPPEOnDemand( iDofIndex, x, y, w, h );
 }
 
 void ResetEffects()
