@@ -669,7 +669,8 @@ static void DrawVertexLitGeneric_DX9_Internal( CBaseVSShader *pShader, IMaterial
 			if ( bHasBump || bHasDiffuseWarp )
 			{
 #ifndef _X360
-				if ( !g_pHardwareConfig->SupportsShaderModel_3_0() )
+				//if ( !g_pHardwareConfig->SupportsShaderModel_3_0() )
+				if ( false )
 #endif
 				{
 					DECLARE_STATIC_VERTEX_SHADER( sdk_vertexlit_and_unlit_generic_bump_vs20 );
@@ -740,7 +741,7 @@ static void DrawVertexLitGeneric_DX9_Internal( CBaseVSShader *pShader, IMaterial
 					SET_STATIC_PIXEL_SHADER_COMBO( FLASHLIGHT,  bHasFlashlight );
 					SET_STATIC_PIXEL_SHADER_COMBO( DETAILTEXTURE,  bHasDetailTexture );
 					SET_STATIC_PIXEL_SHADER_COMBO( DETAIL_BLEND_MODE, nDetailBlendMode );
-					SET_STATIC_PIXEL_SHADER_COMBO( FLASHLIGHTDEPTHFILTERMODE, nShadowFilterMode );
+//					SET_STATIC_PIXEL_SHADER_COMBO( FLASHLIGHTDEPTHFILTERMODE, nShadowFilterMode );
 					SET_STATIC_PIXEL_SHADER_COMBO( SELFILLUMMASK, bHasSelfIllumMask );
 					SET_STATIC_PIXEL_SHADER( sdk_vertexlit_and_unlit_generic_bump_ps30 );
 				}
@@ -762,7 +763,8 @@ static void DrawVertexLitGeneric_DX9_Internal( CBaseVSShader *pShader, IMaterial
 				}
 
 #ifndef _X360
-				if ( !g_pHardwareConfig->SupportsShaderModel_3_0() )
+				//if ( !g_pHardwareConfig->SupportsShaderModel_3_0() )
+				if ( false )
 #endif
 				{
 					DECLARE_STATIC_VERTEX_SHADER( sdk_vertexlit_and_unlit_generic_vs20 );
@@ -868,7 +870,7 @@ static void DrawVertexLitGeneric_DX9_Internal( CBaseVSShader *pShader, IMaterial
 					SET_STATIC_PIXEL_SHADER_COMBO( SOFT_MASK, bSoftMask );
 					SET_STATIC_PIXEL_SHADER_COMBO( OUTLINE, bOutline );
 					SET_STATIC_PIXEL_SHADER_COMBO( OUTER_GLOW, bGlow );
-					SET_STATIC_PIXEL_SHADER_COMBO( FLASHLIGHTDEPTHFILTERMODE, nShadowFilterMode );
+					//SET_STATIC_PIXEL_SHADER_COMBO( FLASHLIGHTDEPTHFILTERMODE, nShadowFilterMode );
 					SET_STATIC_PIXEL_SHADER_COMBO( DEPTHBLEND, IsBoolSet( info.m_nDepthBlend, params ) );
 					// GSTRINGMIGRATION
 					SET_STATIC_PIXEL_SHADER_COMBO( SELFILLUM_TWOTEXTURE_BLEND, bHasSelfIllum && bHasSelfIllumTwoTexture );
@@ -1227,7 +1229,8 @@ static void DrawVertexLitGeneric_DX9_Internal( CBaseVSShader *pShader, IMaterial
 		if ( bHasBump || bHasDiffuseWarp )
 		{
 #ifndef _X360
-			if ( !g_pHardwareConfig->SupportsShaderModel_3_0() )
+			//if ( !g_pHardwareConfig->SupportsShaderModel_3_0() )
+			if ( false )
 #endif
 			{
 				DECLARE_DYNAMIC_VERTEX_SHADER( sdk_vertexlit_and_unlit_generic_bump_vs20 );
@@ -1297,7 +1300,8 @@ static void DrawVertexLitGeneric_DX9_Internal( CBaseVSShader *pShader, IMaterial
 			}
 
 #ifndef _X360
-			if ( !g_pHardwareConfig->SupportsShaderModel_3_0() )
+			//if ( !g_pHardwareConfig->SupportsShaderModel_3_0() )
+			if ( false )
 #endif
 			{
 				DECLARE_DYNAMIC_VERTEX_SHADER( sdk_vertexlit_and_unlit_generic_vs20 );

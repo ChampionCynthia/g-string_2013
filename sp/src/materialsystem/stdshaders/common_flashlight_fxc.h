@@ -625,43 +625,43 @@ float DoFlashlightShadow( sampler DepthSampler, sampler RandomRotationSampler, f
 {
 	float flShadow = 1.0f;
 
-#if !defined( _X360 ) //PC
-	if( nShadowLevel == NVIDIA_PCF_POISSON )
-#if defined( NEW_SHADOW_FILTERS ) && defined( SHADER_MODEL_PS_3_0 )
+//#if !defined( _X360 ) //PC
+	//if( nShadowLevel == NVIDIA_PCF_POISSON )
+//#if defined( NEW_SHADOW_FILTERS ) && defined( SHADER_MODEL_PS_3_0 )
 		// Let's replace noise filter with gaussian blur, like in Portal 2.
 		flShadow = DoShadowNvidiaPCF5x5Gaussian( DepthSampler, vProjCoords, float2( 1.0 / 512.0, 1.0 / 512.0 ) );
-#else
-		flShadow = DoShadowPoisson16Sample( DepthSampler, RandomRotationSampler, vProjCoords, vScreenPos, vShadowTweaks, true, false );
-#endif	
-	else if( nShadowLevel == ATI_NOPCF )
-		flShadow = DoShadowPoisson16Sample( DepthSampler, RandomRotationSampler, vProjCoords, vScreenPos, vShadowTweaks, false, false );
-	else if( nShadowLevel == ATI_NO_PCF_FETCH4 )
-		flShadow = DoShadowPoisson16Sample( DepthSampler, RandomRotationSampler, vProjCoords, vScreenPos, vShadowTweaks, false, true );
+//#else
+		//flShadow = DoShadowPoisson16Sample( DepthSampler, RandomRotationSampler, vProjCoords, vScreenPos, vShadowTweaks, true, false );
+//#endif	
+	//else if( nShadowLevel == ATI_NOPCF )
+	//	flShadow = DoShadowPoisson16Sample( DepthSampler, RandomRotationSampler, vProjCoords, vScreenPos, vShadowTweaks, false, false );
+	//else if( nShadowLevel == ATI_NO_PCF_FETCH4 )
+	//	flShadow = DoShadowPoisson16Sample( DepthSampler, RandomRotationSampler, vProjCoords, vScreenPos, vShadowTweaks, false, true );
 
 	return flShadow;
-#else
-
-	// Compile-time switch for shaders which allow high quality modes on 360
-	if ( bAllowHighQuality )
-	{
-		// Static control flow switch for shadow quality.  Some non-interactive sequences use the high quality path
-		if ( g_bHighQualityShadows )
-		{
-			flShadow = DoShadowPoisson360( DepthSampler, RandomRotationSampler, vProjCoords, vScreenPos, vShadowTweaks );
-		}
-		else
-		{
-			flShadow = DoShadow360Simple( DepthSampler, vProjCoords );
-		}
-	}
-	else
-	{
-		flShadow = DoShadow360Simple( DepthSampler, vProjCoords );
-	}
-
-	return flShadow;
-
-#endif
+//#else
+//
+//	// Compile-time switch for shaders which allow high quality modes on 360
+//	if ( bAllowHighQuality )
+//	{
+//		// Static control flow switch for shadow quality.  Some non-interactive sequences use the high quality path
+//		if ( g_bHighQualityShadows )
+//		{
+//			flShadow = DoShadowPoisson360( DepthSampler, RandomRotationSampler, vProjCoords, vScreenPos, vShadowTweaks );
+//		}
+//		else
+//		{
+//			flShadow = DoShadow360Simple( DepthSampler, vProjCoords );
+//		}
+//	}
+//	else
+//	{
+//		flShadow = DoShadow360Simple( DepthSampler, vProjCoords );
+//	}
+//
+//	return flShadow;
+//
+//#endif
 }
 
 float3 SpecularLight( const float3 vWorldNormal, const float3 vLightDir, const float fSpecularExponent,
@@ -864,18 +864,18 @@ float DoCascadedShadow( sampler depthSampler, sampler randomSampler, float3 worl
 	closePosition.xy = lerp(closePosition.xy * cascadedStepData.x + cascadedStepData.yz, closePosition.xy, blendCascades);
 
 	float shadow;
-	if ( nShadowLevel == NVIDIA_PCF_POISSON )
+	//if ( nShadowLevel == NVIDIA_PCF_POISSON )
 		shadow = DoShadowNvidiaPCF5x5Gaussian( depthSampler, closePosition, float2( 1.0 / 2048.0, 1.0 / 1024.0 ) );
-	else if( nShadowLevel == ATI_NOPCF )
-		shadow = DoShadowPoisson16Sample( depthSampler, randomSampler, closePosition, vScreenPos, vShadowTweaks, false, false );
-	else //if( nShadowLevel == ATI_NO_PCF_FETCH4 )
-		shadow = DoShadowPoisson16Sample( depthSampler, randomSampler, closePosition, vScreenPos, vShadowTweaks, false, true );
+	//else if( nShadowLevel == ATI_NOPCF )
+	//	shadow = DoShadowPoisson16Sample( depthSampler, randomSampler, closePosition, vScreenPos, vShadowTweaks, false, false );
+	//else //if( nShadowLevel == ATI_NO_PCF_FETCH4 )
+	//	shadow = DoShadowPoisson16Sample( depthSampler, randomSampler, closePosition, vScreenPos, vShadowTweaks, false, true );
 
 	float weight = lerp( saturate( saturate( abs( closePosition.x * 4.0 - 3.0 ) - 0.9 ) * 10.0 +
 		saturate( abs( closePosition.y * 2.0 - 1.0 ) - 0.9 ) * 10.0 ), 0.0f, blendCascades);
-	shadow = lerp( shadow, 1.0, weight ) * saturate( cascadedDot * 12.0 );
+	shadow = lerp( shadow, 1.0, weight ); // * saturate( cascadedDot * 12.0 );
 
-	return lerp(0.0, shadow, step(0.0, cascadedDot));
+	return lerp(1.0, shadow, smoothstep(-0.1, 0.1, cascadedDot)); //lerp(0.0, shadow, step(0.0, cascadedDot));
 }
 #endif
 

@@ -1429,7 +1429,7 @@ inline void AddRenderableToRenderList( CClientRenderablesList &renderList, IClie
 		CClientRenderablesList::CEntry *pEntry = &renderList.m_RenderGroups[group][curCount];
 		pEntry->m_pRenderable = pRenderable;
 		pEntry->m_iWorldListInfoLeaf = iLeaf;
-		pEntry->m_TwoPass = bTwoPass;
+		pEntry->m_TwoPassSkip = bTwoPass ? CClientRenderablesList::CEntry::IS_TWO_PASS : 0;
 		pEntry->m_RenderHandle = renderHandle;
 		curCount++;
 	}

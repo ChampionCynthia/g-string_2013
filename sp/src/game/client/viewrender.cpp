@@ -107,6 +107,8 @@ static Vector ConvertLightmapGammaToLinear( int *iColor4 )
 	vecColor *= iColor4[ 3 ] / 255.0f;
 	return vecColor;
 }
+
+static bool requireDepthForDoF = false;
 // END GSTRINGMIGRATION
 
 static void testfreezeframe_f( void )
@@ -2553,6 +2555,10 @@ void CViewRender::RenderView( const CViewSetup &view, int nClearFlags, int whatT
 	const bool bSpaceMap = g_pGstringGlobals != NULL && g_pGstringGlobals->IsSpaceMap();
 	//const bool bFirstPersonSpace = bSpaceMap && gstring_spacecraft_firstperson.GetBool();
 	CascadedConfigMode cascadedMode = bSpaceMap ? CASCADEDCONFIG_SPACE : CASCADEDCONFIG_NORMAL;
+	
+
+	const bool dofEnabled = !bBuildingCubemaps && !bSpaceMap && ShouldDrawDoF();
+	requireDepthForDoF = dofEnabled;
 	// END GSTRINGMIGRATION
 
 	pRenderContext.SafeRelease(); // don't want to hold for long periods in case in a locking active share thread mode // GSTRINGMIGRATION
@@ -2708,18 +2714,22 @@ void CViewRender::RenderView( const CViewSetup &view, int nClearFlags, int whatT
 			UpdateScreenEffectTexture( 0, view.x, view.y, view.width, view.height );
 		}
 
-		if ( !bBuildingCubemaps && !bSpaceMap && ShouldDrawDoF() )
+		if ( dofEnabled )
 		{
-			ITexture *pRenderTarget = materials->FindTexture( "_rt_FullFrame16", TEXTURE_GROUP_RENDER_TARGET );
+			//ITexture *pRenderTarget = materials->FindTexture( "_rt_FullFrame16", TEXTURE_GROUP_RENDER_TARGET );
 
-			if ( pRenderTarget == NULL )
-				return;
+			//if ( pRenderTarget == nullptr )
+			//	return;
 
-			render->Push3DView( view, VIEW_CLEAR_DEPTH | VIEW_CLEAR_COLOR, pRenderTarget, GetFrustum() );
-			ClearDoF( view.x, view.y, view.width, view.height );
-			DrawWorldAndEntities( false, view, VIEW_CLEAR_DEPTH );
-			DrawViewModels( view, true, false );
-			render->PopView( GetFrustum() );
+			//render->Push3DView( view, VIEW_CLEAR_DEPTH | VIEW_CLEAR_COLOR, pRenderTarget, GetFrustum() );
+			//ClearDoF( view.x, view.y, view.width, view.height );
+
+			//modelrender->ForcedMaterialOverride(nullptr, OVERRIDE_SSAO_DEPTH_WRITE);
+			//DrawWorldAndEntities( false, view, VIEW_CLEAR_DEPTH );
+			//DrawViewModels( view, true, false );
+			//modelrender->ForcedMaterialOverride(nullptr, OVERRIDE_NORMAL);
+
+			//render->PopView( GetFrustum() );
 
 			DrawDoF( view.x, view.y, view.width, view.height, view.m_eStereoEye );
 		}
@@ -4079,7 +4089,7 @@ void CRendering3dView::BuildRenderableRenderLists( int viewID )
 		int i;
 		for( i=0; i < nOpaque; ++i )
 		{
-			Assert(pEntities[i].m_TwoPass==0);
+			Assert((pEntities[i].m_TwoPassSkip & CClientRenderablesList::CEntry::IS_TWO_PASS) == 0);
 			UpdateBrushModelLightmap( pEntities[i].m_pRenderable );
 		}
 
@@ -4453,7 +4463,7 @@ static void DrawOpaqueRenderables_DrawBrushModels( CClientRenderablesList::CEntr
 {
 	for( CClientRenderablesList::CEntry *itEntity = pEntitiesBegin; itEntity < pEntitiesEnd; ++ itEntity )
 	{
-		Assert( !itEntity->m_TwoPass );
+		Assert( (itEntity->m_TwoPassSkip & CClientRenderablesList::CEntry::IS_TWO_PASS) == 0 );
 		DrawOpaqueRenderable( itEntity->m_pRenderable, false, DepthMode );
 	}
 }
@@ -4502,8 +4512,8 @@ static void DrawOpaqueRenderables_Range( CClientRenderablesList::CEntry *pEntiti
 {
 	for( CClientRenderablesList::CEntry *itEntity = pEntitiesBegin; itEntity < pEntitiesEnd; ++ itEntity )
 	{
-		if ( itEntity->m_pRenderable )
-			DrawOpaqueRenderable( itEntity->m_pRenderable, ( itEntity->m_TwoPass != 0 ), DepthMode );
+		if ( itEntity->m_pRenderable && (itEntity->m_TwoPassSkip & CClientRenderablesList::CEntry::SHOULD_SKIP) == 0 )
+			DrawOpaqueRenderable( itEntity->m_pRenderable, ( itEntity->m_TwoPassSkip & CClientRenderablesList::CEntry::IS_TWO_PASS ) != 0, DepthMode );
 	}
 }
 
@@ -4618,8 +4628,11 @@ void CRendering3dView::DrawOpaqueRenderables( ERenderDepthMode DepthMode )
 					arrRenderEntsNpcsFirst[ numNpcs ++ ] = *itEntity;
 					arrBoneSetupNpcsLast[ numOpaqueEnts - numNpcs ] = pba;
 					
-					itEntity->m_pRenderable = NULL;		// We will render NPCs separately
-					itEntity->m_RenderHandle = NULL;
+					// GSTRINGMIGRATION we can't modify this when rendering a depth pass.
+					//itEntity->m_pRenderable = NULL;		// We will render NPCs separately
+					//itEntity->m_RenderHandle = NULL;
+					itEntity->m_TwoPassSkip |= CClientRenderablesList::CEntry::SHOULD_SKIP;
+					// GSTRINGMIGRATION END
 					
 					continue;
 				}
@@ -4717,6 +4730,12 @@ void CRendering3dView::DrawOpaqueRenderables( ERenderDepthMode DepthMode )
 	//
 	// Draw NPCs now
 	//
+	// GSTRINGMIGRATION
+	for( CClientRenderablesList::CEntry *itEntity = arrRenderEntsNpcsFirst.Base(); itEntity < arrRenderEntsNpcsFirst.Base() + numNpcs; ++ itEntity )
+	{
+		itEntity->m_TwoPassSkip &= ~CClientRenderablesList::CEntry::SHOULD_SKIP;
+	}
+	// GSTRINGMIGRATION END
 	DrawOpaqueRenderables_Range( arrRenderEntsNpcsFirst.Base(), arrRenderEntsNpcsFirst.Base() + numNpcs, DepthMode );
 
 	//
@@ -4867,7 +4886,7 @@ void CRendering3dView::DrawTranslucentRenderablesNoWorld( bool bInSkybox )
 			UpdateScreenEffectTexture();
 		}
 
-		DrawTranslucentRenderable( pRenderable, pEntities[iCurTranslucentEntity].m_TwoPass != 0, bShadowDepth, false );
+		DrawTranslucentRenderable( pRenderable, (pEntities[iCurTranslucentEntity].m_TwoPassSkip & CClientRenderablesList::CEntry::IS_TWO_PASS) != 0, bShadowDepth, false );
 		--iCurTranslucentEntity;
 	}
 
@@ -4904,7 +4923,7 @@ void CRendering3dView::DrawNoZBufferTranslucentRenderables( void )
 			UpdateScreenEffectTexture();
 		}
 
-		DrawTranslucentRenderable( pRenderable, pEntities[iCurTranslucentEntity].m_TwoPass != 0, bShadowDepth, true );
+		DrawTranslucentRenderable( pRenderable, (pEntities[iCurTranslucentEntity].m_TwoPassSkip & CClientRenderablesList::CEntry::IS_TWO_PASS) != 0, bShadowDepth, true );
 		--iCurTranslucentEntity;
 	}
 
@@ -5143,7 +5162,7 @@ void CRendering3dView::DrawTranslucentRenderables( bool bInSkybox, bool bShadowD
 						pRenderContext.SafeRelease();
 					}
 
-					DrawTranslucentRenderable( pRenderable, (pEntities[iCurTranslucentEntity].m_TwoPass != 0), bShadowDepth, false );
+					DrawTranslucentRenderable( pRenderable, (pEntities[iCurTranslucentEntity].m_TwoPassSkip & CClientRenderablesList::CEntry::IS_TWO_PASS) != 0, bShadowDepth, false );
 				}
 
 				nDetailLeafCount = 0;
@@ -5224,7 +5243,7 @@ void CRendering3dView::DrawTranslucentRenderables( bool bInSkybox, bool bShadowD
 						}
 
 						// Then draw the translucent renderable
-						DrawTranslucentRenderable( pRenderable, (pEntities[iCurTranslucentEntity].m_TwoPass != 0), bShadowDepth, false );
+						DrawTranslucentRenderable( pRenderable, (pEntities[iCurTranslucentEntity].m_TwoPassSkip & CClientRenderablesList::CEntry::IS_TWO_PASS) != 0, bShadowDepth, false );
 					}
 
 					// Draw all remaining props in this leaf
@@ -5275,7 +5294,7 @@ void CRendering3dView::DrawTranslucentRenderables( bool bInSkybox, bool bShadowD
 							pRenderContext.SafeRelease();
 						}
 
-						DrawTranslucentRenderable( pRenderable, (pEntities[iCurTranslucentEntity].m_TwoPass != 0), bShadowDepth, false );
+						DrawTranslucentRenderable( pRenderable, (pEntities[iCurTranslucentEntity].m_TwoPassSkip & CClientRenderablesList::CEntry::IS_TWO_PASS) != 0, bShadowDepth, false );
 					}
 				}
 
@@ -6054,14 +6073,14 @@ void CBaseWorldView::DrawSetup( float waterHeight, int nSetupFlags, float waterZ
 		render->PopView( GetFrustum() );
 	}
 
-#ifdef TF_CLIENT_DLL
-	bool bVisionOverride = ( localplayer_visionflags.GetInt() & ( 0x01 ) ); // Pyro-vision Goggles
+//#ifdef TF_CLIENT_DLL
+	// bool bVisionOverride = ( localplayer_visionflags.GetInt() & ( 0x01 ) ); // Pyro-vision Goggles
 
-	if ( savedViewID == VIEW_MAIN && bVisionOverride && pyro_dof.GetBool() )
+	if ( savedViewID == VIEW_MAIN && requireDepthForDoF ) //&& bVisionOverride && pyro_dof.GetBool() )
 	{
 		SSAO_DepthPass();
 	}
-#endif
+//#endif
 
 	g_CurrentViewID = savedViewID;
 }
@@ -6200,7 +6219,7 @@ void CBaseWorldView::SSAO_DepthPass()
 	int savedViewID = g_CurrentViewID;
 	g_CurrentViewID = VIEW_SSAO;
 
-	ITexture *pSSAO = materials->FindTexture( "_rt_ResolvedFullFrameDepth", TEXTURE_GROUP_RENDER_TARGET );
+	ITexture *pSSAO = materials->FindTexture( "_rt_FullFrame16", TEXTURE_GROUP_RENDER_TARGET );
 
 	CMatRenderContextPtr pRenderContext( materials );
 
@@ -6249,6 +6268,8 @@ void CBaseWorldView::SSAO_DepthPass()
 		DrawTranslucentRenderables( false, true );
 	}
 #endif
+
+	m_pMainView->DrawViewModels( (*this), true, false );
 
 	modelrender->ForcedMaterialOverride( 0 );
 

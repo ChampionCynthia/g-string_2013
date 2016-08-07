@@ -977,7 +977,7 @@ protected:
 	{
 		for( CClientRenderablesList::CEntry *itEntity = pEntitiesBegin; itEntity < pEntitiesEnd; ++ itEntity )
 			if ( itEntity->m_pRenderable )
-				DrawOpaqueRenderable( itEntity->m_pRenderable, ( itEntity->m_TwoPass != 0 ), bShadowDepth );
+				DrawOpaqueRenderable( itEntity->m_pRenderable, ( (itEntity->m_TwoPassSkip & CClientRenderablesList::CEntry::IS_TWO_PASS) != 0 ), bShadowDepth );
 	};
 #endif
 };

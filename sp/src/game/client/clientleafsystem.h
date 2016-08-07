@@ -57,10 +57,17 @@ public:
 
 	struct CEntry
 	{
+		enum TwoPassSkipFlags
+		{
+			IS_TWO_PASS = 1 << 0,
+			SHOULD_SKIP = 1 << 1,
+		};
+		// GSTRINGMIGRATION
 		IClientRenderable	*m_pRenderable;
 		unsigned short		m_iWorldListInfoLeaf; // NOTE: this indexes WorldListInfo_t's leaf list.
-		unsigned short		m_TwoPass;
+		unsigned short		m_TwoPassSkip;
 		ClientRenderHandle_t m_RenderHandle;
+		// GSTRINGMIGRATION END
 	};
 
 	// The leaves for the entries are in the order of the leaves you call CollateRenderablesInLeaf in.

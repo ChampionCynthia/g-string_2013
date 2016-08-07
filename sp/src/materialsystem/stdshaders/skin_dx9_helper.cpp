@@ -447,7 +447,8 @@ void DrawSkin_DX9_Internal( CBaseVSShader *pShader, IMaterialVar** params, IShad
 
 
 #ifndef _X360
-		if ( !g_pHardwareConfig->SupportsShaderModel_3_0() )
+		//if ( !g_pHardwareConfig->SupportsShaderModel_3_0() )
+		if ( false )
 #endif
 		{
 			DECLARE_STATIC_VERTEX_SHADER( sdk_skin_vs20 );
@@ -494,7 +495,7 @@ void DrawSkin_DX9_Internal( CBaseVSShader *pShader, IMaterialVar** params, IShad
 			SET_STATIC_PIXEL_SHADER_COMBO( DETAIL_BLEND_MODE, nDetailBlendMode );
 			SET_STATIC_PIXEL_SHADER_COMBO( RIMLIGHT, bHasRimLight );
 			SET_STATIC_PIXEL_SHADER_COMBO( CUBEMAP, bHasEnvmap );
-			SET_STATIC_PIXEL_SHADER_COMBO( FLASHLIGHTDEPTHFILTERMODE, nShadowFilterMode );
+			//SET_STATIC_PIXEL_SHADER_COMBO( FLASHLIGHTDEPTHFILTERMODE, nShadowFilterMode );
 			SET_STATIC_PIXEL_SHADER_COMBO( CONVERT_TO_SRGB, 0 );
 			SET_STATIC_PIXEL_SHADER_COMBO( FASTPATH_NOBUMP, pContextData->m_bFastPath );
 			SET_STATIC_PIXEL_SHADER( sdk_skin_ps30 );
@@ -735,7 +736,8 @@ void DrawSkin_DX9_Internal( CBaseVSShader *pShader, IMaterialVar** params, IShad
 		}
 
 #ifndef _X360
-		if ( !g_pHardwareConfig->SupportsShaderModel_3_0() )
+		//if ( !g_pHardwareConfig->SupportsShaderModel_3_0() )
+		if ( false )
 #endif
 		{
 			DECLARE_DYNAMIC_VERTEX_SHADER( sdk_skin_vs20 );

@@ -448,7 +448,10 @@ private:
 
 	// Drawing primitives
 	bool			ShouldDrawViewModel( bool drawViewmodel );
+
+public:
 	void			DrawViewModels( const CViewSetup &view, bool drawViewmodel, bool bDrawVignette );
+private:
 
 	void			PerformScreenSpaceEffects( int x, int y, int w, int h );
 

@@ -18,23 +18,10 @@
 //  SKIP: $SEAMLESS && $DETAILTEXTURE
 //  SKIP: $SEAMLESS && $MASKEDBLENDING
 //  SKIP: $BUMPMASK && ( $SEAMLESS || $DETAILTEXTURE || $SELFILLUM || $BASETEXTURENOENVMAP || $BASETEXTURE2 )
-//	SKIP: !$BUMPMAP && ($NORMAL_DECODE_MODE == 1)
-//	SKIP: !$BUMPMAP && ($NORMAL_DECODE_MODE == 2)
-//	SKIP: !$BUMPMAP && ($NORMALMASK_DECODE_MODE == 1)
-//	SKIP: !$BUMPMAP && ($NORMALMASK_DECODE_MODE == 2)
-//  NOSKIP: $FANCY_BLENDING && (!$FASTPATH)
 
 // 360 compiler craps out on some combo in this family.  Content doesn't use blendmode 10 anyway
 //  SKIP: $FASTPATH && $PIXELFOGTYPE && $BASETEXTURE2 && $DETAILTEXTURE && $CUBEMAP && ($DETAIL_BLEND_MODE == 10 )
 
-// debug crap:
-// SKEIP: $DETAILTEXTURE
-// SKEIP: $CUBEMAP
-// SKEIP: $ENVMAPMASK
-// SKEIP: $BASEALPHAENVMAPMASK
-// SKEIP: $SELFILLUM
-// SKEIP: $BUMPMAP
-// SKEIP: !$CASCADED_SHADOW
 
 #define USE_32BIT_LIGHTMAPS_ON_360 //uncomment to use 32bit lightmaps, be sure to keep this in sync with the same #define in materialsystem/cmatlightmaps.cpp
 

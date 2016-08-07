@@ -251,6 +251,8 @@ public:
 	DECLARE_NETWORKCLASS();
 	DECLARE_DATADESC();
 
+	CEnvLight();
+
 	virtual bool KeyValue( const char *szKeyName, const char *szValue );
 	virtual void Spawn();
 
@@ -269,6 +271,8 @@ private:
 	CNetworkVector( m_vecLight );
 	CNetworkVector( m_vecAmbient );
 	CNetworkVar( bool, m_bCascadedShadowMappingEnabled );
+	bool m_bHasHDRLightSet;
+	bool m_bHasHDRAmbientSet;
 };
 
 LINK_ENTITY_TO_CLASS( light_environment, CEnvLight );
@@ -287,6 +291,12 @@ IMPLEMENT_SERVERCLASS_ST_NOBASE( CEnvLight, DT_CEnvLight )
 	SendPropBool( SENDINFO( m_bCascadedShadowMappingEnabled ) ),
 END_SEND_TABLE()
 
+CEnvLight::CEnvLight()
+	: m_bHasHDRLightSet(false)
+	, m_bHasHDRAmbientSet(false)
+{
+}
+
 bool CEnvLight::KeyValue( const char *szKeyName, const char *szValue )
 {
 	if ( FStrEq( szKeyName, "pitch" ) )
@@ -299,18 +309,48 @@ bool CEnvLight::KeyValue( const char *szKeyName, const char *szValue )
 		UTIL_StringToVector( vecParsed.Base(), szValue );
 		m_angSunAngles.SetY( vecParsed.y );
 	}
-	else if ( FStrEq( szKeyName, "_light" ) )
+	else if ( FStrEq( szKeyName, "_light" ) || FStrEq( szKeyName, "_lightHDR" ) )
 	{
 		int iParsed[ 4 ];
 		UTIL_StringToIntArray( iParsed, 4, szValue );
+
+		if ( iParsed[0] <= 0 || iParsed[1] <= 0 || iParsed[2] <= 0 )
+			return true;
+
+		if ( FStrEq( szKeyName, "_lightHDR" ) )
+		{
+			// HDR overrides LDR
+			m_bHasHDRLightSet = true;
+		}
+		else if ( m_bHasHDRLightSet )
+		{
+			// If this is LDR and we got HDR already, bail out.
+			return true;
+		}
+
 		m_vecLight = ConvertLightmapGammaToLinear( iParsed );
 		Msg( "Parsed light_environment light: %i %i %i %i\n",
 			iParsed[ 0 ], iParsed[ 1 ], iParsed[ 2 ], iParsed[ 3 ] );
 	}
-	else if ( FStrEq( szKeyName, "_ambient" ) )
+	else if ( FStrEq( szKeyName, "_ambient" ) || FStrEq( szKeyName, "_ambientHDR" ) )
 	{
 		int iParsed[ 4 ];
 		UTIL_StringToIntArray( iParsed, 4, szValue );
+
+		if ( iParsed[0] <= 0 || iParsed[1] <= 0 || iParsed[2] <= 0 )
+			return true;
+
+		if ( FStrEq( szKeyName, "_ambientHDR" ) )
+		{
+			// HDR overrides LDR
+			m_bHasHDRLightSet = true;
+		}
+		else if ( m_bHasHDRLightSet )
+		{
+			// If this is LDR and we got HDR already, bail out.
+			return true;
+		}
+
 		m_vecAmbient = ConvertLightmapGammaToLinear( iParsed );
 		Msg( "Parsed light_environment ambient: %i %i %i %i\n",
 			iParsed[ 0 ], iParsed[ 1 ], iParsed[ 2 ], iParsed[ 3 ] );

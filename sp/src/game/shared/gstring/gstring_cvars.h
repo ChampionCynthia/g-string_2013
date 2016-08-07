@@ -49,6 +49,7 @@ extern ConVar gstring_dof_aperture;
 extern ConVar gstring_dof_smooth_speed;
 extern ConVar gstring_dof_max_distance;
 extern ConVar gstring_dof_radius;
+extern ConVar gstring_dof_override;
 
 #endif
 

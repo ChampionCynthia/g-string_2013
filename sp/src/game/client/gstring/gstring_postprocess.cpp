@@ -862,6 +862,8 @@ bool ShouldDrawDoF()
 {
 	if ( !ShouldDrawCommon() )
 		return false;
+	if ( g_pPPCtrl != nullptr && !g_pPPCtrl->IsDoFEnabled() && !gstring_dof_override.GetBool() )
+		return false;
 	return cvar_gstring_drawdof.GetBool();
 }
 
@@ -883,9 +885,13 @@ void DrawDoF( int x, int y, int w, int h, StereoEye_t stereoEye )
 	DEFINE_SHADEREDITOR_MATERIALVAR( DOF_EDITOR_NAME, "blur1", "$MUTABLE_01", pVar_BlurRadius1 );
 	DEFINE_SHADEREDITOR_MATERIALVAR( DOF_EDITOR_NAME, "blur2", "$MUTABLE_01", pVar_BlurRadius2 );
 
+	// Use cvar state by default
 	float focalLength = gstring_dof_focallength.GetFloat();
 	float focalDistance = gstring_dof_focaldistance.GetFloat();
 	float aperture = gstring_dof_aperture.GetFloat();
+	float radius = gstring_dof_radius.GetFloat();
+
+	const float maxSSAODistance = 4000.0f;
 	if (gstring_dof_autofocus.GetBool())
 	{
 		Vector vecForward;
@@ -898,11 +904,23 @@ void DrawDoF( int x, int y, int w, int h, StereoEye_t stereoEye )
 		focalDistance = (tr.endpos - tr.startpos).Length();
 		if (tr.DidHit() && tr.surface.flags & SURF_SKY)
 		{
-			focalDistance = 30000.0f;
+			focalDistance = maxSSAODistance;
 		}
 	}
 
+	// If there is a PPC and we are not overriding, use that instead
+	if ( !gstring_dof_override.GetBool() && g_pPPCtrl != nullptr )
+	{
+		radius = g_pPPCtrl->GetDoFRadius();
+		focalLength = g_pPPCtrl->GetDoFFocalLength();
+		const float autoFocusLerp = g_pPPCtrl->GetDoFAutoFocusInterp();
+		focalDistance = Lerp( autoFocusLerp, g_pPPCtrl->GetDoFFocalDistance(), focalDistance );
+	}
+
 	focalDistance = MIN( focalDistance, gstring_dof_max_distance.GetFloat() );
+
+	// Normalize for SSAO depth
+	focalDistance /= maxSSAODistance;
 
 	static float smoothFocalDistance = focalDistance;
 	if ( stereoEye != STEREO_EYE_RIGHT )
@@ -912,9 +930,9 @@ void DrawDoF( int x, int y, int w, int h, StereoEye_t stereoEye )
 	}
 
 	pVar_DistanceLengthAperature->SetVecValue( smoothFocalDistance, focalLength, aperture );
-	pVar_BlurRadius0->SetFloatValue( gstring_dof_radius.GetFloat() );
-	pVar_BlurRadius1->SetFloatValue( gstring_dof_radius.GetFloat() );
-	pVar_BlurRadius2->SetFloatValue( gstring_dof_radius.GetFloat() );
+	pVar_BlurRadius0->SetFloatValue( radius );
+	pVar_BlurRadius1->SetFloatValue( radius );
+	pVar_BlurRadius2->SetFloatValue( radius );
 
 	static const int iDofIndex = shaderEdit->GetPPEIndex( DOF_EDITOR_NAME );
 	shaderEdit->DrawPPEOnDemand( iDofIndex, x, y, w, h );

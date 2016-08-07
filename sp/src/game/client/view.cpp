@@ -336,7 +336,7 @@ void CViewRender::Init( void ) // GSTRINGMIGRATION
 	materials->CreateNamedRenderTargetTextureEx(
 			"_rt_FullFrame16",
 			0, 0, RT_SIZE_FULL_FRAME_BUFFER_ROUNDED_UP,
-			IMAGE_FORMAT_RGBA16161616F,
+			IMAGE_FORMAT_R32F,
 			MATERIAL_RT_DEPTH_NONE,
 			flags,
 			0);

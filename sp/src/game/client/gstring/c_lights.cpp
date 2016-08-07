@@ -33,7 +33,8 @@ void C_EnvLight::OnDataChanged( DataUpdateType_t type )
 	BaseClass::OnDataChanged( type );
 
 	if ( g_pCSMEnvLight == NULL ||
-		m_bCascadedShadowMappingEnabled && !g_pCSMEnvLight->m_bCascadedShadowMappingEnabled )
+		m_bCascadedShadowMappingEnabled && !g_pCSMEnvLight->m_bCascadedShadowMappingEnabled ||
+		m_vecLight.Length() > g_pCSMEnvLight->m_vecLight.Length() ) // If there are multiple lights, use the brightest one if CSM is forced
 	{
 		g_pCSMEnvLight = this;
 	}
