@@ -11,6 +11,7 @@
 
 // GSTRINGMIGRATION
 // DYNAMIC: "CASCADED_SHADOW"		"0..1" [vs30]
+//  SKIP: $CASCADED_SHADOW && $FLASHLIGHT
 // END GSTRINGMIGRATION
 
 //  DYNAMIC: "FASTPATH"					"0..1"
@@ -103,11 +104,11 @@ struct VS_OUTPUT
 	float4 vertexColor				: COLOR;				// in seamless, r g b = blend weights
 
 	// Extra iterators on 360, used in flashlight combo
-#if defined( _X360 ) && FLASHLIGHT || CASCADED_SHADOW
+#if FLASHLIGHT || CASCADED_SHADOW
 	float4 flashlightSpacePos		: TEXCOORD8;
 #endif
-#if defined( _X360 ) && FLASHLIGHT
-	float4 vProjPos					: TEXCOORD9;
+#if FLASHLIGHT
+	//float4 vProjPos					: TEXCOORD9;
 #endif
 
 };
@@ -273,11 +274,11 @@ VS_OUTPUT main( const VS_INPUT v )
 #endif
 
 // On 360, we have extra iterators and can fold the flashlight into this shader
-#if defined( _X360 ) && FLASHLIGHT || CASCADED_SHADOW
+#if FLASHLIGHT || CASCADED_SHADOW
 	o.flashlightSpacePos = mul( float4( worldPos, 1.0f ), g_FlashlightWorldToTexture );
 #endif
-#if defined( _X360 ) && FLASHLIGHT
-	o.vProjPos = projPos;
+#if FLASHLIGHT
+	//o.vProjPos = projPos;
 #endif
 
 	if ( g_bVertexAlphaTexBlendFactor )

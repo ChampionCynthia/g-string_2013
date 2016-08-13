@@ -190,6 +190,27 @@ public:
 		m_bBUMPMASK = true;
 #endif
 	}
+private:
+	int m_nFLASHLIGHT;
+#ifdef _DEBUG
+	bool m_bFLASHLIGHT;
+#endif
+public:
+	void SetFLASHLIGHT( int i )
+	{
+		Assert( i >= 0 && i <= 1 );
+		m_nFLASHLIGHT = i;
+#ifdef _DEBUG
+		m_bFLASHLIGHT = true;
+#endif
+	}
+	void SetFLASHLIGHT( bool i )
+	{
+		m_nFLASHLIGHT = i ? 1 : 0;
+#ifdef _DEBUG
+		m_bFLASHLIGHT = true;
+#endif
+	}
 public:
 	sdk_lightmappedgeneric_vs30_Static_Index( )
 	{
@@ -229,19 +250,23 @@ public:
 		m_bBUMPMASK = false;
 #endif // _DEBUG
 		m_nBUMPMASK = 0;
+#ifdef _DEBUG
+		m_bFLASHLIGHT = false;
+#endif // _DEBUG
+		m_nFLASHLIGHT = 0;
 	}
 	int GetIndex()
 	{
 		// Asserts to make sure that we aren't using any skipped combinations.
 		// Asserts to make sure that we are setting all of the combination vars.
 #ifdef _DEBUG
-		bool bAllStaticVarsDefined = m_bENVMAP_MASK && m_bTANGENTSPACE && m_bBUMPMAP && m_bDIFFUSEBUMPMAP && m_bVERTEXCOLOR && m_bVERTEXALPHATEXBLENDFACTOR && m_bRELIEF_MAPPING && m_bSEAMLESS && m_bBUMPMASK;
+		bool bAllStaticVarsDefined = m_bENVMAP_MASK && m_bTANGENTSPACE && m_bBUMPMAP && m_bDIFFUSEBUMPMAP && m_bVERTEXCOLOR && m_bVERTEXALPHATEXBLENDFACTOR && m_bRELIEF_MAPPING && m_bSEAMLESS && m_bBUMPMASK && m_bFLASHLIGHT;
 		Assert( bAllStaticVarsDefined );
 #endif // _DEBUG
-		return ( 16 * m_nENVMAP_MASK ) + ( 32 * m_nTANGENTSPACE ) + ( 64 * m_nBUMPMAP ) + ( 128 * m_nDIFFUSEBUMPMAP ) + ( 256 * m_nVERTEXCOLOR ) + ( 512 * m_nVERTEXALPHATEXBLENDFACTOR ) + ( 1024 * m_nRELIEF_MAPPING ) + ( 1024 * m_nSEAMLESS ) + ( 2048 * m_nBUMPMASK ) + 0;
+		return ( 16 * m_nENVMAP_MASK ) + ( 32 * m_nTANGENTSPACE ) + ( 64 * m_nBUMPMAP ) + ( 128 * m_nDIFFUSEBUMPMAP ) + ( 256 * m_nVERTEXCOLOR ) + ( 512 * m_nVERTEXALPHATEXBLENDFACTOR ) + ( 1024 * m_nRELIEF_MAPPING ) + ( 1024 * m_nSEAMLESS ) + ( 2048 * m_nBUMPMASK ) + ( 4096 * m_nFLASHLIGHT ) + 0;
 	}
 };
-#define shaderStaticTest_sdk_lightmappedgeneric_vs30 vsh_forgot_to_set_static_ENVMAP_MASK + vsh_forgot_to_set_static_TANGENTSPACE + vsh_forgot_to_set_static_BUMPMAP + vsh_forgot_to_set_static_DIFFUSEBUMPMAP + vsh_forgot_to_set_static_VERTEXCOLOR + vsh_forgot_to_set_static_VERTEXALPHATEXBLENDFACTOR + vsh_forgot_to_set_static_RELIEF_MAPPING + vsh_forgot_to_set_static_SEAMLESS + vsh_forgot_to_set_static_BUMPMASK + 0
+#define shaderStaticTest_sdk_lightmappedgeneric_vs30 vsh_forgot_to_set_static_ENVMAP_MASK + vsh_forgot_to_set_static_TANGENTSPACE + vsh_forgot_to_set_static_BUMPMAP + vsh_forgot_to_set_static_DIFFUSEBUMPMAP + vsh_forgot_to_set_static_VERTEXCOLOR + vsh_forgot_to_set_static_VERTEXALPHATEXBLENDFACTOR + vsh_forgot_to_set_static_RELIEF_MAPPING + vsh_forgot_to_set_static_SEAMLESS + vsh_forgot_to_set_static_BUMPMASK + vsh_forgot_to_set_static_FLASHLIGHT + 0
 class sdk_lightmappedgeneric_vs30_Dynamic_Index
 {
 private:

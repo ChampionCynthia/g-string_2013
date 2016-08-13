@@ -19,6 +19,7 @@
 //  SKIP: $SEAMLESS && $MASKEDBLENDING
 //  SKIP: $BUMPMASK && ( $SEAMLESS || $DETAILTEXTURE || $SELFILLUM || $BASETEXTURENOENVMAP || $BASETEXTURE2 )
 
+
 // 360 compiler craps out on some combo in this family.  Content doesn't use blendmode 10 anyway
 //  SKIP: $FASTPATH && $PIXELFOGTYPE && $BASETEXTURE2 && $DETAILTEXTURE && $CUBEMAP && ($DETAIL_BLEND_MODE == 10 )
 
@@ -140,7 +141,7 @@ sampler AlphaMaskSampler		: register( s11 );	// alpha
 #endif
 #endif
 
-#if defined( _X360 ) && FLASHLIGHT
+#if FLASHLIGHT
 sampler FlashlightSampler		: register( s13 );
 sampler ShadowDepthSampler		: register( s14 );
 sampler RandRotSampler			: register( s15 );
@@ -192,11 +193,11 @@ struct PS_INPUT
 	//float4 vertexBlendX_fogFactorW	: COLOR1;
 
 	// Extra iterators on 360, used in flashlight combo
-#if defined( _X360 ) && FLASHLIGHT || CASCADED_SHADOW
+#if FLASHLIGHT || CASCADED_SHADOW
 	float4 flashlightSpacePos		: TEXCOORD8;
 #endif
-#if defined( _X360 ) && FLASHLIGHT
-	float4 vProjPos					: TEXCOORD9;
+#if FLASHLIGHT
+	//float4 vProjPos					: TEXCOORD9;
 #endif
 };
 
@@ -535,7 +536,7 @@ HALF4 main( PS_INPUT i ) : COLOR
 	// END GSTRINGMIGRATION
 	
 
-#if defined( _X360 ) && FLASHLIGHT
+#if FLASHLIGHT
 
 	// ssbump doesn't pass a normal to the flashlight...it computes shadowing a different way
 #if ( BUMPMAP == 2 )
@@ -561,7 +562,7 @@ HALF4 main( PS_INPUT i ) : COLOR
 	float fFlashlight = DoFlashlight( g_FlashlightPos, i.worldPos_projPosZ.xyz, i.flashlightSpacePos,
 		worldSpaceNormal, g_FlashlightAttenuationFactors.xyz, 
 		g_FlashlightAttenuationFactors.w, FlashlightSampler, ShadowDepthSampler,
-		RandRotSampler, 0, true, false, i.vProjPos.xy / i.vProjPos.w, false, g_ShadowTweaks, bHasNormal );
+		RandRotSampler, 0, true, false, float2(0, 0), false, g_ShadowTweaks, bHasNormal );
 
 	diffuseComponent = albedo.xyz * ( diffuseLighting + ( fFlashlight * nDotL ) );
 #endif

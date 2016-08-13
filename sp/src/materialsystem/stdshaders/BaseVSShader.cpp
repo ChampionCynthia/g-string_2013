@@ -1923,7 +1923,7 @@ void CBaseVSShader::DrawFlashlight_dx90( IMaterialVar** params, IShaderDynamicAP
 
 		if ( g_pHardwareConfig->SupportsShaderModel_3_0() && vars.m_bLightmappedGeneric )
 		{
-			int nShadowFilterMode = g_pHardwareConfig->GetShadowFilterMode();
+			int nShadowFilterMode = 0; //g_pHardwareConfig->GetShadowFilterMode();
 
 			sdk_flashlight_ps30_Static_Index	pshIndex;
 			pshIndex.SetNORMALMAP( nBumpMapVariant );
@@ -1937,7 +1937,7 @@ void CBaseVSShader::DrawFlashlight_dx90( IMaterialVar** params, IShaderDynamicAP
 		}
 		else if ( g_pHardwareConfig->SupportsPixelShaders_2_b() )
 		{
-			int nShadowFilterMode = g_pHardwareConfig->GetShadowFilterMode();
+			int nShadowFilterMode = 0; //g_pHardwareConfig->GetShadowFilterMode();
 
 			sdk_flashlight_ps20b_Static_Index	pshIndex;
 			pshIndex.SetNORMALMAP( nBumpMapVariant );
