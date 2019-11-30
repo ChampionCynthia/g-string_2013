@@ -790,13 +790,13 @@ void DrawHurtFX( int x, int y, int w, int h )
 
 	const float flDecayDuration = 0.5f;
 	const float flHealthAnimationDuration = 0.8f;
-	const float flChromaticHurtMax = ( flChromaticAmount > 0.0f ) ? 0.02f : 0.0f;
+	//const float flChromaticHurtMax = ( flChromaticAmount > 0.0f ) ? 0.02f : 0.0f;
 
 	int iHealthCurrent = pPlayer->GetHealth();
 	iHealthCurrent = MAX( 0, iHealthCurrent );
 
-	float flChromatic = RemapValClamped( iHealthCurrent, 0, 25, flChromaticHurtMax, flChromaticAmount );
-	float flRedBlend = RemapValClamped( iHealthCurrent, 0, 25, 2.5f, 0.0f );
+	float flChromatic = 0.0f; //RemapValClamped( iHealthCurrent, 0, 25, flChromaticHurtMax, flChromaticAmount );
+	float flRedBlend = 0.0f; //RemapValClamped( iHealthCurrent, 0, 25, 2.5f, 0.0f );
 	float flHealthBlend = 0.0f;
 
 	if ( iHealthLast != iHealthCurrent )
@@ -848,6 +848,9 @@ void DrawHurtFX( int x, int y, int w, int h )
 	{
 		vecLastParams = params;
 	}
+
+	if (params.Length() < 0.0001f)
+		return;
 
 	pVar_HurtFX_Params->SetVecValue( params.x, params.y * flHurtFXEnable, params.z * flHurtFXEnable );
 

@@ -113,6 +113,7 @@ BEGIN_DATADESC( CSpacecraft )
 
 	// Player
 	DEFINE_INPUTFUNC( FIELD_VOID, "EnterVehicle", InputEnterVehicle ),
+	DEFINE_INPUTFUNC( FIELD_VOID, "ExitVehicle", InputExitVehicle ),
 
 	// Events
 	DEFINE_OUTPUT( m_OnKilled, "OnKilled" ),
@@ -402,6 +403,13 @@ void CSpacecraft::InputEnterVehicle( inputdata_t &inputdata )
 	CGstringPlayer *pPlayer = LocalGstringPlayer();
 	SetPlayerSimulated( pPlayer );
 	pPlayer->EnterSpacecraft( this );
+}
+
+void CSpacecraft::InputExitVehicle( inputdata_t &inputdata )
+{
+	CGstringPlayer *pPlayer = LocalGstringPlayer();
+	SetPlayerSimulated( pPlayer );
+	pPlayer->ExitSpacecraft();
 }
 
 void CSpacecraft::PhysicsSimulate()

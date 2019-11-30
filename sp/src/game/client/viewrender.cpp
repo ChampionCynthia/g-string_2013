@@ -2026,9 +2026,11 @@ void CViewRender::UpdateCascadedShadow( const CViewSetup &view, CascadedConfigMo
 		{
 			ShadowConfig_t &closeShadow = shadowConfigs[ 0 ];
 			ShadowConfig_t &farShadow = shadowConfigs[ 1 ];
-			closeShadow.flOrthoSize = 4.0f;
+			//closeShadow.flOrthoSize = 4.0f;
+			closeShadow.flOrthoSize = 7.5f;
 			closeShadow.flForwardOffset = 2.0f;
 			closeShadow.flUVOffsetX = 0.25f;
+			closeShadow.flViewDepthBiasHack = 0.001f;
 			farShadow.flViewDepthBiasHack = 1.5f;
 		}
 		break;

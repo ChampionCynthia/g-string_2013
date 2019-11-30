@@ -86,9 +86,9 @@ void CVGUIGstringMain::ApplySchemeSettings( vgui::IScheme *pScheme )
 	SetMouseInputEnabled( true );
 	SetKeyBoardInputEnabled( true );
 
-	SetPaintBackgroundEnabled( false );
+	SetPaintBackgroundEnabled( true );
 	SetPaintBackgroundType( 0 );
-	SetBgColor( Color( 0, 0, 255, 255 ) );
+	SetBgColor( Color( 0, 0, 0, 255 ) );
 }
 
 void CVGUIGstringMain::PerformLayout()

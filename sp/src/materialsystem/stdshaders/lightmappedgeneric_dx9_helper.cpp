@@ -609,7 +609,7 @@ void DrawLightmappedGeneric_DX9_Internal(CBaseVSShader *pShader, IMaterialVar** 
 				SET_STATIC_VERTEX_SHADER_COMBO( BUMPMASK, hasBumpMask );
 				SET_STATIC_VERTEX_SHADER_COMBO( RELIEF_MAPPING, false );//bReliefMapping );
 				SET_STATIC_VERTEX_SHADER_COMBO( SEAMLESS, bSeamlessMapping );
-				SET_STATIC_VERTEX_SHADER_COMBO( FLASHLIGHT, hasFlashlight);
+				//SET_STATIC_VERTEX_SHADER_COMBO( FLASHLIGHT, hasFlashlight);
 				SET_STATIC_VERTEX_SHADER( sdk_lightmappedgeneric_vs30 );
 
 
@@ -636,7 +636,7 @@ void DrawLightmappedGeneric_DX9_Internal(CBaseVSShader *pShader, IMaterialVar** 
 				//SET_STATIC_PIXEL_SHADER_COMBO( OUTLINE, bHasOutline );
 				//SET_STATIC_PIXEL_SHADER_COMBO( SOFTEDGES, bHasSoftEdges );
 				SET_STATIC_PIXEL_SHADER_COMBO( DETAIL_BLEND_MODE, nDetailBlendMode );
-				SET_STATIC_PIXEL_SHADER_COMBO( FLASHLIGHT, hasFlashlight );
+				//SET_STATIC_PIXEL_SHADER_COMBO( FLASHLIGHT, hasFlashlight );
 				//SET_STATIC_PIXEL_SHADER_COMBO( FLASHLIGHTDEPTHFILTERMODE, nShadowFilterMode );
 				SET_STATIC_PIXEL_SHADER( sdk_lightmappedgeneric_ps30 );
 				//else

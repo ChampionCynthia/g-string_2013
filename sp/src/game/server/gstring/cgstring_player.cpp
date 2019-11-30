@@ -65,6 +65,8 @@ void CGstringPlayer::Precache()
 	PrecacheParticleSystem( "blood_advisor_spray_strong_2" );
 	PrecacheParticleSystem( "blood_advisor_spray_strong_3" );
 
+	PrecacheParticleSystem( "explosion_common" );
+
 	BaseClass::Precache();
 }
 
@@ -80,6 +82,16 @@ void CGstringPlayer::Spawn()
 void CGstringPlayer::Activate()
 {
 	BaseClass::Activate();
+
+	// Was in space craft before, exit it now
+	if ((m_Local.m_iHideHUD & HIDEHUD_SPACECRAFT) == 0 &&
+		(m_Local.m_iHideHUD & HIDEHUD_HEALTH) != 0 &&
+		GetMoveType() == MOVETYPE_NOCLIP &&
+		(g_pGstringGlobals == NULL ||
+		!g_pGstringGlobals->IsSpaceMap()))
+	{
+		ExitSpacecraft();
+	}
 
 	RemoveFlag( FL_GODMODE );
 	m_takedamage = DAMAGE_YES;
@@ -305,9 +317,12 @@ bool CGstringPlayer::IsInSpacecraft() const
 
 void CGstringPlayer::ExitSpacecraft()
 {
-	Assert( m_hSpacecraft->GetOwnerEntity() == this );
-	m_hSpacecraft->SetOwnerEntity( NULL );
-	m_hSpacecraft.Set( NULL );
+	if (m_hSpacecraft != NULL)
+	{
+		Assert(m_hSpacecraft->GetOwnerEntity() == this);
+		m_hSpacecraft->SetOwnerEntity(NULL);
+		m_hSpacecraft.Set(NULL);
+	}
 
 	RemoveSolidFlags( FSOLID_NOT_SOLID );
 	SetSolid( SOLID_BBOX );

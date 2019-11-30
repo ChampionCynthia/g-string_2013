@@ -1723,6 +1723,116 @@ static TITLECOMMENT gTitleComments[] =
 	
 	{ "ep2_outland_12a", "#ep2_Chapter7_Title" },
 	{ "ep2_outland_12", "#ep2_Chapter6_Title" },
+
+
+	//ACT 1
+
+	{ "lab_rat"   , "#GstringV2_Chapter1_Title" },
+	{ "lab_rat1" , "#GstringV2_Chapter1_Title" },
+ 
+	{ "human_waste1" , "#GstringV2_Chapter2_Title" },
+	{ "human_waste2" , "#GstringV2_Chapter2_Title" },
+	{ "human_waste3" , "#GstringV2_Chapter2_Title" },
+	{ "human_waste4" , "#GstringV2_Chapter2_Title" },
+	{ "human_waste5" , "#GstringV2_Chapter2_Title" },
+	{ "human_waste6" , "#GstringV2_Chapter2_Title" },
+	{ "human_waste7" , "#GstringV2_Chapter2_Title" },
+	{ "human_waste8" , "#GstringV2_Chapter2_Title" },
+	{ "human_waste9" , "#GstringV2_Chapter2_Title" },
+ 
+	{ "hazardous_ai"            , "#GstringV2_Chapter3_Title" },
+	{ "hazardous_ai_more"  , "#GstringV2_Chapter3_Title" },
+	{ "hazardous_ai0"          , "#GstringV2_Chapter3_Title" },
+	{ "hazardous_ai01"        , "#GstringV2_Chapter3_Title" },
+	{ "hazardous_ai2"          , "#GstringV2_Chapter3_Title" },
+	{ "hazardous_ai3"          , "#GstringV2_Chapter3_Title" },
+	{ "hazardous_ai3b"        , "#GstringV2_Chapter3_Title" },
+	{ "hazardous_ai4"          , "#GstringV2_Chapter3_Title" },
+	{ "hazardous_ai5"     , "#GstringV2_Chapter3_Title" },
+	{ "hazardous_ai6"     , "#GstringV2_Chapter3_Title" },
+	{ "hazardous_ai7"     , "#GstringV2_Chapter3_Title" },
+ 
+	{ "money_is_dead"       , "#GstringV2_Chapter4_Title" },
+	{ "money_is_dead_1"   , "#GstringV2_Chapter4_Title" },
+	{ "money_is_dead2"     , "#GstringV2_Chapter4_Title" },
+	{ "money_is_dead3"     , "#GstringV2_Chapter4_Title" },
+	{ "money_is_dead3_2" , "#GstringV2_Chapter4_Title" },
+	{ "money_is_dead4"     , "#GstringV2_Chapter4_Title" },
+	{ "money_is_dead0"     , "#GstringV2_Chapter4_Title" },
+	{ "money_is_dead2_1" , "#GstringV2_Chapter4_Title" },
+	{ "money_is_dead2_2" , "#GstringV2_Chapter4_Title" },
+	{ "money_is_dead4_2" , "#GstringV2_Chapter4_Title" },
+	{ "money_is_dead4_3" , "#GstringV2_Chapter4_Title" },
+ 
+	 //ACT 2 
+  
+	 { "murdock_air1"                  , "#GstringV2_Chapter5_Title" },
+	 { "murdock_air2"                  , "#GstringV2_Chapter5_Title" },
+	 { "murdock_air3"                  , "#GstringV2_Chapter5_Title" },
+	 { "murdock_air4"                  , "#GstringV2_Chapter5_Title" }, 
+	 { "terror_management_x1"  , "#GstringV2_Chapter5_Title" }, 
+	 { "terror_management_x2"  , "#GstringV2_Chapter5_Title" }, 
+	 { "terror_management_x3"  , "#GstringV2_Chapter5_Title" }, 
+ 
+	 { "murdock_air5"                , "#GstringV2_Chapter6_Title" },
+	 { "murdock_air6"                , "#GstringV2_Chapter6_Title" },
+	 { "murdock_air7"                , "#GstringV2_Chapter6_Title" },
+	 { "human_waste_x1"          , "#GstringV2_Chapter6_Title" },
+
+	 { "murdock_air8"           , "#GstringV2_Chapter7_Title" },
+	 { "murdock_air9"           , "#GstringV2_Chapter7_Title" },
+
+	 { "murdock_air10"    , "#GstringV2_Chapter8_Title" },
+	 { "murdock_air11"    , "#GstringV2_Chapter8_Title" },
+	 { "murdock_air12"    , "#GstringV2_Chapter8_Title" },
+	 { "murdock_air13"    , "#GstringV2_Chapter8_Title" },
+	 { "murdock_air_x1"  , "#GstringV2_Chapter8_Title" },
+	 { "murdock_air_x1"  , "#GstringV2_Chapter8_Title" },
+
+	 { "smog_storm"   , "#GstringV2_Chapter9_Title" },
+	 { "smog_storm1" , "#GstringV2_Chapter9_Title" },
+	 { "smog_storm2" , "#GstringV2_Chapter9_Title" },
+	 { "smog_storm3" , "#GstringV2_Chapter9_Title" },
+ 
+	 { "space_race"   , "#GstringV2_Chapter10_Title" },
+	 { "space_race1" , "#GstringV2_Chapter10_Title" },
+	 { "space_race2" , "#GstringV2_Chapter10_Title" },
+	 { "space_race3" , "#GstringV2_Chapter10_Title" },
+	 { "space_race4" , "#GstringV2_Chapter10_Title" },
+	 { "space_race5" , "#GstringV2_Chapter10_Title" },
+ 
+	//ACT 3 
+ 
+	{ "sabotage"      , "#GstringV2_Chapter11_Title" },
+	{ "sabotage1"    , "#GstringV2_Chapter11_Title" },
+	{ "sabotage2"    , "#GstringV2_Chapter11_Title" },
+	{ "sabotage3"    , "#GstringV2_Chapter11_Title" },
+ 
+	{ "perp_org1"    , "#GstringV2_Chapter12_Title" },
+	{ "perp_org2"    , "#GstringV2_Chapter12_Title" },
+	{ "perp_org3"    , "#GstringV2_Chapter12_Title" },
+	{ "perp_org4"    , "#GstringV2_Chapter12_Title" },
+ 
+	{ "dragon_girl"    , "#GstringV2_Chapter13_Title" },
+	{ "dragon_girl1"  , "#GstringV2_Chapter13_Title" },
+	{ "dragon_girl2"  , "#GstringV2_Chapter13_Title" },
+	{ "dragon_girl3"  , "#GstringV2_Chapter13_Title" },
+
+	{ "free_mars1"    , "#GstringV2_Chapter14_Title" },
+	{ "free_mars2"    , "#GstringV2_Chapter14_Title" },
+	{ "free_mars3"    , "#GstringV2_Chapter14_Title" },
+	{ "free_mars4"    , "#GstringV2_Chapter14_Title" },
+
+	{ "the_call1"     , "#GstringV2_Chapter15_Title" },
+	{ "the_call2"     , "#GstringV2_Chapter15_Title" },
+	{ "the_call3"     , "#GstringV2_Chapter15_Title" },
+	{ "the_call4"     , "#GstringV2_Chapter15_Title" },
+
+	{ "optional1"     , "#GstringV2_Chapter16_Title" },
+	{ "optional2"     , "#GstringV2_Chapter16_Title" },
+	{ "optional3"     , "#GstringV2_Chapter16_Title" },
+	{ "optional4"     , "#GstringV2_Chapter16_Title" },
+
 #endif
 };
 

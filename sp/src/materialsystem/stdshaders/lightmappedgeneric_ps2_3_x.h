@@ -21,7 +21,7 @@
 
 
 // 360 compiler craps out on some combo in this family.  Content doesn't use blendmode 10 anyway
-//  SKIP: $FASTPATH && $PIXELFOGTYPE && $BASETEXTURE2 && $DETAILTEXTURE && $CUBEMAP && ($DETAIL_BLEND_MODE == 10 )
+//  SKIP: $FASTPATH && $PIXELFOGTYPE && $BASETEXTURE2 && $DETAILTEXTURE && $CUBEMAP && ($DETAIL_BLEND_MODE == 10 ) [XBOX]
 
 
 #define USE_32BIT_LIGHTMAPS_ON_360 //uncomment to use 32bit lightmaps, be sure to keep this in sync with the same #define in materialsystem/cmatlightmaps.cpp
@@ -339,14 +339,15 @@ HALF4 main( PS_INPUT i ) : COLOR
 
 	if( bBaseTexture2 )
 	{
-#if (SELFILLUM == 0) && (NORMALMAPALPHAENVMAPMASK==0) && (PIXELFOGTYPE != PIXEL_FOG_TYPE_HEIGHT) && (FANCY_BLENDING)
+#if (SELFILLUM == 0) && (PIXELFOGTYPE != PIXEL_FOG_TYPE_HEIGHT) && (FANCY_BLENDING)
 		float4 modt=tex2D(BlendModulationSampler,i.lightmapTexCoord3.zw);
 #if MASKEDBLENDING
-		float minb=modt.g-modt.r;
-		float maxb=modt.g+modt.r;
+		//float minb=modt.g-modt.r;
+		//float maxb=modt.g+modt.r;
+		blendfactor=modt.g;
 #else
-		float minb=max(0,modt.g-modt.r);
-		float maxb=min(1,modt.g+modt.r);
+		float minb=saturate(modt.g-modt.r);
+		float maxb=saturate(modt.g+modt.r);
 #endif
 		blendfactor=smoothstep(minb,maxb,blendfactor);
 #endif

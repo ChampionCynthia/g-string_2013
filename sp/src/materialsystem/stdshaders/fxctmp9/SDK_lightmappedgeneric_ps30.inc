@@ -358,27 +358,6 @@ public:
 		m_bDETAIL_BLEND_MODE = true;
 #endif
 	}
-private:
-	int m_nFLASHLIGHT;
-#ifdef _DEBUG
-	bool m_bFLASHLIGHT;
-#endif
-public:
-	void SetFLASHLIGHT( int i )
-	{
-		Assert( i >= 0 && i <= 1 );
-		m_nFLASHLIGHT = i;
-#ifdef _DEBUG
-		m_bFLASHLIGHT = true;
-#endif
-	}
-	void SetFLASHLIGHT( bool i )
-	{
-		m_nFLASHLIGHT = i ? 1 : 0;
-#ifdef _DEBUG
-		m_bFLASHLIGHT = true;
-#endif
-	}
 public:
 	sdk_lightmappedgeneric_ps30_Static_Index( )
 	{
@@ -450,23 +429,19 @@ public:
 		m_bDETAIL_BLEND_MODE = false;
 #endif // _DEBUG
 		m_nDETAIL_BLEND_MODE = 0;
-#ifdef _DEBUG
-		m_bFLASHLIGHT = false;
-#endif // _DEBUG
-		m_nFLASHLIGHT = 0;
 	}
 	int GetIndex()
 	{
 		// Asserts to make sure that we aren't using any skipped combinations.
 		// Asserts to make sure that we are setting all of the combination vars.
 #ifdef _DEBUG
-		bool bAllStaticVarsDefined = m_bMASKEDBLENDING && m_bBASETEXTURE2 && m_bDETAILTEXTURE && m_bBUMPMAP && m_bBUMPMAP2 && m_bCUBEMAP && m_bENVMAPMASK && m_bBASEALPHAENVMAPMASK && m_bSELFILLUM && m_bNORMALMAPALPHAENVMAPMASK && m_bDIFFUSEBUMPMAP && m_bBASETEXTURENOENVMAP && m_bBASETEXTURE2NOENVMAP && m_bWARPLIGHTING && m_bFANCY_BLENDING && m_bSEAMLESS && m_bDETAIL_BLEND_MODE && m_bFLASHLIGHT;
+		bool bAllStaticVarsDefined = m_bMASKEDBLENDING && m_bBASETEXTURE2 && m_bDETAILTEXTURE && m_bBUMPMAP && m_bBUMPMAP2 && m_bCUBEMAP && m_bENVMAPMASK && m_bBASEALPHAENVMAPMASK && m_bSELFILLUM && m_bNORMALMAPALPHAENVMAPMASK && m_bDIFFUSEBUMPMAP && m_bBASETEXTURENOENVMAP && m_bBASETEXTURE2NOENVMAP && m_bWARPLIGHTING && m_bFANCY_BLENDING && m_bSEAMLESS && m_bDETAIL_BLEND_MODE;
 		Assert( bAllStaticVarsDefined );
 #endif // _DEBUG
-		return ( 64 * m_nMASKEDBLENDING ) + ( 128 * m_nBASETEXTURE2 ) + ( 256 * m_nDETAILTEXTURE ) + ( 512 * m_nBUMPMAP ) + ( 1536 * m_nBUMPMAP2 ) + ( 3072 * m_nCUBEMAP ) + ( 6144 * m_nENVMAPMASK ) + ( 12288 * m_nBASEALPHAENVMAPMASK ) + ( 24576 * m_nSELFILLUM ) + ( 49152 * m_nNORMALMAPALPHAENVMAPMASK ) + ( 98304 * m_nDIFFUSEBUMPMAP ) + ( 196608 * m_nBASETEXTURENOENVMAP ) + ( 393216 * m_nBASETEXTURE2NOENVMAP ) + ( 786432 * m_nWARPLIGHTING ) + ( 1572864 * m_nFANCY_BLENDING ) + ( 3145728 * m_nSEAMLESS ) + ( 6291456 * m_nDETAIL_BLEND_MODE ) + ( 75497472 * m_nFLASHLIGHT ) + 0;
+		return ( 64 * m_nMASKEDBLENDING ) + ( 128 * m_nBASETEXTURE2 ) + ( 256 * m_nDETAILTEXTURE ) + ( 512 * m_nBUMPMAP ) + ( 1536 * m_nBUMPMAP2 ) + ( 3072 * m_nCUBEMAP ) + ( 6144 * m_nENVMAPMASK ) + ( 12288 * m_nBASEALPHAENVMAPMASK ) + ( 24576 * m_nSELFILLUM ) + ( 49152 * m_nNORMALMAPALPHAENVMAPMASK ) + ( 98304 * m_nDIFFUSEBUMPMAP ) + ( 196608 * m_nBASETEXTURENOENVMAP ) + ( 393216 * m_nBASETEXTURE2NOENVMAP ) + ( 786432 * m_nWARPLIGHTING ) + ( 1572864 * m_nFANCY_BLENDING ) + ( 3145728 * m_nSEAMLESS ) + ( 6291456 * m_nDETAIL_BLEND_MODE ) + 0;
 	}
 };
-#define shaderStaticTest_sdk_lightmappedgeneric_ps30 psh_forgot_to_set_static_MASKEDBLENDING + psh_forgot_to_set_static_BASETEXTURE2 + psh_forgot_to_set_static_DETAILTEXTURE + psh_forgot_to_set_static_BUMPMAP + psh_forgot_to_set_static_BUMPMAP2 + psh_forgot_to_set_static_CUBEMAP + psh_forgot_to_set_static_ENVMAPMASK + psh_forgot_to_set_static_BASEALPHAENVMAPMASK + psh_forgot_to_set_static_SELFILLUM + psh_forgot_to_set_static_NORMALMAPALPHAENVMAPMASK + psh_forgot_to_set_static_DIFFUSEBUMPMAP + psh_forgot_to_set_static_BASETEXTURENOENVMAP + psh_forgot_to_set_static_BASETEXTURE2NOENVMAP + psh_forgot_to_set_static_WARPLIGHTING + psh_forgot_to_set_static_FANCY_BLENDING + psh_forgot_to_set_static_SEAMLESS + psh_forgot_to_set_static_DETAIL_BLEND_MODE + psh_forgot_to_set_static_FLASHLIGHT + 0
+#define shaderStaticTest_sdk_lightmappedgeneric_ps30 psh_forgot_to_set_static_MASKEDBLENDING + psh_forgot_to_set_static_BASETEXTURE2 + psh_forgot_to_set_static_DETAILTEXTURE + psh_forgot_to_set_static_BUMPMAP + psh_forgot_to_set_static_BUMPMAP2 + psh_forgot_to_set_static_CUBEMAP + psh_forgot_to_set_static_ENVMAPMASK + psh_forgot_to_set_static_BASEALPHAENVMAPMASK + psh_forgot_to_set_static_SELFILLUM + psh_forgot_to_set_static_NORMALMAPALPHAENVMAPMASK + psh_forgot_to_set_static_DIFFUSEBUMPMAP + psh_forgot_to_set_static_BASETEXTURENOENVMAP + psh_forgot_to_set_static_BASETEXTURE2NOENVMAP + psh_forgot_to_set_static_WARPLIGHTING + psh_forgot_to_set_static_FANCY_BLENDING + psh_forgot_to_set_static_SEAMLESS + psh_forgot_to_set_static_DETAIL_BLEND_MODE + 0
 class sdk_lightmappedgeneric_ps30_Dynamic_Index
 {
 private:

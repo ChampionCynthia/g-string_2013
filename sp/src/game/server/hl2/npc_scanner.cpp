@@ -1929,7 +1929,7 @@ void CNPC_CScanner::AttackFlash(void)
 	m_pEyeFlash->SetBrightness( 255 );
 	m_pEyeFlash->SetColor(255,255,255);
 
-	if (GetEnemy() != NULL)
+	if (GetEnemy() != NULL && !m_bNoLight)
 	{
 		Vector pos = GetEnemyLKP();
 		CBroadcastRecipientFilter filter;
@@ -1966,6 +1966,9 @@ void CNPC_CScanner::BlindFlashTarget( CBaseEntity *pTarget )
 			}
 		}
 	}
+
+	if (m_bNoLight)
+		return;
 
 	// Only bother with player
 	if ( pTarget->IsPlayer() == false )

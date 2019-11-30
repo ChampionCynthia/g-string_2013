@@ -175,7 +175,7 @@ bool CBaseHLCombatWeapon::WeaponShouldBeLowered( void )
 
 	// GSTRINGMIGRATION
 	CHL2_Player *player = assert_cast< CHL2_Player* >( GetOwner() );
-	if ( player->IsSprinting()
+	if ( player != nullptr && player->IsSprinting()
 		&& player->GetAbsVelocity().Length2DSqr() > ( 200.0f * 200.0f ) )
 		return true;
 	// END GSTRINGMIGRATION

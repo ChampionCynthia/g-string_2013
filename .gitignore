@@ -100,3 +100,4 @@ config.cfg
 
 /sp/src/utils/vbsp/Debug
 /sp/src/utils/vbsp/Release
+/sp/src/materialsystem/stdshaders/tools

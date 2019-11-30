@@ -25,21 +25,21 @@ extern ConVar gstring_volumetrics_enabled;
 static PostProcessingState_t presets[] =
 {
 	// Subtle
-	{ true, true, true, true, true, true, false, true, 0.0f, 0.3f, 0.7f, 0.3f, 0.2f, 0.1f, 0.2f, 0.2f },
+	{ true, true, true, true, true, true, false, true, false, 0.0f, 0.3f, 0.7f, 0.3f, 0.2f, 0.1f, 0.2f, 0.2f },
 	// Vibrant
-	{ true, true, true, true, true, true, true, true, 0.0f, 0.7f, 1.0f, 0.5f, 0.0f, 0.2f, 0.6f, 0.8f },
+	{ true, true, true, true, true, true, true, true, true, 0.0f, 0.7f, 1.0f, 0.5f, 0.0f, 0.2f, 0.6f, 0.8f },
 	// film noir
-	{ true, true, true, true, true, true, true, true, 0.0f, 0.8f, 1.0f, 0.5f, 1.0f, 0.3f, 0.2f, 0.9f },
+	{ true, true, true, true, true, true, true, true, false, 0.0f, 0.8f, 1.0f, 0.5f, 1.0f, 0.3f, 0.2f, 0.9f },
 	// film noir red
-	{ true, true, true, true, true, true, true, true, 0.0f, 0.8f, 1.0f, 0.5f, 0.5f, 0.3f, 0.2f, 0.9f },
+	{ true, true, true, true, true, true, true, true, false, 0.0f, 0.8f, 1.0f, 0.5f, 0.5f, 0.3f, 0.2f, 0.9f },
 	// bw
-	{ false, false, false, false, false, false, false, false, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f },
+	{ false, false, false, false, false, false, false, false, false, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f },
 	// bw red
 	//{ false, false, false, false, false, false, false, 0.0f, 0.0f, 0.0f, 0.0f, 0.5f, 0.0f, 0.0f, 0.0f },
 	// 70 mm
-	{ true, true, true, true, true, true, true, true, 1.0f, 0.2f, 0.8f, 0.1f, 0.1f, 0.2f, 0.7f, 0.6f },
+	{ true, true, true, true, true, true, true, true, true, 1.0f, 0.2f, 0.8f, 0.1f, 0.1f, 0.2f, 0.7f, 0.6f },
 	// none
-	{ false, false, false, false, false, false, false, false, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },
+	{ false, false, false, false, false, false, false, false, false, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },
 };
 
 static float scales[ PP_VALS ] = {
@@ -92,6 +92,7 @@ CVGUIGstringOptions::CVGUIGstringOptions( VPANEL parent, const char *pName ) : B
 	CREATE_VGUI_CHECKBOX( m_pCheck_DreamBlur, "check_dreamblur", pPagePostProcessing );
 	CREATE_VGUI_CHECKBOX( m_pCheck_ScreenBlur, "check_screenblur", pPagePostProcessing );
 	CREATE_VGUI_CHECKBOX( m_pCheck_CinemaOverlay, "check_cinemaoverlay", pPagePostProcessing );
+	CREATE_VGUI_CHECKBOX( m_pCheck_Dof, "check_dof", pPagePostProcessing );
 	m_pCBox_Preset = new ComboBox( pPagePostProcessing, "combo_preset", 10, false );
 	m_pCBox_Preset->AddItem( "#pp_preset_subtle", NULL );
 	m_pCBox_Preset->AddItem( "#pp_preset_vibrant", NULL );
@@ -154,6 +155,7 @@ CVGUIGstringOptions::CVGUIGstringOptions( VPANEL parent, const char *pName ) : B
 	m_pVarChecks[ 5 ] = &cvar_gstring_drawdreamblur;
 	m_pVarChecks[ 6 ] = &cvar_gstring_drawscreenblur;
 	m_pVarChecks[ 7 ] = &cvar_gstring_drawcinemaoverlay;
+	m_pVarChecks[ 8 ] = &cvar_gstring_drawdof;
 	m_pVarValues[ 0 ] = &cvar_gstring_bars_scale;
 	m_pVarValues[ 1 ] = &cvar_gstring_motionblur_scale;
 	m_pVarValues[ 2 ] = &cvar_gstring_bloomflare_strength;
@@ -248,6 +250,7 @@ void CVGUIGstringOptions::ReadValues( bool bUpdatePreset )
 	CVAR_STATE_CHECK_SELECTED( 5, m_pCheck_DreamBlur );
 	CVAR_STATE_CHECK_SELECTED( 6, m_pCheck_ScreenBlur );
 	CVAR_STATE_CHECK_SELECTED( 7, m_pCheck_CinemaOverlay );
+	CVAR_STATE_CHECK_SELECTED( 8, m_pCheck_Dof );
 	CVAR_STATE_SLIDER_INTEGER( 0, m_pSlider_CinematicBars_Size );
 	CVAR_STATE_SLIDER_INTEGER( 1, m_pSlider_MotionBlur_Strength );
 	CVAR_STATE_SLIDER_INTEGER( 2, m_pSlider_BloomFlare_Strength );
@@ -301,7 +304,8 @@ void CVGUIGstringOptions::OnCheckButtonChecked( Panel *panel )
 			m_pCheck_LensFlare,
 			m_pCheck_DreamBlur,
 			m_pCheck_ScreenBlur,
-			m_pCheck_CinemaOverlay
+			m_pCheck_CinemaOverlay,
+			m_pCheck_Dof
 		};
 		for ( int i = 0; i < PP_CHECKS; ++i )
 		{

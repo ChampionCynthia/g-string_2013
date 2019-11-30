@@ -212,6 +212,10 @@ void C_BaseExplosionEffect::CreateCore( void )
 	//Spread constricts as force rises
 	float force = m_flForce;
 
+	QAngle angles;
+	VectorAngles(m_vecDirection, angles);
+	DispatchParticleEffect("explosion_common", m_vecOrigin, angles);
+
 	//Cap our force
 	if ( force < EXPLOSION_FORCE_MIN )
 		force = EXPLOSION_FORCE_MIN;

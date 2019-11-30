@@ -109,6 +109,10 @@ public:
 		AITEAM_BITS = 1
 	};
 
+	virtual int ObjectCaps( void ) {
+		return BaseClass::ObjectCaps() & ~FCAP_ACROSS_TRANSITION;
+	};
+
 	bool IsPlayerControlled() const;
 	bool ShouldPlaySounds() const;
 	const SpacecraftSettings_t &GetSettings() { return m_Settings; }
@@ -144,6 +148,7 @@ public:
 	void OnPlayerEntered(CGstringPlayer *pPlayer);
 
 	void InputEnterVehicle(inputdata_t &inputdata);
+	void InputExitVehicle(inputdata_t &inputdata);
 	virtual void PhysicsSimulate();
 	virtual void VPhysicsCollision(int index, gamevcollisionevent_t *pEvent);
 	virtual void VPhysicsFriction( IPhysicsObject *pObject, float energy, int surfaceProps, int surfacePropsHit );

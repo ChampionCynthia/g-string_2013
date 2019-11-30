@@ -3596,7 +3596,7 @@ int CNPC_AttackHelicopter::OnTakeDamage_Alive( const CTakeDamageInfo &info )
 		{
 			if ( nPrevHealth != GetMaxHealth() )
 			{
-				DropCorpse( info.GetDamage() );
+				//DropCorpse( info.GetDamage() );
 			}
 		}
 

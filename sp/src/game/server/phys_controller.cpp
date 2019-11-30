@@ -310,7 +310,9 @@ void CPhysForce::ScaleForce( float scale )
 		ForceOn();
 
 	m_integrator.ScaleConstantForce( scale );
-	m_pController->WakeObjects();
+
+	if ( m_pController )
+		m_pController->WakeObjects();
 }
 
 
