@@ -1787,7 +1787,7 @@ static TITLECOMMENT gTitleComments[] =
 	 { "murdock_air12"    , "#GstringV2_Chapter8_Title" },
 	 { "murdock_air13"    , "#GstringV2_Chapter8_Title" },
 	 { "murdock_air_x1"  , "#GstringV2_Chapter8_Title" },
-	 { "murdock_air_x1"  , "#GstringV2_Chapter8_Title" },
+	 { "murdock_air_x2"  , "#GstringV2_Chapter8_Title" },
 
 	 { "smog_storm"   , "#GstringV2_Chapter9_Title" },
 	 { "smog_storm1" , "#GstringV2_Chapter9_Title" },
