@@ -1781,13 +1781,13 @@ static TITLECOMMENT gTitleComments[] =
 
 	 { "murdock_air8"           , "#GstringV2_Chapter7_Title" },
 	 { "murdock_air9"           , "#GstringV2_Chapter7_Title" },
-
-	 { "murdock_air10"    , "#GstringV2_Chapter8_Title" },
-	 { "murdock_air11"    , "#GstringV2_Chapter8_Title" },
-	 { "murdock_air12"    , "#GstringV2_Chapter8_Title" },
-	 { "murdock_air13"    , "#GstringV2_Chapter8_Title" },
-	 { "murdock_air_x1"  , "#GstringV2_Chapter8_Title" },
-	 { "murdock_air_x2"  , "#GstringV2_Chapter8_Title" },
+		
+	 { "murdock_air_x1"   , "#GstringV2_Chapter8_Title" },
+	 { "murdock_air_x2"   , "#GstringV2_Chapter8_Title" },
+	 { "murdock_air_x3"   , "#GstringV2_Chapter8_Title" },
+	 { "murdock_air_x4"   , "#GstringV2_Chapter8_Title" },
+	 { "murdock_air_x5"   , "#GstringV2_Chapter8_Title" },
+	 { "murdock_air_x6"   , "#GstringV2_Chapter8_Title" },
 
 	 { "smog_storm"   , "#GstringV2_Chapter9_Title" },
 	 { "smog_storm1" , "#GstringV2_Chapter9_Title" },
