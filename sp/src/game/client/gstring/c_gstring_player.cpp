@@ -10,7 +10,7 @@
 #include "c_bobmodel.h"
 #include "c_gstring_player_ragdoll.h"
 #include "cgstring_interaction_body.h"
-#include "sourcevr\isourcevirtualreality.h"
+#include "sourcevr/isourcevirtualreality.h"
 
 #define FLASHLIGHT_DISTANCE		1000
 
