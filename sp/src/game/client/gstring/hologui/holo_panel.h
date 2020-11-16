@@ -1,7 +1,7 @@
 #ifndef HOLO_PANEL_H
 #define HOLO_PANEL_H
 
-#include "vgui_controls/panel.h"
+#include "vgui_controls/Panel.h"
 
 #define HOLO_COLOR255_FRIENDLY 0.3f * 255.0f, 1.0f * 255.0f, 0.5f * 255.0f
 #define HOLO_COLOR_FRIENDLY 0.3f, 1.0f, 0.5f
